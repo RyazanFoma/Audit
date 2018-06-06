@@ -168,7 +168,7 @@ public class AuditTask extends AppCompatActivity implements
             case R.id.fab: //Сохранить задание
                 saveTask(v);
                 break;
-            case R.id.btn_type: //Выбрать вид
+            case R.id.type: //Выбрать вид
                 line = animeView(this,R.id.line_type);
                 intent = ReferenceManager.intentActivity(this, SELECT_TYPE, AuditDB.TBL_TYPE,
                         getString(R.string.txt_tp),task.type );
@@ -179,7 +179,7 @@ public class AuditTask extends AppCompatActivity implements
                     }
                 }, 1000L);
                 break;
-            case R.id.btn_object: //Выбрать объект
+            case R.id.object: //Выбрать объект
                 line = animeView(this,R.id.line_obj);
                 intent = ReferenceManager.intentActivity(this, SELECT_OBJECT, AuditDB.TBL_OBJECT,
                         getString(R.string.txt_obj),task.object );

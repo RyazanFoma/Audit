@@ -163,6 +163,8 @@ public class ReferenceManager extends AppCompatActivity implements View.OnClickL
         RecyclerView recyclerView = (RecyclerView) findViewById(R.id.list);
         recyclerView.setAdapter(recyclerAdapter);
         recyclerView.setLayoutManager(mLayoutManager);
+        if (!(savedInstanceState!=null||ids==null||ids.isEmpty()))
+            recyclerView.scrollToPosition(recyclerAdapter.getPosition(ids.get(0))); // скролинг до текущего/первого выбранного пункта
 //        recyclerView.setHasFixedSize(true); //Так и не понял, для чего это нужно(
 
         BottomNavigationView navigation = (BottomNavigationView) findViewById(R.id.navigation);
@@ -207,7 +209,7 @@ public class ReferenceManager extends AppCompatActivity implements View.OnClickL
     public void onClick(View v) {
         Items.Item item = (Items.Item) v.getTag();
         switch (v.getId()) {
-            case R.id.image: //Кнопка + || -
+            case R.id.item: //Кнопка + || -
                 if (item.folder) { //Проваливаемся в группу
                     myStack.push(item);
                     myStack.addTextView((LinearLayout) findViewById(R.id.ancestors), 10);
@@ -217,6 +219,8 @@ public class ReferenceManager extends AppCompatActivity implements View.OnClickL
                 break;
             case R.id.checked: //Чек-бокс
                 item.checked = ((CheckBox) v).isChecked();
+                if (item.checked) ids.add(item.id);
+                else ids.remove(item.id);
                 break;
             default:
                 myStack.clip(item);
@@ -275,7 +279,7 @@ public class ReferenceManager extends AppCompatActivity implements View.OnClickL
             int index = NO_SELECTED;
             int j=0;
             // ищем позицию пункта
-            for(Items.Item myItem:items.getItems()) if(myItem.equals(item)) index=j; else j++;
+            for(Items.Item myItem:items.getItems()) if(myItem.equals(item)) {index=j; break;} else j++;
             // удаляем все, что правее начиная с последнего
             if (index!=NO_SELECTED) for(int i=items.size()-1;i>index;i--) items.remove(i);
         }
@@ -304,6 +308,14 @@ public class ReferenceManager extends AppCompatActivity implements View.OnClickL
             mValues.addAll(items);
         }
 
+        //Возвращает позицию пункта по id, если не найден 0
+        private int getPosition(int id) {
+            int position = 0;
+            int i=0;
+            for(Items.Item item:mValues.getItems()) if (item.id==id) { position=i; break;} else i++;
+            return position;
+        }
+
         //Отмечает пункты с по текущему выбору
         private void setChecked(List<Integer> ids) { for(Items.Item item:mValues.getItems()) item.checked=ids.contains(item.id); }
 
@@ -314,61 +326,57 @@ public class ReferenceManager extends AppCompatActivity implements View.OnClickL
             return new RecyclerAdapter.ViewHolder(view);
         }
 
+        // строим вью пункта
         @Override
         public void onBindViewHolder(final RecyclerAdapter.ViewHolder holder, int position) {
             //Текущий пункт
             holder.mItem = mValues.get(position);
             // наименование и описание
+
+            //Иконка + / -
+            holder.mImageView.setImageResource(holder.mItem.folder?
+                    R.drawable.ic_baseline_add_circle_outline_24px:
+                    R.drawable.ic_baseline_remove_circle_outline_24px);
+
             holder.mNameView.setText(holder.mItem.name);
             holder.mDescView.setText(holder.mItem.desc);
+            holder.mItemView.setTag(holder.mItem); // в теге храним пункт
 
-            if (iMode==MODE_SINGLE_CHOICE) { // очищаем фон у вью, которые были раньше выбранным пунктом
-                holder.mNameView.setBackgroundResource(0);
-                holder.mDescView.setBackgroundResource(0);
-            }
-
-            if (holder.mItem.folder) { // папка
-                // иконка + / -
-                holder.mImageView.setImageResource(R.drawable.ic_baseline_add_circle_outline_24px);
-                // Стрелка > vs чек-бокс
-                holder.mForwardView.setVisibility(View.VISIBLE);
-                holder.mCheckedView.setVisibility(View.GONE);
-            }
-            else { // файл
-                // иконка + / -
-                holder.mImageView.setImageResource(R.drawable.ic_baseline_remove_circle_outline_24px);
-                // Стрелка > vs чек-бокс
-                if (iMode==MODE_MULTIPLE_CHOICE) {
-                    holder.mForwardView.setVisibility(View.GONE);
-                    holder.mCheckedView.setVisibility(View.VISIBLE);
-                    holder.mCheckedView.setChecked(holder.mItem.checked);
-                }
-                else {
-                    if (ids.contains(holder.mItem.id)) { // выделяем фон у выбранного пункта
-                        holder.mNameView.setBackgroundResource(R.color.colorBackgroundItem);
-                        holder.mDescView.setBackgroundResource(R.color.colorBackgroundItem);
-                    }
-                    holder.mForwardView.setVisibility(View.VISIBLE);
+            switch (iMode) {
+                case MODE_SINGLE_CHOICE:
+                    holder.mItemView.setBackgroundResource(0); // очищаем фон у вью, которые были раньше выбранным пунктом
+                    if (ids.contains(holder.mItem.id)) holder.mItemView.setBackgroundResource(R.color.colorBackgroundItem); // выбеляем выбранные //Переделать список на int!!!
                     holder.mCheckedView.setVisibility(View.GONE);
-                }
+                    holder.mForwardView.setVisibility(View.VISIBLE);
+                    if (holder.mItem.folder)
+                        holder.mItemView.setOnClickListener(ReferenceManager.this); //Папки открываем
+                    else
+                        holder.mItemView.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                if (null != mListener)
+                                    mListener.OnReferenceManagerInteractionListener(ReferenceManager.this, iRC, holder.mItem);
+                            }
+                        });
+                    break;
+                case MODE_MULTIPLE_CHOICE:
+                    if (holder.mItem.folder) {
+                        holder.mItemView.setOnClickListener(ReferenceManager.this); //Папки открываем
+                        holder.mForwardView.setVisibility(View.VISIBLE);
+                        holder.mCheckedView.setVisibility(View.GONE);
+                        holder.mCheckedView.setTag(null);
+                        holder.mCheckedView.setOnClickListener(null);
+                    }
+                    else {
+                        holder.mItemView.setOnClickListener(null); //Только чек-бокс
+                        holder.mForwardView.setVisibility(View.GONE);
+                        holder.mCheckedView.setVisibility(View.VISIBLE);
+                        holder.mCheckedView.setChecked(holder.mItem.checked);
+                        holder.mCheckedView.setTag(holder.mItem);
+                        holder.mCheckedView.setOnClickListener(ReferenceManager.this);
+                    }
+                    break;
             }
-
-            // обработчик выбора пункта
-            holder.mView.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    if (null != mListener) mListener.OnReferenceManagerInteractionListener(ReferenceManager.this, iRC, holder.mItem);
-                }
-            });
-
-            holder.mImageView.setOnClickListener(ReferenceManager.this);
-            holder.mImageView.setTag(holder.mItem);
-
-            holder.mCheckedView.setOnClickListener(ReferenceManager.this);
-            holder.mCheckedView.setTag(holder.mItem);
-
-            //Выделяем
-            holder.mView.setBackgroundResource((holder.mItem.checked)?R.color.colorBackgroundAccent:0);
         }
 
         @Override
@@ -378,6 +386,7 @@ public class ReferenceManager extends AppCompatActivity implements View.OnClickL
 
         public class ViewHolder extends RecyclerView.ViewHolder {
             public final View mView;
+            public final LinearLayout mItemView;
             public final ImageView mImageView;
             public final TextView mNameView;
             public final TextView mDescView;
@@ -388,6 +397,7 @@ public class ReferenceManager extends AppCompatActivity implements View.OnClickL
             public ViewHolder(View view) {
                 super(view);
                 mView = view;
+                mItemView = (LinearLayout) view.findViewById(R.id.item);
                 mImageView = (ImageView) view.findViewById(R.id.image);
                 mNameView = (TextView) view.findViewById(R.id.name);
                 mDescView = (TextView) view.findViewById(R.id.desc);

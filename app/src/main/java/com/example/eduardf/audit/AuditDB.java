@@ -182,7 +182,7 @@ public class AuditDB {
     //Возвращает список наименований по коллеции идентификаторов
     Items getItemsByPater(String table, int pater) {
 
-        Cursor cursor = mDB.rawQuery("SELECT * FROM "+table+" WHERE "+PATER+" = ? ORDER BY "+NAME+";",
+        Cursor cursor = mDB.rawQuery("SELECT * FROM "+table+" WHERE "+PATER+" = ? ORDER BY 1-"+IS_GROUP+", "+NAME+" ASC;",
                 new String[] {Integer.toString(pater)});
 
         Items items = new Items(cursor.getCount());
