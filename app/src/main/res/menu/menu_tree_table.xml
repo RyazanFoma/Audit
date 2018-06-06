@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="com.example.eduardf.audit.TreeTable"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/search"
+        android:icon="@android:drawable/ic_search_category_default"
+        android:title="@string/item_search"
+        app:actionViewClass="android.support.v7.widget.SearchView"
+        app:showAsAction="always"/>
+    <item
+        android:id="@+id/choose"
+        android:icon="@android:drawable/ic_media_play"
+        android:title="@string/item_choose"
+        app:showAsAction="always"/>
+    <item
+        android:id="@+id/create"
+        android:icon="@android:drawable/ic_input_add"
+        android:title="@string/item_create"
+        app:showAsAction="never"/>
+    <item
+        android:id="@+id/creategroup"
+        android:icon="@android:drawable/sym_contact_card"
+        android:title="@string/item_create_group"
+        app:showAsAction="never"/>
+    <item
+        android:id="@+id/delete"
+        android:icon="@android:drawable/ic_delete"
+        android:title="@string/item_delete"
+        app:showAsAction="never"/>
+    <item
+        android:id="@+id/allmark"
+        android:icon="@android:drawable/checkbox_on_background"
+        android:title="@string/item_all_mark"
+        app:showAsAction="never"/>
+    <item
+        android:id="@+id/unmark"
+        android:icon="@android:drawable/checkbox_off_background"
+        android:title="@string/item_task_unmark"
+        app:showAsAction="never"/>
+
+</menu>

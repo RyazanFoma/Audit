@@ -1,0 +1,82 @@
+<resources>
+    <string name="app_name">Audit</string>
+    <string name="title_activity_task_list">Задания</string>
+    <string name="title_activity_audit_task">Задание</string>
+    <string name="title_activity_select_fttable">Выбор</string>
+
+    <string name="action_settings">Settings</string>
+    <string name="msg_password">Неверный пароль!</string>
+
+    <string name="tab_left">Утвержден</string>
+    <string name="tab_center">В работе</string>
+    <string name="tab_right">Проведен</string>
+
+    <string name="progress_title">Ожидание</string>
+    <string name="progress_msq">Идет загрузка…</string>
+
+    <string name="tab_task_l">Общее</string>
+    <string name="tab_task_c">Аналитика</string>
+    <string name="tab_task_r">Показатели</string>
+
+    <string name="tab_com">Общее</string>
+    <string name="tab_obj">Объекты</string>
+    <string name="tab_anl">Аналитика</string>
+
+    <string name="txt_grp">Группа</string>
+    <string name="txt_dt">Дата</string>
+    <string name="txt_tp">Вид*</string>
+    <string name="txt_obj">Объект*</string>
+    <string name="txt_anobj">Аналитика</string>
+    <string name="txt_sts">Статус</string>
+
+    <string name="msg_not_find_id">Не могу найти id!</string>
+    <string name="msg_delete">Удалить текущую строку?</string>
+    <string name="msg_delete_n">Удалить отмеченные строки?</string>
+    <string name="msg_not_selected">Нет выбраных строк</string>
+    <string name="msg_not_fill">Не все обязательные* поля заполнены</string>
+
+    <string name="ttl_delete">Удаление строк</string>
+    <string name="ttl_status">Изменение статуса задания</string>
+    <string name="ttl_status_n">Изменение статуса заданий</string>
+    <string-array name="status_list">
+        <item>Утвержден</item>
+        <item>В работе</item>
+        <item>Проведен</item>
+    </string-array>
+    <string name="btn_change">Изменить</string>
+    <string name="btn_delete">Удалить</string>
+    <string name="btn_cancel">Отмена</string>
+
+    <string name="search_hint_name">по наименованию&#8230;</string>
+    <string name="search_hint_object">по объекту&#8230;</string>
+
+    <string name="item_open">Открыть&#8230;</string>
+    <string name="item_search">Поиск</string>
+    <string name="item_choose">Выбрать</string>
+    <string name="item_save">Сохранить</string>
+    <string name="item_edit">Изменить&#8230;</string>
+    <string name="item_copy">Копировать&#8230;</string>
+    <string name="item_create">Создать&#8230;</string>
+    <string name="item_create_group">Создать группу&#8230;</string>
+    <string name="item_all_mark">Отметить все</string>
+    <string name="item_un_mark">Снять отметки</string>
+    <string name="item_delete">Удалить&#8230;</string>
+
+    <string name="item_task_create">Создать задание…</string>
+    <string name="item_task_allmark">Отметить все</string>
+    <string name="item_task_unmark">Снять отметки</string>
+    <string name="item_task_status">Изменить статус…</string>
+    <string name="item_task_del">Удалить задания…</string>
+    <string name="cnt_item_task_open">Открыть</string>
+    <string name="cnt_item_task_copy">Копировать</string>
+    <string name="cnt_item_task_status">Статус…</string>
+    <string name="cnt_item_task_delete">Удалить…</string>
+
+    <string name="title_activity_type">Вид аудита</string>
+    <string name="title_activity_group_table">GroupTable</string>
+    <string name="title_activity_reference_maneger">ReferenceManeger</string>
+    <string name="title_home">Home</string>
+    <string name="title_dashboard">Dashboard</string>
+    <string name="title_notifications">Notifications</string>
+
+</resources>

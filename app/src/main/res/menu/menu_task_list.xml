@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="com.example.eduardf.audit.TaskList"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android" >
+
+    <item
+        android:id="@+id/search"
+        android:icon="@android:drawable/ic_search_category_default"
+        android:title="@string/item_search"
+        app:actionViewClass="android.support.v7.widget.SearchView"
+        app:showAsAction="always" />
+    <item
+        android:id="@+id/task_create"
+        android:icon="@android:drawable/ic_input_add"
+        android:title="@string/item_create"
+        app:showAsAction="ifRoom|collapseActionView" />
+    <item
+        android:id="@+id/task_allmark"
+        android:title="@string/item_all_mark"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/task_unmark"
+        android:title="@string/item_un_mark"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/task_status"
+        android:title="@string/item_task_status"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/task_del"
+        android:title="@string/item_delete"
+        app:showAsAction="never" />
+
+</menu>
