@@ -1,14 +1,19 @@
 package com.example.eduardf.audit;
 
+import android.app.SearchManager;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.SearchView;
+import android.support.v7.widget.Toolbar;
 import android.view.LayoutInflater;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -32,6 +37,7 @@ public class ReferenceManager extends AppCompatActivity implements View.OnClickL
     private LinearLayoutManager mLayoutManager; //Менеджер для RecyclerView
     private MyStack myStack; //Все имена предков
     private static OnReferenceManagerInteractionListener mListener;
+    private String sLike = ""; //Строка для отбора по наименованию
 
     static final int NO_SELECTED = -1; //Нет элемента для выбора
 
@@ -116,7 +122,13 @@ public class ReferenceManager extends AppCompatActivity implements View.OnClickL
         int[] in; //Папки для отбора
 
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_reference_maneger);
+        setContentView(R.layout.activity_reference_manager);
+
+        //Лента инструментов
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        ActionBar ab = getSupportActionBar();
+        ab.setDisplayHomeAsUpEnabled(true); //Отловит onSupportNavigateUp
 
         mLayoutManager = new LinearLayoutManager(this);
 
@@ -204,6 +216,81 @@ public class ReferenceManager extends AppCompatActivity implements View.OnClickL
         // закрываем подключение при выходе
         db.close();
     }
+
+    //ВСЕ ДЛЯ ИНСТРУМЕНТАЛЬНОГО МЕНЮ:
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.menu_reference_manager, menu);
+        MenuItem searchItem = menu.findItem(R.id.search);
+        SearchView searchView = (SearchView) searchItem.getActionView();
+
+        SearchManager searchManager = (SearchManager) getSystemService(Context.SEARCH_SERVICE);
+        if(null!=searchManager ) {
+            searchView.setSearchableInfo(searchManager.getSearchableInfo(getComponentName()));
+        }
+        searchView.setIconifiedByDefault(true); //Поиск свернут по умолчанию
+        searchView.setQueryHint(getString(R.string.search_hint_object));
+
+        //Если есть текст запроса,
+        if (!sLike.isEmpty()) { //то переходим в режим поиска
+            searchItem.expandActionView();
+            searchView.setQuery(sLike, true);
+            searchView.clearFocus();
+//            getSupportLoaderManager().restartLoader(1, null, this);
+        }
+
+        //Обработчик текста запроса для поиска
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                sLike = query;
+//                getSupportLoaderManager().restartLoader(1, null, TaskList.this);
+                return false;
+            }
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                if (newText.isEmpty()) {
+                    sLike = "";
+//                    getSupportLoaderManager().restartLoader(1, null, TaskList.this);
+                }
+                return false;
+            }
+        });
+
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+
+        //noinspection SimplifiableIfStatement
+        switch (item.getItemId()) {
+            case R.id.task_allmark:
+                return true;
+            case R.id.task_unmark:
+                return true;
+            case R.id.task_create:
+                return true;
+            case R.id.task_status:
+                return true;
+            case R.id.task_del:
+                return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    //Обработчик возврата назад
+    @Override
+    public boolean onSupportNavigateUp() {
+        onBackPressed();
+        return true;
+    }
+
+
 
     @Override
     public void onClick(View v) {
@@ -344,13 +431,15 @@ public class ReferenceManager extends AppCompatActivity implements View.OnClickL
 
             switch (iMode) {
                 case MODE_SINGLE_CHOICE:
+                    holder.mCheckedView.setVisibility(View.GONE);
                     holder.mItemView.setBackgroundResource(0); // очищаем фон у вью, которые были раньше выбранным пунктом
                     if (ids.contains(holder.mItem.id)) holder.mItemView.setBackgroundResource(R.color.colorBackgroundItem); // выбеляем выбранные //Переделать список на int!!!
-                    holder.mCheckedView.setVisibility(View.GONE);
-                    holder.mForwardView.setVisibility(View.VISIBLE);
-                    if (holder.mItem.folder)
+                    if (holder.mItem.folder) {
+                        holder.mForwardView.setVisibility(View.VISIBLE);
                         holder.mItemView.setOnClickListener(ReferenceManager.this); //Папки открываем
-                    else
+                    }
+                    else {
+                        holder.mForwardView.setVisibility(View.GONE);
                         holder.mItemView.setOnClickListener(new View.OnClickListener() {
                             @Override
                             public void onClick(View v) {
@@ -358,6 +447,7 @@ public class ReferenceManager extends AppCompatActivity implements View.OnClickL
                                     mListener.OnReferenceManagerInteractionListener(ReferenceManager.this, iRC, holder.mItem);
                             }
                         });
+                    }
                     break;
                 case MODE_MULTIPLE_CHOICE:
                     if (holder.mItem.folder) {
