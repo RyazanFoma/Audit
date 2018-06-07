@@ -180,9 +180,10 @@ public class AuditDB {
     }
 
     //Возвращает список наименований по коллеции идентификаторов
-    Items getItemsByPater(String table, int pater) {
-
-        Cursor cursor = mDB.rawQuery("SELECT * FROM "+table+" WHERE "+PATER+" = ? ORDER BY 1-"+IS_GROUP+", "+NAME+" ASC;",
+    Items getItemsByPater(String table, int pater, String like) {
+        String where = "";
+        if ((like!=null)&&(!like.isEmpty())) where = " AND ( "+NAME+" LIKE '%"+like+"%' OR "+IS_GROUP+" = 1 )";
+        Cursor cursor = mDB.rawQuery("SELECT * FROM "+table+" WHERE "+PATER+" = ?"+where+" ORDER BY 1-"+IS_GROUP+", "+NAME+" ASC;",
                 new String[] {Integer.toString(pater)});
 
         Items items = new Items(cursor.getCount());
@@ -193,12 +194,11 @@ public class AuditDB {
                 boolean folder = cursor.getInt(cursor.getColumnIndex(IS_GROUP))==1;
                 if (folder) {
                     int folders = child(table, true, id);
-                    int files = child(table, false, id)-folders;
+                    int files = child(table, id, like);
                     desc = "Папок "+folders+", элементов "+files;
                 }
                 else desc = cursor.getString(cursor.getColumnIndex(DESC));
                 items.add(new Items.Item(id, folder, pater, cursor.getString(cursor.getColumnIndex(NAME)), desc));
-
             } while (cursor.moveToNext());
         }
         cursor.close();
@@ -207,7 +207,6 @@ public class AuditDB {
 
     //Возвращает список наименований по коллеции идентификаторов
     List<GroupTable.Item> getGroupsByPater(String table, int pater) {
-
         Cursor cursor = mDB.rawQuery("SELECT * FROM "+table+" WHERE "+IS_GROUP+" = 1 AND "+PATER+" = ? ORDER BY "+NAME+";", new String[] {Integer.toString(pater)});
         List<GroupTable.Item> list = new ArrayList<GroupTable.Item>(cursor.getCount());
         if (cursor.moveToFirst()) {
@@ -224,6 +223,17 @@ public class AuditDB {
     //Возвращает число потомков
     private int child(String sTable, boolean only_group, int id) {
         Cursor cursor = mDB.rawQuery("SELECT * FROM "+sTable+" WHERE "+(only_group?IS_GROUP+" = 1 AND ":"")+PATER+" = ?;", new String[] {Integer.toString(id)});
+        int count = cursor.getCount();
+        cursor.close();
+        return count;
+    }
+
+    //Возвращает число элементов-потомков с отбором по наименованию
+    private int child(String sTable, int id, String like) {
+        String where = "";
+        if (!(like==null||like.isEmpty())) where = " AND "+NAME+" LIKE '%"+like+"%'";
+        Cursor cursor = mDB.rawQuery("SELECT * FROM "+sTable+" WHERE "+IS_GROUP+" = 0 AND "+PATER+" = ?"+where+";",
+                new String[] {Integer.toString(id)});
         int count = cursor.getCount();
         cursor.close();
         return count;

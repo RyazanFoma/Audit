@@ -53,6 +53,7 @@ public class ReferenceManager extends AppCompatActivity implements View.OnClickL
     static final String ARG_IN = "in"; //Папки для отбора
     static final String ARG_PATER = "pater"; //Текущий родитель
     static final String ARG_STATE = "state"; //Состояние RecyclerView
+    static final String ARG_LIKE = "like"; //Строка поиска
 
     //ВОЗВРАЩАЕТ ИНТЕНТ ДЛЯ АКТИВНОСТИ
     //в режиме одиночного выбора
@@ -160,11 +161,12 @@ public class ReferenceManager extends AppCompatActivity implements View.OnClickL
             sTitle = savedInstanceState.getString(ARG_TITLE);
             ids = savedInstanceState.getIntegerArrayList(ARG_ID);
             iPater = savedInstanceState.getInt(ARG_PATER);
+            sLike = savedInstanceState.getString(ARG_LIKE, ""); //Сохраняем строку поиска
         }
 
         setTitle(sTitle); //Заголовок активности
 
-        recyclerAdapter = new RecyclerAdapter(db.getItemsByPater(sTable, iPater), mListener);
+        recyclerAdapter = new RecyclerAdapter(db.getItemsByPater(sTable, iPater, sLike), mListener);
         if (iMode==MODE_MULTIPLE_CHOICE) recyclerAdapter.setChecked(ids);
 
         //Выводим всех предков
@@ -195,6 +197,7 @@ public class ReferenceManager extends AppCompatActivity implements View.OnClickL
         outState.putIntegerArrayList(ARG_ID, ids);
         outState.putInt(ARG_PATER, myStack.peek().id);
         outState.putParcelable(ARG_STATE, mLayoutManager.onSaveInstanceState());
+        outState.putString(ARG_LIKE,sLike); //Сохраняем строку поиска
     }
 
     // после поворота экрана
@@ -230,14 +233,15 @@ public class ReferenceManager extends AppCompatActivity implements View.OnClickL
             searchView.setSearchableInfo(searchManager.getSearchableInfo(getComponentName()));
         }
         searchView.setIconifiedByDefault(true); //Поиск свернут по умолчанию
-        searchView.setQueryHint(getString(R.string.search_hint_object));
+        searchView.setQueryHint(getString(R.string.search_hint_name));
 
         //Если есть текст запроса,
         if (!sLike.isEmpty()) { //то переходим в режим поиска
+            searchView.setIconified(false);
             searchItem.expandActionView();
             searchView.setQuery(sLike, true);
             searchView.clearFocus();
-//            getSupportLoaderManager().restartLoader(1, null, this);
+            recyclerAdapter.loadList(db.getItemsByPater(sTable, myStack.peek().id, sLike));
         }
 
         //Обработчик текста запроса для поиска
@@ -245,14 +249,14 @@ public class ReferenceManager extends AppCompatActivity implements View.OnClickL
             @Override
             public boolean onQueryTextSubmit(String query) {
                 sLike = query;
-//                getSupportLoaderManager().restartLoader(1, null, TaskList.this);
+                recyclerAdapter.loadList(db.getItemsByPater(sTable, myStack.peek().id, sLike));
                 return false;
             }
             @Override
             public boolean onQueryTextChange(String newText) {
                 if (newText.isEmpty()) {
                     sLike = "";
-//                    getSupportLoaderManager().restartLoader(1, null, TaskList.this);
+                    recyclerAdapter.loadList(db.getItemsByPater(sTable, myStack.peek().id, sLike));
                 }
                 return false;
             }
@@ -300,8 +304,7 @@ public class ReferenceManager extends AppCompatActivity implements View.OnClickL
                 if (item.folder) { //Проваливаемся в группу
                     myStack.push(item);
                     myStack.addTextView((LinearLayout) findViewById(R.id.ancestors), 10);
-                    recyclerAdapter.loadList(db.getItemsByPater(sTable, item.id));
-                    recyclerAdapter.notifyDataSetChanged();
+                    recyclerAdapter.loadList(db.getItemsByPater(sTable, item.id, sLike));
                 }
                 break;
             case R.id.checked: //Чек-бокс
@@ -312,8 +315,7 @@ public class ReferenceManager extends AppCompatActivity implements View.OnClickL
             default:
                 myStack.clip(item);
                 myStack.addTextView((LinearLayout) findViewById(R.id.ancestors), 10);
-                recyclerAdapter.loadList(db.getItemsByPater(sTable, item.id));
-                recyclerAdapter.notifyDataSetChanged();
+                recyclerAdapter.loadList(db.getItemsByPater(sTable, item.id, sLike));
                 break;
         }
     }
@@ -393,6 +395,7 @@ public class ReferenceManager extends AppCompatActivity implements View.OnClickL
         private void loadList(Items items) {
             mValues.clear();
             mValues.addAll(items);
+            notifyDataSetChanged();
         }
 
         //Возвращает позицию пункта по id, если не найден 0
