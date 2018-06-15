@@ -9,7 +9,7 @@ android {
             storePassword 'foma2017'
         }
     }
-    compileSdkVersion 26
+    compileSdkVersion 27
     defaultConfig {
         applicationId "com.example.eduardf.audit"
         minSdkVersion 15

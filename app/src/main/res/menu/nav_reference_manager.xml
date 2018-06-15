@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/allmark"
+        android:icon="@drawable/ic_black_check_box_24px"
+        android:title="@string/item_all_mark"
+        app:showAsAction="always" />
+    <item
+        android:id="@+id/unmark"
+        android:icon="@drawable/ic_black_check_box_outline_blank_24px"
+        android:title="@string/item_un_mark"
+        app:showAsAction="always" />
+    <item
+        android:id="@+id/choose"
+        android:icon="@drawable/ic_black_done_all_24px"
+        android:title="@string/item_choose"
+        app:showAsAction="always" />
+
+</menu>

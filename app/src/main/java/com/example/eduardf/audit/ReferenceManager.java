@@ -8,12 +8,15 @@ import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.view.ActionMode;
+import android.support.v7.widget.CardView;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SearchView;
 import android.support.v7.widget.Toolbar;
 import android.view.LayoutInflater;
 import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -24,6 +27,9 @@ import android.widget.TextView;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static android.content.res.Configuration.ORIENTATION_LANDSCAPE;
+import static android.content.res.Configuration.ORIENTATION_PORTRAIT;
 
 public class ReferenceManager extends AppCompatActivity implements View.OnClickListener{
 
@@ -37,7 +43,10 @@ public class ReferenceManager extends AppCompatActivity implements View.OnClickL
     private LinearLayoutManager mLayoutManager; //Менеджер для RecyclerView
     private MyStack myStack; //Все имена предков
     private static OnReferenceManagerInteractionListener mListener;
+    private static OnReferenceManagerInteractionChoose mChoose;
     private String sLike = ""; //Строка для отбора по наименованию
+    ActionMode mActionMode; //Контекстное меню
+    Toolbar toolbar; //Меню действий
 
     static final int NO_SELECTED = -1; //Нет элемента для выбора
 
@@ -54,6 +63,14 @@ public class ReferenceManager extends AppCompatActivity implements View.OnClickL
     static final String ARG_PATER = "pater"; //Текущий родитель
     static final String ARG_STATE = "state"; //Состояние RecyclerView
     static final String ARG_LIKE = "like"; //Строка поиска
+    static final String ARG_STATUS = "status"; //Статус отметки пунктов для контектного меню
+    static final String ARG_CHECKED = "checked"; //Список с отметками
+    static final String ARG_ACTION = "action"; //Признак открытого контекстного меню
+
+    final static int CHECKED_STATUS_NULL = 0; //Нет отмеченных пунктов
+    final static int CHECKED_STATUS_ONE = 1; //Помечен один пункт
+    final static int CHECKED_STATUS_SOME = 2; //Помечено несколько пунктов
+    final static int CHECKED_STATUS_ALL = 3; //Помечены все пункты
 
     //ВОЗВРАЩАЕТ ИНТЕНТ ДЛЯ АКТИВНОСТИ
     //в режиме одиночного выбора
@@ -73,7 +90,7 @@ public class ReferenceManager extends AppCompatActivity implements View.OnClickL
         return intent;
     }
     //в режиме множественного выбора
-    public static Intent intentActivity(Context context, int requestCode, String table, String title,  ArrayList<Integer> ids) {
+    public static Intent intentActivity(Context context, int requestCode, String table, String title, ArrayList<Integer> ids) {
         return intentActivity(context, requestCode, table, title, ids,null);
     }
     //в режиме множественного выбора с отбором по папкам
@@ -97,24 +114,22 @@ public class ReferenceManager extends AppCompatActivity implements View.OnClickL
             throw new RuntimeException(context.toString()
                     + " must implement OnListFragmentInteractionListener");
         }
+        if (context instanceof OnReferenceManagerInteractionChoose) {
+            mChoose = (OnReferenceManagerInteractionChoose) context;
+        } else {
+            throw new RuntimeException(context.toString()
+                    + " must implement OnListFragmentInteractionChoose");
+        }
     }
 
-    private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
-            = new BottomNavigationView.OnNavigationItemSelectedListener() {
-
-        @Override
-        public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-            switch (item.getItemId()) {
-                case R.id.navigation_home:
-                    return true;
-                case R.id.navigation_dashboard:
-                    return true;
-                case R.id.navigation_notifications:
-                    return true;
-            }
-            return false;
-        }
-    };
+    //Навигационное меню. Дублирует инструментальное, когда ландшафт
+//    private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
+//            = new BottomNavigationView.OnNavigationItemSelectedListener() {
+//        @Override
+//        public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+//            return onMenuItemSelected(item);
+//        }
+//    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -125,11 +140,11 @@ public class ReferenceManager extends AppCompatActivity implements View.OnClickL
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_reference_manager);
 
-        //Лента инструментов
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        //Меню действий
+        toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        ActionBar ab = getSupportActionBar();
-        ab.setDisplayHomeAsUpEnabled(true); //Отловит onSupportNavigateUp
+        ActionBar actionBar = getSupportActionBar();
+        if (actionBar != null) actionBar.setDisplayHomeAsUpEnabled(true); //Отловит onSupportNavigateUp
 
         mLayoutManager = new LinearLayoutManager(this);
 
@@ -167,7 +182,7 @@ public class ReferenceManager extends AppCompatActivity implements View.OnClickL
         setTitle(sTitle); //Заголовок активности
 
         recyclerAdapter = new RecyclerAdapter(db.getItemsByPater(sTable, iPater, sLike), mListener);
-        if (iMode==MODE_MULTIPLE_CHOICE) recyclerAdapter.setChecked(ids);
+//        if (iMode==MODE_MULTIPLE_CHOICE) recyclerAdapter.setChecked(ids);
 
         //Выводим всех предков
         myStack = new MyStack(this, sTitle, iPater);
@@ -182,29 +197,160 @@ public class ReferenceManager extends AppCompatActivity implements View.OnClickL
 //        recyclerView.setHasFixedSize(true); //Так и не понял, для чего это нужно(
 
         BottomNavigationView navigation = (BottomNavigationView) findViewById(R.id.navigation);
-        navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
+        navigation.setVisibility(View.GONE);
+//        if (iMode==MODE_SINGLE_CHOICE || getResources().getConfiguration().orientation==ORIENTATION_LANDSCAPE) {
+//        }
+//        else {
+//            navigation.setVisibility(View.VISIBLE); //ORIENTATION_PORTRAIT
+//            navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
+//        }
     }
+
+    //ВСЕ ДЛЯ КОНТЕКСТНОГО МЕНЮ
+    private ActionMode.Callback mActionModeCallback = new ActionMode.Callback() {
+
+        // Called when the action mode is created; startActionMode() was called
+        @Override
+        public boolean onCreateActionMode(ActionMode mode, Menu menu) {
+            toolbar.setVisibility(View.GONE);
+            // Inflate a menu resource providing context menu items
+            MenuInflater inflater = mode.getMenuInflater();
+            inflater.inflate(R.menu.cont_reference_manager, menu);
+
+            MenuItem searchItem = menu.findItem(R.id.search);
+            SearchView searchView = (SearchView) searchItem.getActionView();
+            SearchManager searchManager = (SearchManager) getSystemService(Context.SEARCH_SERVICE);
+            if(null!=searchManager ) {
+                searchView.setSearchableInfo(searchManager.getSearchableInfo(getComponentName()));
+            }
+
+            searchView.setIconifiedByDefault(true); //Поиск свернут по умолчанию
+            searchView.setQueryHint(getString(R.string.search_hint_name));
+
+            //Обработчик текста запроса для поиска
+            searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+
+                @Override
+                public boolean onQueryTextSubmit(String query) {
+                    if (!sLike.equals(query)) {
+                        sLike = query;
+                        recyclerAdapter.loadList(db.getItemsByPater(sTable, myStack.peek().id, sLike));
+                        mActionMode.invalidate();
+                    }
+                    return false;
+                }
+
+                @Override
+                public boolean onQueryTextChange(String newText) {
+                    if (newText.isEmpty()) {
+                        sLike = "";
+                        recyclerAdapter.loadList(db.getItemsByPater(sTable, myStack.peek().id, sLike));
+                        mActionMode.invalidate();
+                    }
+                    return false;
+                }
+            });
+
+            return true;
+        }
+
+        // Called each time the action mode is shown. Always called after onCreateActionMode, but
+        // may be called multiple times if the mode is invalidated.
+        @Override
+        public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
+
+            menu.setGroupVisible(R.id.not_checked,recyclerAdapter.checkedStatus==CHECKED_STATUS_NULL);
+            menu.setGroupVisible(R.id.is_checked,recyclerAdapter.checkedStatus!=CHECKED_STATUS_NULL);
+            (menu.findItem(R.id.edit)).setVisible(recyclerAdapter.checkedStatus==CHECKED_STATUS_ONE);
+            (menu.findItem(R.id.allmark)).setVisible(recyclerAdapter.checkedStatus!=CHECKED_STATUS_ALL);
+            (menu.findItem(R.id.unmark)).setVisible(!(menu.findItem(R.id.allmark)).isVisible());
+
+            //Если есть текст запроса,
+            if (!sLike.isEmpty()) { //то переходим в режим поиска
+                MenuItem searchItem = menu.findItem(R.id.search);
+                searchItem.expandActionView();
+                SearchView searchView = (SearchView) searchItem.getActionView();
+                searchView.setIconified(false);
+                searchView.setQuery(sLike, true);
+            }
+            else {
+                MenuItem searchItem = menu.findItem(R.id.search);
+                searchItem.collapseActionView();
+                SearchView searchView = (SearchView) searchItem.getActionView();
+                searchView.setIconified(true);
+            }
+
+            return true; // Return false if nothing is done
+        }
+
+        // Called when the user selects a contextual menu item
+        @Override
+        public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
+            switch (item.getItemId()) {
+                case R.id.allmark:
+                    recyclerAdapter.setCheckedAll(true, false);
+                    mActionMode.invalidate();
+                    return true;
+                case R.id.unmark:
+                    recyclerAdapter.setCheckedAll(false, false);
+                    mActionMode.invalidate();
+                    return true;
+                case R.id.create:
+                case R.id.create_group:
+                case R.id.edit:
+                case R.id.move:
+                case R.id.delete:
+                case R.id.copy:
+                default:
+                    return false;
+            }
+        }
+
+        // Called when the user exits the action mode
+        @Override
+        public void onDestroyActionMode(ActionMode mode) {
+            recyclerAdapter.setCheckedAll(false, false);
+            recyclerAdapter.notifyDataSetChanged();
+            mActionMode = null;
+            toolbar.setVisibility(View.VISIBLE);
+            invalidateOptionsMenu();
+        }
+    };
 
     //ВСЕ ДЛЯ ПОВОРОТА ЭКРАНА:
     // перед поворотом экрана
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        outState.putInt(ARG_RC, iRC);
-        outState.putString(ARG_TABLE, sTable);
-        outState.putInt(ARG_MODE, iMode);
-        outState.putString(ARG_TITLE, sTitle);
-        outState.putIntegerArrayList(ARG_ID, ids);
-        outState.putInt(ARG_PATER, myStack.peek().id);
-        outState.putParcelable(ARG_STATE, mLayoutManager.onSaveInstanceState());
-        outState.putString(ARG_LIKE,sLike); //Сохраняем строку поиска
+        outState.putInt(ARG_RC, iRC); //Сквозной идентификатор активности
+        outState.putString(ARG_TABLE, sTable); //Таблица с данными
+        outState.putInt(ARG_MODE, iMode); //Режим выбора
+        outState.putString(ARG_TITLE, sTitle); //Заголовок активности
+        outState.putIntegerArrayList(ARG_ID, ids); //Избранные пункты
+        outState.putInt(ARG_PATER, myStack.peek().id); //Текущий родитель
+        outState.putParcelable(ARG_STATE, mLayoutManager.onSaveInstanceState()); //Состояние списка
+        outState.putString(ARG_LIKE,sLike); //Строка поиска
+        outState.putIntegerArrayList(ARG_CHECKED, recyclerAdapter.getChecked()); //Отмеченные пункты
+        outState.putInt(ARG_STATUS, recyclerAdapter.checkedStatus); //Статус отметок
+        outState.putBoolean(ARG_ACTION, mActionMode!=null); //Признак открытого контесктного меню
+//        if (mActionMode!=null) {
+//            outState.putBoolean(ARG_ACTION, true);
+//            mActionMode.finish();
+//        }
+//        else    outState.putBoolean(ARG_ACTION, false);
+
     }
 
     // после поворота экрана
     @Override
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
-        mLayoutManager.onRestoreInstanceState(savedInstanceState.getParcelable(ARG_STATE));
+        recyclerAdapter.setChecked(savedInstanceState.getIntegerArrayList(ARG_CHECKED)); //Восстатавливаем отметки пунктов
+        recyclerAdapter.checkedStatus = savedInstanceState.getInt(ARG_STATUS); //Статус пометок
+        mLayoutManager.onRestoreInstanceState(savedInstanceState.getParcelable(ARG_STATE)); //Состояние списка
+        //Если до поворота экрана было запущено контекстное меню, то открываем его опять
+        if (savedInstanceState.getBoolean(ARG_ACTION,false)&& mActionMode == null)
+            mActionMode = startSupportActionMode(mActionModeCallback);
     }
 
     //Закрывает базу при закрытии Activity
@@ -214,74 +360,109 @@ public class ReferenceManager extends AppCompatActivity implements View.OnClickL
         ids = null;
         recyclerAdapter = null;
         mLayoutManager = null;
+        mActionMode = null;
         myStack = null;
 //        mListener = null; //Хорошо бы собрать мусор, но при повороте экрана не будет работать выбор элемента(((
         // закрываем подключение при выходе
         db.close();
     }
 
-    //ВСЕ ДЛЯ ИНСТРУМЕНТАЛЬНОГО МЕНЮ:
+    //ВСЕ ДЛЯ МЕНЮ ДЕЙСТВИЙ:
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_reference_manager, menu);
+
         MenuItem searchItem = menu.findItem(R.id.search);
         SearchView searchView = (SearchView) searchItem.getActionView();
-
         SearchManager searchManager = (SearchManager) getSystemService(Context.SEARCH_SERVICE);
         if(null!=searchManager ) {
             searchView.setSearchableInfo(searchManager.getSearchableInfo(getComponentName()));
         }
+
         searchView.setIconifiedByDefault(true); //Поиск свернут по умолчанию
         searchView.setQueryHint(getString(R.string.search_hint_name));
 
-        //Если есть текст запроса,
-        if (!sLike.isEmpty()) { //то переходим в режим поиска
-            searchView.setIconified(false);
-            searchItem.expandActionView();
-            searchView.setQuery(sLike, true);
-            searchView.clearFocus();
-            recyclerAdapter.loadList(db.getItemsByPater(sTable, myStack.peek().id, sLike));
-        }
-
         //Обработчик текста запроса для поиска
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+
             @Override
             public boolean onQueryTextSubmit(String query) {
-                sLike = query;
-                recyclerAdapter.loadList(db.getItemsByPater(sTable, myStack.peek().id, sLike));
+                if (!sLike.equals(query)) {
+                    sLike = query;
+                    recyclerAdapter.loadList(db.getItemsByPater(sTable, myStack.peek().id, sLike));
+                    invalidateOptionsMenu();
+                }
                 return false;
             }
+
             @Override
             public boolean onQueryTextChange(String newText) {
                 if (newText.isEmpty()) {
                     sLike = "";
                     recyclerAdapter.loadList(db.getItemsByPater(sTable, myStack.peek().id, sLike));
+                    invalidateOptionsMenu();
                 }
                 return false;
             }
         });
 
+//        searchView.setOnCloseListener(new SearchView.OnCloseListener() {
+//            @Override
+//            public boolean onClose() {
+//                sLike = "";
+//                recyclerAdapter.loadList(db.getItemsByPater(sTable, myStack.peek().id, sLike));
+//                invalidateOptionsMenu();
+//                return false;
+//            }
+//        });
+
         return true;
+    }
+
+    //Готовит меню действий
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        /*|| getResources().getConfiguration().orientation==ORIENTATION_PORTRAIT*/
+        if (iMode==MODE_SINGLE_CHOICE) menu.setGroupVisible(R.id.groupe_choice,false);
+        else {
+            (menu.findItem(R.id.allmark)).setVisible(recyclerAdapter.checkedStatus!=CHECKED_STATUS_ALL);
+            (menu.findItem(R.id.unmark)).setVisible(!(menu.findItem(R.id.allmark)).isVisible());
+            (menu.findItem(R.id.choose)).setVisible(recyclerAdapter.checkedStatus!=CHECKED_STATUS_NULL);
+        }
+
+        //Если есть текст запроса,
+        if (!sLike.isEmpty()) { //то переходим в режим поиска
+            MenuItem searchItem = menu.findItem(R.id.search);
+            searchItem.expandActionView();
+            SearchView searchView = (SearchView) searchItem.getActionView();
+            searchView.setIconified(false);
+            searchView.setQuery(sLike, true);
+        }
+        else {
+            MenuItem searchItem = menu.findItem(R.id.search);
+            searchItem.collapseActionView();
+            SearchView searchView = (SearchView) searchItem.getActionView();
+            searchView.setIconified(true);
+        }
+
+        return super.onPrepareOptionsMenu(menu);
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-
-        //noinspection SimplifiableIfStatement
         switch (item.getItemId()) {
-            case R.id.task_allmark:
+            case R.id.choose:
+                if (null != mChoose)
+                    mChoose.onReferenceManagerInteractionChoose(ReferenceManager.this, iRC, recyclerAdapter.getChecked());
                 return true;
-            case R.id.task_unmark:
+            case R.id.allmark:
+                recyclerAdapter.setCheckedAll(true, true);
+                invalidateOptionsMenu();
                 return true;
-            case R.id.task_create:
-                return true;
-            case R.id.task_status:
-                return true;
-            case R.id.task_del:
+            case R.id.unmark:
+                recyclerAdapter.setCheckedAll(false, true);
+                invalidateOptionsMenu();
                 return true;
         }
         return super.onOptionsItemSelected(item);
@@ -294,13 +475,11 @@ public class ReferenceManager extends AppCompatActivity implements View.OnClickL
         return true;
     }
 
-
-
     @Override
     public void onClick(View v) {
         Items.Item item = (Items.Item) v.getTag();
         switch (v.getId()) {
-            case R.id.item: //Кнопка + || -
+            case R.id.item: //Весь пункт
                 if (item.folder) { //Проваливаемся в группу
                     myStack.push(item);
                     myStack.addTextView((LinearLayout) findViewById(R.id.ancestors), 10);
@@ -309,20 +488,26 @@ public class ReferenceManager extends AppCompatActivity implements View.OnClickL
                 break;
             case R.id.checked: //Чек-бокс
                 item.checked = ((CheckBox) v).isChecked();
-                if (item.checked) ids.add(item.id);
-                else ids.remove(item.id);
+                recyclerAdapter.checkedStatus(mActionMode==null); // Проверяем все пункты, вместе с группами, или только детей, в зависимости от активности контекстного меню.
                 break;
-            default:
+            default: //Переход на предков
                 myStack.clip(item);
                 myStack.addTextView((LinearLayout) findViewById(R.id.ancestors), 10);
                 recyclerAdapter.loadList(db.getItemsByPater(sTable, item.id, sLike));
                 break;
         }
+        if (mActionMode==null) invalidateOptionsMenu();
+        else  mActionMode.invalidate();
     }
 
-    //Интерфейс для передачи выбранного пункта из фрагмента
+    //Интерфейс для передачи выбранного пункта для одиночного выбора
     public interface OnReferenceManagerInteractionListener {
-        void OnReferenceManagerInteractionListener(Context context, int requestCode, Items.Item item);
+        void onReferenceManagerInteractionListener(Context context, int requestCode, Items.Item item);
+    }
+
+    //Интерфейс для передачи выбранных пунктов для множественного выбора
+    public interface OnReferenceManagerInteractionChoose {
+        void onReferenceManagerInteractionChoose(Context context, int requestCode, List<Integer> ids);
     }
 
     //Класс стек для вывода текущего положения в дереве
@@ -385,10 +570,12 @@ public class ReferenceManager extends AppCompatActivity implements View.OnClickL
 
         private final Items mValues;
         private final OnReferenceManagerInteractionListener mListener;
+        private int checkedStatus;
 
-        public RecyclerAdapter(Items items, OnReferenceManagerInteractionListener listener) {
+        private RecyclerAdapter(Items items, OnReferenceManagerInteractionListener listener) {
             mValues = items;
             mListener = listener;
+            checkedStatus = CHECKED_STATUS_NULL;
         }
 
         //Загружает список пунктов
@@ -396,6 +583,7 @@ public class ReferenceManager extends AppCompatActivity implements View.OnClickL
             mValues.clear();
             mValues.addAll(items);
             notifyDataSetChanged();
+            checkedStatus = CHECKED_STATUS_NULL;
         }
 
         //Возвращает позицию пункта по id, если не найден 0
@@ -406,19 +594,63 @@ public class ReferenceManager extends AppCompatActivity implements View.OnClickL
             return position;
         }
 
-        //Отмечает пункты с по текущему выбору
-        private void setChecked(List<Integer> ids) { for(Items.Item item:mValues.getItems()) item.checked=ids.contains(item.id); }
+        //Помечает/отменяет отметки всех видимых элементов или только детей
+        private void setCheckedAll(boolean checked, boolean only_child) {
+            if (only_child) { for(Items.Item item:mValues.getItems()) if (!item.folder) item.checked=checked; }
+            else { for(Items.Item item:mValues.getItems()) item.checked=checked; }
+            notifyDataSetChanged();
+            checkedStatus = checked?CHECKED_STATUS_ALL:CHECKED_STATUS_NULL;
+        }
 
+        //Проверяет количество отмеченных объектов
+        private int checkedStatus(boolean only_child) {
+            int count = 0; //Общее количество пунктов
+            int checked = 0; //Из них отмеченных
+
+            //Подсчитываем количество отмеченных и всех
+            if (only_child) {
+                for(Items.Item item:mValues.getItems()) {
+                    if (!item.folder) {
+                        count++;
+                        if (item.checked) checked++;
+                    }
+                }
+            }
+            else {
+                count = mValues.size();
+                for(Items.Item item:mValues.getItems()) if (item.checked) checked++;
+            }
+
+            //Сравниваем результат
+            if (checked==0 || count==0) checkedStatus = CHECKED_STATUS_NULL;
+            else if (checked==1) checkedStatus = CHECKED_STATUS_ONE;
+            else if (checked==count) checkedStatus = CHECKED_STATUS_ALL;
+            else checkedStatus = CHECKED_STATUS_SOME;
+
+            return checkedStatus;
+        }
+
+        //Возвращает список отмеченных пунктов
+        private ArrayList<Integer> getChecked() {
+            ArrayList<Integer> checked = new ArrayList<Integer>();
+            for(Items.Item item:mValues.getItems()) if (item.checked) checked.add(item.id);
+            return checked;
+        }
+
+        //Отмечает пункты по списки
+        private void setChecked(ArrayList<Integer> checked) { for(Items.Item item:mValues.getItems()) item.checked = checked.contains(item.id); }
+
+        @NonNull
         @Override
-        public RecyclerAdapter.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+        public RecyclerAdapter.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
             View view = LayoutInflater.from(parent.getContext())
-                    .inflate(R.layout.reference_manager_item, parent, false);
+                    .inflate(R.layout.item_reference_manager, parent, false);
             return new RecyclerAdapter.ViewHolder(view);
         }
 
         // строим вью пункта
         @Override
-        public void onBindViewHolder(final RecyclerAdapter.ViewHolder holder, int position) {
+        public void onBindViewHolder(@NonNull final RecyclerAdapter.ViewHolder holder, int position) {
             //Текущий пункт
             holder.mItem = mValues.get(position);
             // наименование и описание
@@ -432,43 +664,73 @@ public class ReferenceManager extends AppCompatActivity implements View.OnClickL
             holder.mDescView.setText(holder.mItem.desc);
             holder.mItemView.setTag(holder.mItem); // в теге храним пункт
 
-            switch (iMode) {
-                case MODE_SINGLE_CHOICE:
-                    holder.mCheckedView.setVisibility(View.GONE);
-                    holder.mItemView.setBackgroundResource(0); // очищаем фон у вью, которые были раньше выбранным пунктом
-                    if (ids.contains(holder.mItem.id)) holder.mItemView.setBackgroundResource(R.color.colorBackgroundItem); // выбеляем выбранные //Переделать список на int!!!
-                    if (holder.mItem.folder) {
-                        holder.mForwardView.setVisibility(View.VISIBLE);
-                        holder.mItemView.setOnClickListener(ReferenceManager.this); //Папки открываем
-                    }
-                    else {
-                        holder.mForwardView.setVisibility(View.GONE);
-                        holder.mItemView.setOnClickListener(new View.OnClickListener() {
-                            @Override
-                            public void onClick(View v) {
-                                if (null != mListener)
-                                    mListener.OnReferenceManagerInteractionListener(ReferenceManager.this, iRC, holder.mItem);
-                            }
-                        });
-                    }
-                    break;
-                case MODE_MULTIPLE_CHOICE:
-                    if (holder.mItem.folder) {
-                        holder.mItemView.setOnClickListener(ReferenceManager.this); //Папки открываем
-                        holder.mForwardView.setVisibility(View.VISIBLE);
+            //Выделяем цветом выбранные ранее пункты
+            holder.mCardView.setBackgroundResource((ids.contains(holder.mItem.id))?
+                    R.color.colorBackgroundItem:
+                    R.color.cardview_light_background); // выделяем выбранные
+
+            if (mActionMode==null) { //Нет контектстного меню действий
+                switch (iMode) {
+                    case MODE_SINGLE_CHOICE:
                         holder.mCheckedView.setVisibility(View.GONE);
-                        holder.mCheckedView.setTag(null);
-                        holder.mCheckedView.setOnClickListener(null);
+                        if (holder.mItem.folder) {
+                            holder.mForwardView.setVisibility(View.VISIBLE);
+                            holder.mItemView.setOnClickListener(ReferenceManager.this); //Папки открываем
+                        }
+                        else {
+                            holder.mForwardView.setVisibility(View.GONE);
+                            holder.mItemView.setOnClickListener(new View.OnClickListener() {
+                                @Override
+                                public void onClick(View v) {
+                                    if (null != mListener)
+                                        mListener.onReferenceManagerInteractionListener(ReferenceManager.this, iRC, holder.mItem);
+                                }
+                            });
+                        }
+                        break;
+                    case MODE_MULTIPLE_CHOICE:
+                        if (holder.mItem.folder) {
+                            holder.mItemView.setOnClickListener(ReferenceManager.this); //Папки открываем
+                            holder.mForwardView.setVisibility(View.VISIBLE);
+                            holder.mCheckedView.setVisibility(View.GONE);
+                            holder.mCheckedView.setTag(null);
+                            holder.mCheckedView.setOnClickListener(null);
+                        }
+                        else {
+                            holder.mItemView.setOnClickListener(null); //Только чек-бокс
+                            holder.mForwardView.setVisibility(View.GONE);
+                            holder.mCheckedView.setVisibility(View.VISIBLE);
+                            holder.mCheckedView.setChecked(holder.mItem.checked);
+                            holder.mCheckedView.setTag(holder.mItem);
+                            holder.mCheckedView.setOnClickListener(ReferenceManager.this);
+                        }
+                        break;
+                }
+
+                holder.mItemView.setOnLongClickListener(new View.OnLongClickListener() {
+                    // Called when the user long-clicks on someView
+                    public boolean onLongClick(View view) {
+                        if (mActionMode != null) {
+                            return false;
+                        }
+                        setCheckedAll(false, false);
+                        ((Items.Item) view.getTag()).checked=true;
+                        checkedStatus = CHECKED_STATUS_ONE;
+                        notifyDataSetChanged();
+                        // Start the CAB using the ActionMode.Callback defined above
+                        mActionMode = startSupportActionMode(mActionModeCallback);
+                        return true;
                     }
-                    else {
-                        holder.mItemView.setOnClickListener(null); //Только чек-бокс
-                        holder.mForwardView.setVisibility(View.GONE);
-                        holder.mCheckedView.setVisibility(View.VISIBLE);
-                        holder.mCheckedView.setChecked(holder.mItem.checked);
-                        holder.mCheckedView.setTag(holder.mItem);
-                        holder.mCheckedView.setOnClickListener(ReferenceManager.this);
-                    }
-                    break;
+                });
+            }
+            else { //Контектное меню действий
+                holder.mForwardView.setVisibility(View.GONE);
+                holder.mCheckedView.setVisibility(View.VISIBLE);
+                holder.mCheckedView.setChecked(holder.mItem.checked);
+                holder.mCheckedView.setTag(holder.mItem);
+                holder.mCheckedView.setOnClickListener(ReferenceManager.this);
+                if (holder.mItem.folder) holder.mItemView.setOnClickListener(ReferenceManager.this); //Папки открываем
+                else holder.mItemView.setOnClickListener(null); //Только чек-бокс
             }
         }
 
@@ -480,6 +742,7 @@ public class ReferenceManager extends AppCompatActivity implements View.OnClickL
         public class ViewHolder extends RecyclerView.ViewHolder {
             public final View mView;
             public final LinearLayout mItemView;
+            public final CardView mCardView;
             public final ImageView mImageView;
             public final TextView mNameView;
             public final TextView mDescView;
@@ -491,6 +754,7 @@ public class ReferenceManager extends AppCompatActivity implements View.OnClickL
                 super(view);
                 mView = view;
                 mItemView = (LinearLayout) view.findViewById(R.id.item);
+                mCardView = (CardView) view.findViewById(R.id.card);
                 mImageView = (ImageView) view.findViewById(R.id.image);
                 mNameView = (TextView) view.findViewById(R.id.name);
                 mDescView = (TextView) view.findViewById(R.id.desc);

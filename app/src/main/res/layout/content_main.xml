@@ -30,7 +30,7 @@
                 android:layout_marginBottom="8dp"
                 android:layout_marginTop="8dp"
                 android:layout_weight="1"
-                app:srcCompat="@drawable/ic_baseline_account_box_24px" />
+                app:srcCompat="@drawable/ic_black_account_box_24px" />
 
             <Spinner
                 android:id="@+id/user"

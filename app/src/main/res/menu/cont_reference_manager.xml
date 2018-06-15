@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="com.example.eduardf.audit.ReferenceManager"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android" >
+
+    <item
+        android:id="@+id/search"
+        android:icon="@drawable/ic_search_white_24dp"
+        android:orderInCategory="1"
+        android:title="@string/item_search"
+        app:actionViewClass="android.support.v7.widget.SearchView"
+        app:showAsAction="always" />
+    <group android:id="@+id/not_checked">
+        <item
+            android:id="@+id/create"
+            android:icon="@drawable/ic_white_add_24px"
+            android:orderInCategory="2"
+            android:title="@string/item_create"
+            app:showAsAction="always|collapseActionView" />
+        <item
+            android:id="@+id/create_group"
+            android:icon="@drawable/ic_white_add_circle_outline_24px"
+            android:orderInCategory="3"
+            android:title="@string/item_create_group"
+            app:showAsAction="always|collapseActionView" />
+    </group>
+    <group android:id="@+id/is_checked">
+        <item
+            android:id="@+id/edit"
+            android:icon="@drawable/ic_white_edit_24px"
+            android:orderInCategory="4"
+            android:title="@string/item_edit"
+            app:showAsAction="always|collapseActionView" />
+        <item
+            android:id="@+id/delete"
+            android:icon="@drawable/ic_white_delete_sweep_24px"
+            android:orderInCategory="5"
+            android:title="@string/item_delete"
+            app:showAsAction="always|collapseActionView" />
+        <item
+            android:id="@+id/move"
+            android:icon="@drawable/ic_white_library_books_24px"
+            android:orderInCategory="6"
+            android:title="@string/item_move"
+            app:showAsAction="ifRoom" />
+        <item
+            android:id="@+id/copy"
+            android:icon="@drawable/ic_white_file_copy_24px"
+            android:orderInCategory="7"
+            android:title="@string/item_copy"
+            app:showAsAction="ifRoom" />
+    </group>
+    <item
+        android:id="@+id/allmark"
+        android:icon="@drawable/ic_white_check_box_24px"
+        android:orderInCategory="8"
+        android:title="@string/item_all_mark"
+        app:showAsAction="always" />
+    <item
+        android:id="@+id/unmark"
+        android:icon="@drawable/ic_white_check_box_outline_blank_24px"
+        android:orderInCategory="9"
+        android:title="@string/item_un_mark"
+        app:showAsAction="always" />
+
+</menu>

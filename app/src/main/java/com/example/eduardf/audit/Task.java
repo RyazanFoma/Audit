@@ -48,6 +48,7 @@ public class Task {
         analytics.clear();
     }
 
+    // возвращает массив с аналитикой
     public int[] getAnalytics() {
         int[] analytics = new int[this.analytics.size()];
         int i = 0;
@@ -55,6 +56,13 @@ public class Task {
         return analytics;
     }
 
+    // устанавливает новый список аналитики по коллекции
+    public boolean setAnalytics(Collection<Integer> ids) {
+        clearAnalytic();
+        return addAnalytics(ids);
+    }
+
+    // устанавливает новый список аналитики по массиву
     public void setAnalytics(int[] ids) {
         clearAnalytic();
         if (ids!=null) for (int i:ids) addAnalytic(i);

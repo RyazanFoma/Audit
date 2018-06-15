@@ -39,9 +39,7 @@
         <activity
             android:name=".TreeTable"
             android:label="@string/title_activity_select_fttable"
-            android:theme="@style/AppTheme.NoActionBar">
-            >
-        </activity>
+            android:theme="@style/AppTheme.NoActionBar" />
         <activity
             android:name=".ActivityType"
             android:label="@string/title_activity_type"
@@ -52,7 +50,8 @@
             android:theme="@style/AppTheme.NoActionBar" />
         <activity
             android:name=".ReferenceManager"
-            android:label="@string/title_activity_reference_maneger"></activity>
+            android:label="@string/title_activity_reference_maneger"
+            android:theme="@style/AppTheme.NoActionBar" />
     </application>
 
 </manifest>

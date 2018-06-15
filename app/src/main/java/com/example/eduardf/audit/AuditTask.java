@@ -31,7 +31,8 @@ import java.util.Map;
 public class AuditTask extends AppCompatActivity implements
         AdapterView.OnItemSelectedListener,
         View.OnClickListener,
-        ReferenceManager.OnReferenceManagerInteractionListener {
+        ReferenceManager.OnReferenceManagerInteractionListener,
+        ReferenceManager.OnReferenceManagerInteractionChoose {
 
     AuditDB db; //База данных
     Task task; //Задание
@@ -150,8 +151,6 @@ public class AuditTask extends AppCompatActivity implements
 
         //noinspection SimplifiableIfStatement
         switch (item.getItemId()) {
-            case R.id.search:
-                break;
             case R.id.save:
                 saveTask((View) findViewById(R.id.fab));
                 return true;
@@ -192,8 +191,10 @@ public class AuditTask extends AppCompatActivity implements
                 break;
             case R.id.btn_analytic: //Выбрать аналитику
                 line = animeView(this,R.id.line_anl);
+                ArrayList<Integer> analytics = new ArrayList<>(task.analytics.size());
+                analytics.addAll(task.analytics);
                 intent = ReferenceManager.intentActivity(this, SELECT_ANALYTICS, AuditDB.TBL_ANALYTIC,
-                        getString(R.string.txt_anobj), (ArrayList<Integer>) task.analytics, db.getAnalyticsByTO(task.type, task.object));
+                        getString(R.string.txt_anobj), analytics , db.getAnalyticsByTO(task.type, task.object));
                 line.postDelayed(new Runnable() {
                     @Override
                     public void run() {
@@ -205,7 +206,7 @@ public class AuditTask extends AppCompatActivity implements
     }
 
     @Override
-    public void OnReferenceManagerInteractionListener(Context referenceManager, int requestCode, Items.Item item) {
+    public void onReferenceManagerInteractionListener(Context referenceManager, int requestCode, Items.Item item) {
         ((Activity)referenceManager).finish();
         switch (requestCode) {
             case SELECT_TYPE:
@@ -219,6 +220,17 @@ public class AuditTask extends AppCompatActivity implements
             case SELECT_ANALYTICS:
         }
         visibilityView(); //Устанвилаем доступность в зависимости от реквизитов задания
+    }
+
+    @Override
+    public void onReferenceManagerInteractionChoose(Context referenceManager, int requestCode, List<Integer> ids) {
+        ((Activity)referenceManager).finish();
+        if (requestCode==SELECT_ANALYTICS) {
+            task.addAnalytics(ids); //Добавляем аналитику в задачу
+            dataAnalytics.clear();
+            dataAnalytics.addAll(db.getNamebyIds(AuditDB.TBL_ANALYTIC,task.analytics));
+            anlAdapter.notifyDataSetChanged();
+        }
     }
 
 //    // получает результат активити выбора из таблиц

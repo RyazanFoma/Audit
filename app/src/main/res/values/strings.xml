@@ -50,17 +50,18 @@
     <string name="search_hint_name">по наименованию&#8230;</string>
     <string name="search_hint_object">по объекту&#8230;</string>
 
-    <string name="item_open">Открыть&#8230;</string>
+    <string name="item_open">Открыть</string>
     <string name="item_search">Поиск</string>
     <string name="item_choose">Выбрать</string>
     <string name="item_save">Сохранить</string>
-    <string name="item_edit">Изменить&#8230;</string>
-    <string name="item_copy">Копировать&#8230;</string>
-    <string name="item_create">Создать&#8230;</string>
-    <string name="item_create_group">Создать группу&#8230;</string>
-    <string name="item_all_mark">Отметить все</string>
-    <string name="item_un_mark">Снять отметки</string>
-    <string name="item_delete">Удалить&#8230;</string>
+    <string name="item_edit">Изменить</string>
+    <string name="item_copy">Копировать</string>
+    <string name="item_move">Переместить</string>
+    <string name="item_create">Добавить</string>
+    <string name="item_create_group">Нов. группа</string>
+    <string name="item_all_mark">Отметить</string>
+    <string name="item_un_mark">Снять</string>
+    <string name="item_delete">Удалить</string>
 
     <string name="item_task_create">Создать задание…</string>
     <string name="item_task_allmark">Отметить все</string>
