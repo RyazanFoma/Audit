@@ -37,14 +37,18 @@ public class Items {
         int id; //Идентификатор
         int pater; //Родитель или 0, если корень
         boolean folder; //Признак группы
+        int folders; //число папок в группе
+        int files; //число файлов в группе
         String name; //Наименование
         String desc; //Описание
         boolean checked; //Отмеченные пункты
 
         //Конструктор пункта
-        public Item( int id, boolean folder, int pater, String name, String desc) {
+        public Item( int id, boolean folder, int folders, int files, int pater, String name, String desc) {
             this.id = id;
             this.folder = folder;
+            this.folders = folders;
+            this.files = files;
             this.pater = pater;
             this.name = name;
             this.desc = desc;

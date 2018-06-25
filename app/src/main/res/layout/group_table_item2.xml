@@ -11,7 +11,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        app:srcCompat="@drawable/ic_baseline_add_circle_outline_24px" />
+        app:srcCompat="@drawable/ic_black_add_circle_outline_24px" />
 
     <LinearLayout
         android:layout_width="wrap_content"

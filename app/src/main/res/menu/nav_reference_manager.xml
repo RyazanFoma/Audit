@@ -3,19 +3,28 @@
     xmlns:android="http://schemas.android.com/apk/res/android">
 
     <item
-        android:id="@+id/allmark"
-        android:icon="@drawable/ic_black_check_box_24px"
-        android:title="@string/item_all_mark"
-        app:showAsAction="always" />
+        android:id="@+id/create"
+        android:icon="@drawable/ic_black_add_24px"
+        android:title="@string/item_create"
+        app:showAsAction="ifRoom|withText" />
     <item
-        android:id="@+id/unmark"
-        android:icon="@drawable/ic_black_check_box_outline_blank_24px"
-        android:title="@string/item_un_mark"
-        app:showAsAction="always" />
+        android:id="@+id/create_group"
+        android:icon="@drawable/ic_black_add_circle_outline_24px"
+        android:title="@string/item_create_group"
+        app:showAsAction="ifRoom|withText" />
     <item
-        android:id="@+id/choose"
-        android:icon="@drawable/ic_black_done_all_24px"
-        android:title="@string/item_choose"
-        app:showAsAction="always" />
-
+        android:id="@+id/close"
+        android:icon="@drawable/ic_black_close_24px"
+        android:title="@string/btn_cancel"
+        app:showAsAction="ifRoom|withText" />
+    <item
+        android:id="@+id/copy"
+        android:icon="@drawable/ic_black_file_copy_24px"
+        android:title="@string/item_copy"
+        app:showAsAction="ifRoom|withText" />
+    <item
+        android:id="@+id/move"
+        android:icon="@drawable/ic_black_library_books_24px"
+        android:title="@string/item_move"
+        app:showAsAction="ifRoom|withText" />
 </menu>

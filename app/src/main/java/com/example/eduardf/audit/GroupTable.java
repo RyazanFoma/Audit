@@ -282,7 +282,7 @@ public class GroupTable extends Fragment implements View.OnClickListener {
             holder.mItem = mValues.get(position);
             // заполняем вью пункта
             holder.mImageView.setImageResource((holder.mItem.child>0)?
-                    R.drawable.ic_baseline_add_circle_outline_24px:
+                    R.drawable.ic_black_add_circle_outline_24px :
                     R.drawable.ic_baseline_remove_circle_outline_24px);
             holder.mNameView.setText(holder.mItem.name);
             holder.mDescView.setText(holder.mItem.desc);

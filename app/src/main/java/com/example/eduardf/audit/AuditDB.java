@@ -146,7 +146,6 @@ public class AuditDB {
 //        c.close();
 //    }
 
-
     //УНИВЕРСАЛЬНЫЕ МЕТОДЫ ПОЛУЧЕНИЯ ДАННЫХ ИЗ ТАБЛИЦ
     //Получить все данные таблицы
     Cursor getAllData(String table) {
@@ -190,15 +189,17 @@ public class AuditDB {
         if (cursor.moveToFirst()) {
             do {
                 int id = cursor.getInt(cursor.getColumnIndex(ID));
+                int folders = 0;
+                int files = 0;
                 String desc;
                 boolean folder = cursor.getInt(cursor.getColumnIndex(IS_GROUP))==1;
                 if (folder) {
-                    int folders = child(table, true, id);
-                    int files = child(table, id, like);
-                    desc = "Папок "+folders+", элементов "+files;
+                    folders = child(table, true, id);
+                    files = child(table, id, null); //Файлы подсчитываем без учета фильтра
+                    desc = "Папок "+folders+", элементов "+child(table, id, like); //В описании указываем с учетом фильтра
                 }
                 else desc = cursor.getString(cursor.getColumnIndex(DESC));
-                items.add(new Items.Item(id, folder, pater, cursor.getString(cursor.getColumnIndex(NAME)), desc));
+                items.add(new Items.Item(id, folder, folders, files, pater, cursor.getString(cursor.getColumnIndex(NAME)), desc));
             } while (cursor.moveToNext());
         }
         cursor.close();
@@ -302,7 +303,6 @@ public class AuditDB {
         return pater;
     }
 
-
     // получить всех наследников с сортировкой по алфавиту
     Cursor getChildsByPater(String table, int pater, String like) {
         String where = "";
@@ -320,6 +320,42 @@ public class AuditDB {
         }
         String query = "SELECT " + ID + ", " + NAME + ", " + IS_GROUP + " FROM " + table + " WHERE " + PATER + " = " + pater + where.toString() + " ORDER BY " + NAME + ";";
         return mDB.rawQuery(query, null );
+    }
+
+    // удаляет записи по id. NB: Необходимо добавить проверку целостности!!!
+    void deleteRecord(String table, int id) {
+            mDB.beginTransaction();
+            try {
+                mDB.delete(table, ID+" = "+id, null);
+                mDB.setTransactionSuccessful();
+            } finally { mDB.endTransaction(); }
+    }
+
+    // изменяет поля записи
+    void updateRecord(String table, Items.Item item) {
+        ContentValues cv = new ContentValues();
+        cv.put(NAME, item.name);
+        cv.put(DESC, item.desc);
+        cv.put(PATER, item.pater);
+        mDB.beginTransaction();
+        try {
+            mDB.update(table, cv,ID+" = "+item.id, null);
+            mDB.setTransactionSuccessful();
+        } finally { mDB.endTransaction(); }
+    }
+
+    // добавляет новую запись
+    void insertRecord(String table, Items.Item item) {
+        ContentValues cv = new ContentValues();
+        cv.put(NAME, item.name);
+        cv.put(IS_GROUP, item.folder);
+        cv.put(DESC, item.desc);
+        cv.put(PATER, item.pater);
+        mDB.beginTransaction();
+        try {
+            mDB.insert(table, null, cv);
+            mDB.setTransactionSuccessful();
+        } finally { mDB.endTransaction(); }
     }
 
     //МЕТОДЫ РАБОТЫ С РЕГИСТРОМ TOA

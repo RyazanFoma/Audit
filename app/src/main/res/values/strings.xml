@@ -29,13 +29,19 @@
     <string name="txt_anobj">Аналитика</string>
     <string name="txt_sts">Статус</string>
 
+    <string name="msg_enter_name">Наименование</string>
     <string name="msg_not_find_id">Не могу найти id!</string>
     <string name="msg_delete">Удалить текущую строку?</string>
-    <string name="msg_delete_n">Удалить отмеченные строки?</string>
+    <string name="msg_delete_n">Удалить отмеченные строки в количестве …?</string>
     <string name="msg_not_selected">Нет выбраных строк</string>
     <string name="msg_not_fill">Не все обязательные* поля заполнены</string>
+    <string name="msg_place_copy">Выберите папку для копирования отмеченных строк</string>
+    <string name="msg_place_move">Выберите папку для перемещения отмеченных строк</string>
 
     <string name="ttl_delete">Удаление строк</string>
+    <string name="ttl_create">Новый элемент</string>
+    <string name="ttl_create_group">Новая папка</string>
+    <string name="ttl_edit_group">Изменить папку</string>
     <string name="ttl_status">Изменение статуса задания</string>
     <string name="ttl_status_n">Изменение статуса заданий</string>
     <string-array name="status_list">
@@ -43,6 +49,8 @@
         <item>В работе</item>
         <item>Проведен</item>
     </string-array>
+    <string name="btn_save">Сохранить</string>
+    <string name="btn_addition">Добавить</string>
     <string name="btn_change">Изменить</string>
     <string name="btn_delete">Удалить</string>
     <string name="btn_cancel">Отмена</string>
@@ -58,7 +66,7 @@
     <string name="item_copy">Копировать</string>
     <string name="item_move">Переместить</string>
     <string name="item_create">Добавить</string>
-    <string name="item_create_group">Нов. группа</string>
+    <string name="item_create_group">Нов. папка</string>
     <string name="item_all_mark">Отметить</string>
     <string name="item_un_mark">Снять</string>
     <string name="item_delete">Удалить</string>
