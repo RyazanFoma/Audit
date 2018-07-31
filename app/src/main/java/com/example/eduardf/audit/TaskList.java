@@ -107,16 +107,6 @@ public class TaskList extends AppCompatActivity implements LoaderCallbacks<Curso
         db.close();
     }
 
-    //Открывает форму редактирвоания задания
-    private void openTask(int id, int mode) {
-        Intent intent = new Intent(this, AuditTask.class);
-        intent.putExtra("id", id);
-        intent.putExtra("auditor", iAuditor);
-        intent.putExtra("status", iStatus);
-        intent.putExtra("mode", mode);
-        startActivityForResult(intent, 1);
-    }
-
     //Обновляет список заданий в случае успешного сохранения задания
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -184,7 +174,9 @@ public class TaskList extends AppCompatActivity implements LoaderCallbacks<Curso
                 cAdapter.notifyDataSetChanged();
                 return true;
             case R.id.task_create:
-                openTask(Task.NEW_TASK_ID,AuditTask.CREATE_MODE);
+                // получаем из пункта контекстного меню данные по пункту списка
+                startActivityForResult(AuditTask.intentActivityCreate(TaskList.this,
+                        iAuditor, iStatus ), 1);
                 return true;
             case R.id.task_status:
                 showDialog(CHNG_STATUS_N);
@@ -215,9 +207,6 @@ public class TaskList extends AppCompatActivity implements LoaderCallbacks<Curso
 
     //Контекстное меню
     public boolean onContextItemSelected(MenuItem item) {
-        // получаем из пункта контекстного меню данные по пункту списка
-        AdapterView.AdapterContextMenuInfo acmi = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
-        savedId = (int) acmi.id;
 
         switch (item.getItemId()) {
             case CM_DELETE_ID:
@@ -225,11 +214,11 @@ public class TaskList extends AppCompatActivity implements LoaderCallbacks<Curso
                 showDialog(DEL_TASK);
                 return true;
             case CM_OPEN_ID:
-                // извлекаем id записи и удаляем соответствующую запись в БД
-                openTask(savedId,AuditTask.OPEN_MODE);
+                // получаем из пункта контекстного меню данные по пункту списка
+                startActivityForResult(AuditTask.intentActivityEdit(TaskList.this,
+                        (int) ((AdapterView.AdapterContextMenuInfo) item.getMenuInfo()).id), 1);
                 return true;
             case CM_COPY_ID:
-                openTask(savedId,AuditTask.COPY_MODE);
                 return true;
             case CM_STATUS_ID:
                 showDialog(CHNG_STATUS);
@@ -446,12 +435,9 @@ public class TaskList extends AppCompatActivity implements LoaderCallbacks<Curso
             line.postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    openTask(id,AuditTask.OPEN_MODE);
+                    startActivityForResult(AuditTask.intentActivityEdit(TaskList.this, id), 1);
                 }
             }, 1000L);
-
-
-
         }
     }
 

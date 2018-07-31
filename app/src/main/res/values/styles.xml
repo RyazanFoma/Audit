@@ -9,7 +9,7 @@
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
         <item name="windowActionModeOverlay">true</item>
-        <item name="android:actionModeBackground">@color/colorPrimary</item>
+        <!--         <item name="android:actionModeBackground">@color/colorPrimary</item> -->
         <item name="android:actionModeCloseDrawable">@drawable/ic_white_close_24px</item>
     </style>
 

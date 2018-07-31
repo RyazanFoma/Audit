@@ -21,7 +21,9 @@
     <string name="tab_com">Общее</string>
     <string name="tab_obj">Объекты</string>
     <string name="tab_anl">Аналитика</string>
+    <string name="tab_ind">Показатели</string>
 
+    <string name="hint_name">Наименование</string>
     <string name="txt_grp">Группа</string>
     <string name="txt_dt">Дата</string>
     <string name="txt_tp">Вид*</string>
@@ -37,6 +39,8 @@
     <string name="msg_not_fill">Не все обязательные* поля заполнены</string>
     <string name="msg_place_copy">Выберите папку для копирования отмеченных строк</string>
     <string name="msg_place_move">Выберите папку для перемещения отмеченных строк</string>
+    <string name="msg_move_error">Невозможно перенести папку в саму в себя или подпапку</string>
+    <string name="msg_is_empty">НЕТ ЭЛЕМЕНТОВ ДЛЯ ОТОБРАЖЕНИЯ</string>
 
     <string name="ttl_delete">Удаление строк</string>
     <string name="ttl_create">Новый элемент</string>
@@ -82,10 +86,8 @@
     <string name="cnt_item_task_delete">Удалить…</string>
 
     <string name="title_activity_type">Вид аудита</string>
-    <string name="title_activity_group_table">GroupTable</string>
     <string name="title_activity_reference_maneger">ReferenceManeger</string>
-    <string name="title_home">Home</string>
-    <string name="title_dashboard">Dashboard</string>
-    <string name="title_notifications">Notifications</string>
+    <string name="title_activity_object">Объект аудита</string>
+    <string name="title_activity_analytic">Аналитика объекта</string>
 
 </resources>

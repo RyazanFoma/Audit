@@ -37,21 +37,21 @@
             android:label="@string/title_activity_audit_task"
             android:theme="@style/AppTheme.NoActionBar" />
         <activity
-            android:name=".TreeTable"
-            android:label="@string/title_activity_select_fttable"
-            android:theme="@style/AppTheme.NoActionBar" />
-        <activity
-            android:name=".ActivityType"
+            android:name=".TypeActivity"
             android:label="@string/title_activity_type"
-            android:theme="@style/AppTheme.NoActionBar" />
-        <activity
-            android:name=".GroupTable"
-            android:label="@string/title_activity_group_table"
             android:theme="@style/AppTheme.NoActionBar" />
         <activity
             android:name=".ReferenceManager"
             android:label="@string/title_activity_reference_maneger"
             android:theme="@style/AppTheme.NoActionBar" />
+        <activity
+            android:name=".ObjectActivity"
+            android:label="@string/title_activity_object"
+            android:theme="@style/AppTheme" />
+        <activity
+            android:name=".AnalyticActivity"
+            android:label="@string/title_activity_analytic"
+            android:theme="@style/AppTheme"></activity>
     </application>
 
 </manifest>

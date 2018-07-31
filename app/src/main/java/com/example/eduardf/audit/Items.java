@@ -16,21 +16,25 @@ public class Items {
     }
 
     // добавить пункт
-    public void add(Item item) {list.add(item);}
+    public void add(Item item) { list.add(item); }
 
-    public ArrayList<Item> getItems() {return list;}
+    public ArrayList<Item> getItems() { return list; }
 
-    public Item get(int index) {return list.get(index);}
+    public Item get(int index) { return list.get(index); }
 
-    public int size() {return list.size();}
+    public int size() { return list.size(); }
 
-    public boolean isEmpty() {return list.isEmpty();}
+    public boolean isEmpty() { return list.isEmpty(); }
 
-    public Item remove(int index) {return list.remove(index);}
+    public Item remove(int index) { return list.remove(index); }
+
+    public boolean remove(Object object) { return list.remove(object); }
 
     public void clear() {list.clear();}
 
     public void addAll(Items items) {list.addAll(items.getItems());}
+
+    public int indexOf(Item item) { return list.indexOf(item); }
 
     //Пункт списка
     public static class Item {

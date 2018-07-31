@@ -28,6 +28,7 @@ public class MainActivity extends AppCompatActivity implements LoaderCallbacks<C
     AuditDB db;
     SimpleCursorAdapter scAdapter;
     ProgressDialog pd;
+    int iPosition = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -96,24 +97,21 @@ public class MainActivity extends AppCompatActivity implements LoaderCallbacks<C
         db.close();
     }
 
-//    НЕ СРАБАТЫВАЕТ. Т. К. ПОСЛЕ ВОССТАНОВЛЕНИЯ ЗАГРУЗЧИК ЗАПУСКАЕТ onItemSelected ДЛЯ Spinner
-//    //Сохраняет текущее значение пароля перед поворотом экрана
-//    @Override
-//    protected void onSaveInstanceState(Bundle outState) {
-//        super.onSaveInstanceState(outState);
-//        EditText tv = (EditText) findViewById(R.id.password);
-//        String str = tv.getText().toString();
-//        outState.putString("password", str);
-//    }
-//
-//    //Восстанавливает значение пароля после поворота экрана
-//    @Override
-//    protected void onRestoreInstanceState(Bundle savedInstanceState) {
-//        super.onRestoreInstanceState(savedInstanceState);
-//        EditText tv = (EditText) findViewById(R.id.password);
-//        String str = savedInstanceState.getString("password", "");
-//        tv.setText(str);
-//    }
+    //Сохраняет текущее значение пароля перед поворотом экрана
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putInt("user", iPosition);
+        outState.putString("password", ((EditText) findViewById(R.id.password)).getText().toString());
+    }
+
+    //Восстанавливает значение пароля после поворота экрана
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        iPosition = savedInstanceState.getInt("user");
+        ((EditText) findViewById(R.id.password)).setText(savedInstanceState.getString("password", ""));
+    }
 
     //Обработчик кнопки Вперед
     @Override
@@ -145,8 +143,10 @@ public class MainActivity extends AppCompatActivity implements LoaderCallbacks<C
     //Очищает пароль после выбора пользователя
     @Override
     public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-        EditText tv = (EditText) findViewById(R.id.password);
-        tv.setText("");
+        if (iPosition != position) {
+            iPosition = position;
+            ((EditText) findViewById(R.id.password)).setText("");
+        }
     }
 
     //Загрузчик для спиннера
@@ -160,6 +160,7 @@ public class MainActivity extends AppCompatActivity implements LoaderCallbacks<C
     public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
         pd.dismiss();
         scAdapter.swapCursor(cursor);
+        ((Spinner) findViewById(R.id.user)).setSelection(iPosition, true);
     }
 
     @Override
@@ -184,12 +185,6 @@ public class MainActivity extends AppCompatActivity implements LoaderCallbacks<C
 
         @Override
         public Cursor loadInBackground() {
-//            Cursor cursor = db.getAllData(AuditDB.TBL_USERS);
-//            try {
-//                TimeUnit.SECONDS.sleep(3);
-//            } catch (InterruptedException e) {
-//                e.printStackTrace();
-//            }
             return db.getAllData(AuditDB.TBL_USER);
         }
 

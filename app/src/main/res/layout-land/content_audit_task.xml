@@ -14,30 +14,14 @@
         android:layout_height="match_parent"
         android:orientation="vertical">
 
-        <android.support.design.widget.TabLayout
+        <TabHost
+            android:id="@android:id/tabhost"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-
-            <android.support.design.widget.TabItem
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/tab_task_l" />
-
-            <android.support.design.widget.TabItem
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/tab_task_r" />
-        </android.support.design.widget.TabLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="horizontal">
+            android:layout_height="match_parent">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:layout_weight="2"
                 android:orientation="vertical">
 
                 <LinearLayout
@@ -107,145 +91,176 @@
 
                 </LinearLayout>
 
-                <LinearLayout
+                <TabWidget
+                    android:id="@android:id/tabs"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:paddingBottom="8dp"
-                    android:paddingLeft="16dp"
-                    android:paddingRight="16dp"
-                    android:paddingTop="8dp">
+                    android:layout_height="wrap_content" />
 
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/txt_tp"
-                        android:textSize="12sp" />
+                <FrameLayout
+                    android:id="@android:id/tabcontent"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent">
 
                     <LinearLayout
-                        android:id="@+id/line_type"
+                        android:id="@+id/tab1"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:orientation="horizontal">
+                        android:orientation="vertical">
 
-                        <TextView
-                            android:id="@+id/type"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="20"
-                            android:drawableEnd="@drawable/ic_baseline_navigate_next_24px"
-                            android:onClick="onClick"
-                            android:paddingBottom="8dp"
-                            android:text="XXXXXXXXXXX"
-                            android:textColor="@android:color/black" />
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:orientation="horizontal">
 
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:layout_weight="2"
+                                android:orientation="vertical">
+
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="vertical"
+                                    android:paddingBottom="8dp"
+                                    android:paddingLeft="16dp"
+                                    android:paddingRight="16dp"
+                                    android:paddingTop="8dp">
+
+                                    <TextView
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:text="@string/txt_tp"
+                                        android:textSize="12sp" />
+
+                                    <LinearLayout
+                                        android:id="@+id/line_type"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="match_parent"
+                                        android:orientation="horizontal">
+
+                                        <TextView
+                                            android:id="@+id/type"
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:layout_weight="20"
+                                            android:drawableEnd="@drawable/ic_baseline_navigate_next_24px"
+                                            android:onClick="onClick"
+                                            android:paddingBottom="8dp"
+                                            android:text="XXXXXXXXXXX"
+                                            android:textColor="@android:color/black" />
+
+                                    </LinearLayout>
+
+                                    <View
+                                        android:layout_width="match_parent"
+                                        android:layout_height="2dp"
+                                        android:background="@color/colorPrimaryDark"
+                                        android:paddingBottom="8dp"></View>
+
+                                </LinearLayout>
+
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="vertical"
+                                    android:paddingBottom="8dp"
+                                    android:paddingLeft="16dp"
+                                    android:paddingRight="16dp"
+                                    android:paddingTop="8dp">
+
+                                    <TextView
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:text="@string/txt_obj"
+                                        android:textSize="12sp" />
+
+                                    <LinearLayout
+                                        android:id="@+id/line_obj"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:orientation="horizontal">
+
+                                        <TextView
+                                            android:id="@+id/object"
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:layout_weight="20"
+                                            android:drawableEnd="@drawable/ic_baseline_navigate_next_24px"
+                                            android:onClick="onClick"
+                                            android:paddingBottom="8dp"
+                                            android:text="YYYYYYYYYYY"
+                                            android:textColor="@android:color/black" />
+
+                                    </LinearLayout>
+
+                                    <View
+                                        android:layout_width="match_parent"
+                                        android:layout_height="2dp"
+                                        android:background="@color/colorPrimaryDark"
+                                        android:paddingBottom="8dp"></View>
+
+                                </LinearLayout>
+
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:layout_weight="2"
+                                android:orientation="vertical"
+                                android:paddingBottom="8dp"
+                                android:paddingRight="16dp"
+                                android:paddingTop="16dp">
+
+                                <TextView
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:text="@string/txt_anobj"
+                                    android:textSize="12sp" />
+
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="horizontal">
+
+                                    <ImageButton
+                                        android:id="@+id/addanalytics"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        app:srcCompat="@drawable/ic_black_add_24px" />
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="12dp"
+                                        android:layout_weight="1"
+                                        android:text="@string/btn_addition" />
+                                </LinearLayout>
+
+                                <FrameLayout
+                                    android:id="@+id/objectanalytics"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="match_parent">
+
+                                </FrameLayout>
+
+                            </LinearLayout>
+
+                        </LinearLayout>
                     </LinearLayout>
-
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="2dp"
-                        android:background="@color/colorPrimaryDark"
-                        android:paddingBottom="8dp"></View>
-
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:paddingBottom="8dp"
-                    android:paddingLeft="16dp"
-                    android:paddingRight="16dp"
-                    android:paddingTop="8dp">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/txt_obj"
-                        android:textSize="12sp" />
 
                     <LinearLayout
-                        android:id="@+id/line_obj"
+                        android:id="@+id/tab2"
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal">
-
-                        <TextView
-                            android:id="@+id/object"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="20"
-                            android:drawableEnd="@drawable/ic_baseline_navigate_next_24px"
-                            android:onClick="onClick"
-                            android:paddingBottom="8dp"
-                            android:text="YYYYYYYYYYY"
-                            android:textColor="@android:color/black" />
+                        android:layout_height="match_parent"
+                        android:orientation="vertical">
 
                     </LinearLayout>
 
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="2dp"
-                        android:background="@color/colorPrimaryDark"
-                        android:paddingBottom="8dp"></View>
-
-                </LinearLayout>
-
+                </FrameLayout>
             </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_weight="3"
-                android:orientation="vertical"
-                android:paddingBottom="8dp"
-                android:paddingRight="16dp"
-                android:paddingTop="16dp">
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/txt_anobj"
-                    android:textSize="12sp" />
-
-                <LinearLayout
-                    android:id="@+id/line_anl"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal">
-
-                    <Space
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="20" />
-
-                    <TextView
-                        android:id="@+id/btn_analytic"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:onClick="onClick"
-                        android:paddingBottom="8dp"
-                        android:text="..."
-                        android:textAlignment="center"
-                        android:textColor="@android:color/black" />
-
-                </LinearLayout>
-
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="2dp"
-                    android:background="@color/colorPrimaryDark"
-                    android:paddingBottom="8dp"></View>
-
-                <ListView
-                    android:id="@+id/analytics"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent" />
-
-            </LinearLayout>
-
-        </LinearLayout>
+        </TabHost>
 
     </LinearLayout>
 

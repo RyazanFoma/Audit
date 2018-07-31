@@ -57,7 +57,7 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toRightOf="parent"
-            app:menu="@menu/nav_reference_manager">
+            app:menu="@menu/navi_reference_manager">
 
         </android.support.design.widget.BottomNavigationView>
     </android.support.v7.widget.CardView>

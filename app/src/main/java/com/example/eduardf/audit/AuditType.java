@@ -41,8 +41,8 @@ public class AuditType {
 
     // добавляет группу аналитик в группу объектов
     public boolean addAnalytic(int object, int analytic) {
-        Set<Integer> setObject = objects.get(object);
-        if (setObject==null) addObject(object,null); //Если объекта еще нет
+        if (!objects.containsKey(object))
+            objects.put(object, new ArraySet()); //Если объекта еще нет
         return objects.get(object).add(analytic);
     }
 
@@ -54,4 +54,10 @@ public class AuditType {
 
     // удаляет все группы аналитик из группы объектов
     public void clearAnalytic(int object) { objects.get(object).clear();}
+
+//    public int getObject(int position) {
+//        int i = 0;
+//        for (int o: objects.keySet()) if (i==position) return o; else i++;
+//        return AuditDB.NOT_SELECTED;
+//    }
 }
