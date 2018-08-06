@@ -26,7 +26,7 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
+                android:layout_weight="2"
                 android:orientation="vertical"
                 android:paddingRight="8dp">
 
@@ -36,27 +36,18 @@
                     android:text="@string/txt_dt"
                     android:textSize="12sp" />
 
-                <TextView
-                    android:id="@+id/date"
+                <FrameLayout
+                    android:id="@+id/datetime"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:drawableRight="@android:drawable/ic_lock_idle_alarm"
-                    android:paddingBottom="6dp"
-                    android:text="9999-99-99 99:99:99"
-                    android:textColor="@android:color/black" />
+                    android:layout_height="match_parent">
 
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="2dp"
-                    android:background="@color/colorPrimaryDark"
-                    android:paddingBottom="8dp"></View>
+                </FrameLayout>
             </LinearLayout>
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
+                android:layout_weight="3"
                 android:orientation="vertical"
                 android:paddingLeft="8dp">
 
@@ -69,7 +60,8 @@
                 <Spinner
                     android:id="@+id/status"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content" />
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp" />
 
                 <View
                     android:layout_width="match_parent"
@@ -130,22 +122,16 @@
 
                                 <TextView
                                     android:id="@+id/type"
+                                    style="@android:style/Widget.Holo.EditText"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:layout_weight="20"
                                     android:drawableEnd="@drawable/ic_baseline_navigate_next_24px"
                                     android:onClick="onClick"
                                     android:paddingBottom="8dp"
-                                    android:text="XXXXXXXXXXX"
                                     android:textColor="@android:color/black" />
 
                             </LinearLayout>
-
-                            <View
-                                android:layout_width="match_parent"
-                                android:layout_height="2dp"
-                                android:background="@color/colorPrimaryDark"
-                                android:paddingBottom="8dp"></View>
 
                         </LinearLayout>
 
@@ -171,6 +157,7 @@
                                 android:orientation="horizontal">
 
                                 <TextView
+                                    style="@android:style/Widget.Holo.EditText"
                                     android:id="@+id/object"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
@@ -178,16 +165,9 @@
                                     android:drawableEnd="@drawable/ic_baseline_navigate_next_24px"
                                     android:onClick="onClick"
                                     android:paddingBottom="8dp"
-                                    android:text="XXXXXXXXXXX"
                                     android:textColor="@android:color/black" />
 
                             </LinearLayout>
-
-                            <View
-                                android:layout_width="match_parent"
-                                android:layout_height="2dp"
-                                android:background="@color/colorPrimaryDark"
-                                android:paddingBottom="8dp"></View>
 
                         </LinearLayout>
 

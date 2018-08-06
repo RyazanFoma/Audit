@@ -2,6 +2,7 @@ package com.example.eduardf.audit;
 
 import android.support.v4.util.ArraySet;
 import java.util.Collection;
+import java.util.Date;
 import java.util.Set;
 
 /**
@@ -10,7 +11,7 @@ import java.util.Set;
 
 public class Task {
     public int id; //Идентификатор задания
-    public String date; //Дата задания
+    public Date date; //Дата и время задания
     public int auditor; //Аудитор - пользователь
     public int object; //Объект аудита
     public int type; //Вид аудита
@@ -18,7 +19,7 @@ public class Task {
     public Set<Integer> analytics; //Аналитика объекта
     public final static int NEW_TASK_ID = -1; //Признак нового задания
 
-    public Task(int id, String date, int auditor, int type, int object, int status, Set<Integer> analytics) {
+    public Task(int id, Date date, int auditor, int type, int object, int status, Set<Integer> analytics) {
         this.id = id;
         this.date = date;
         this.auditor = auditor;

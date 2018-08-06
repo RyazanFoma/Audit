@@ -14,11 +14,9 @@
                         <option name="values">
                           <map>
                             <entry key="assetSourceType" value="FILE" />
-                            <entry key="height" value="250" />
-                            <entry key="outputName" value="ic_icon_audit" />
+                            <entry key="outputName" value="ic_black_access_time_24px" />
                             <entry key="overrideSize" value="true" />
-                            <entry key="sourceFile" value="C:\Users\eduardf\Desktop\icon-audit.svg" />
-                            <entry key="width" value="250" />
+                            <entry key="sourceFile" value="C:\Users\eduardf\Desktop\baseline-access_time-24px.svg" />
                           </map>
                         </option>
                       </PersistentState>

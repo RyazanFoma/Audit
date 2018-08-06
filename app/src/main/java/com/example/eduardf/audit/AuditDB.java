@@ -6,6 +6,7 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -94,6 +95,7 @@ public class AuditDB {
             TBL_TYPE + " integer not null, " +
             TBL_OBJECT + " integer not null, " +
             TASKLIST_STATUS + " integer not null);";
+    static final String PATERN_DATE = "yyyy-MM-dd HH:mm:ss"; //Шаблон формата даты
 
     //Аналитики задания
     static final String TBL_ANLTASK = "anltask"; //Имя таблицы
@@ -454,8 +456,16 @@ public class AuditDB {
         String query = "SELECT * FROM " + TBL_TASKLIST + " WHERE " + ID + " = ?;";
         Cursor c = mDB.rawQuery( query, new String[] { String.valueOf(id) });
         if (c.moveToFirst()) {
-            task = new Task( id,
-                    c.getString(c.getColumnIndex(DATE)),
+            SimpleDateFormat dateFormat = new SimpleDateFormat(PATERN_DATE);
+            Date date;
+            try {
+                date = dateFormat.parse(c.getString(c.getColumnIndex(DATE)));
+            } catch (ParseException e) {
+                e.printStackTrace();
+                date = new Date();
+            }
+
+            task = new Task( id, date,
                     c.getInt(c.getColumnIndex(TBL_USER)),
                     c.getInt(c.getColumnIndex(TBL_TYPE)),
                     c.getInt(c.getColumnIndex(TBL_OBJECT)),
@@ -469,7 +479,8 @@ public class AuditDB {
     // сохранить задание
     public void saveTask(Task task) {
         ContentValues cv = new ContentValues();
-        cv.put(DATE, task.date);
+        SimpleDateFormat dateFormat = new SimpleDateFormat(PATERN_DATE);
+        cv.put(DATE, dateFormat.format(task.date));
         cv.put(TBL_USER, task.auditor);
         cv.put(TBL_TYPE, task.type);
         cv.put(TBL_OBJECT, task.object);

@@ -85,9 +85,26 @@
     <string name="cnt_item_task_status">Статус…</string>
     <string name="cnt_item_task_delete">Удалить…</string>
 
+
+    <string name="item_today">Сегодня</string>
+    <string name="item_tomorrow">Завтра</string>
+    <string name="item_nextweek">Через неделю</string>
+    <string name="item_nextmonth">Через месяц</string>
+    <string name="item_selectday">Выбрать день…</string>
+
+    <string name="item_09">Утро</string>
+    <string name="item_13">День</string>
+    <string name="item_17">Вечер</string>
+    <string name="item_20">Ночь</string>
+    <string name="item_selecttime">Выбрать время…</string>
+
     <string name="title_activity_type">Вид аудита</string>
     <string name="title_activity_reference_maneger">ReferenceManeger</string>
     <string name="title_activity_object">Объект аудита</string>
     <string name="title_activity_analytic">Аналитика объекта</string>
+    <string name="title_date_select">Выберите дату</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 
 </resources>

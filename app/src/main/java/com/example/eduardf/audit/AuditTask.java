@@ -20,17 +20,22 @@ import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TabHost;
 import android.widget.TextView;
+
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+
+import static java.text.DateFormat.getDateTimeInstance;
 
 //Форма для редактирвоания задания на аудит
 public class AuditTask extends AppCompatActivity implements
         View.OnClickListener,
         ObjectListEdit.OnObjectListEditInteractionListener,
         ReferenceManager.OnReferenceManagerInteractionListener,
-        ReferenceManager.OnReferenceManagerInteractionChoose {
+        ReferenceManager.OnReferenceManagerInteractionChoose,
+        DateTime.OnDateTimeInteractionListener {
 
     AuditDB db; //База данных
     Task task; //Задание
@@ -160,7 +165,7 @@ public class AuditTask extends AppCompatActivity implements
             Intent intent = getIntent();
             switch (intent.getIntExtra(ARG_MODE, 0)){
                 case CREATE_MODE:
-                    task = new Task(Task.NEW_TASK_ID, sDate,
+                    task = new Task(Task.NEW_TASK_ID, new Date(),
                             intent.getIntExtra(ARG_AUDITOR, 1),
                             -1, //Значения по умолчанию!!!
                             -1, //Значения по умолчанию!!!
@@ -171,11 +176,18 @@ public class AuditTask extends AppCompatActivity implements
                     task = db.getTaskById(intent.getIntExtra(ARG_ID, Task.NEW_TASK_ID)); //Получаем задание через id
                     break;
             }
-            if (task==null) Snackbar.make(findViewById(R.id.date), R.string.msg_not_find_id, Snackbar.LENGTH_LONG).setAction("Action", null).show();
+//            if (task==null) Snackbar.make(findViewById(R.id.date), R.string.msg_not_find_id, Snackbar.LENGTH_LONG).setAction("Action", null).show();
         }
         else { // открываем после поворота. Восстанавливаем:
+            Date date = null;
+            try {
+                date = getDateTimeInstance().parse(savedInstanceState.getString(ARG_DATE));
+            } catch (ParseException e) {
+                e.printStackTrace(); //Здесь нужно сообщить о неправильной дате
+            }
+
             task = new Task(savedInstanceState.getInt(ARG_ID),
-                    savedInstanceState.getString(ARG_DATE, sDate),
+                    date,
                     savedInstanceState.getInt(ARG_AUDITOR, 1),
                     savedInstanceState.getInt(ARG_TYPE, 1),
                     savedInstanceState.getInt(ARG_OBJECT, 1),
@@ -187,7 +199,7 @@ public class AuditTask extends AppCompatActivity implements
         }
 
         //Заполняем View текущими значениями
-        ((TextView) findViewById(R.id.date)).setText(task.date);
+//        ((TextView) findViewById(R.id.date)).setText(task.date);
         status.setSelection(task.status); //Текущий статус
         ((TextView) findViewById(R.id.type)).setText(db.getNameById(AuditDB.TBL_TYPE, task.type));
         ((TextView) findViewById(R.id.object)).setText(db.getNameById(AuditDB.TBL_OBJECT, task.object));
@@ -199,7 +211,7 @@ public class AuditTask extends AppCompatActivity implements
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        outState.putString(ARG_DATE, task.date); //текущую закладку
+        outState.putString(ARG_DATE, getDateTimeInstance().format(task.date)); //дата задания
         outState.putInt(ARG_ID, task.id); //идентификатор задания
         outState.putInt(ARG_STATUS, task.status); //статус задания
         outState.putInt(ARG_AUDITOR, task.auditor); //аудитор
@@ -264,6 +276,8 @@ public class AuditTask extends AppCompatActivity implements
         super.onResume();
         getSupportFragmentManager().
                 beginTransaction().
+                replace(R.id.datetime,
+                        DateTime.newInstance(task.date)).
                 replace(R.id.objectanalytics,
                         ObjectListEdit.newInstance(0, AuditDB.TBL_ANALYTIC, task.analytics)).
                 commit();
@@ -356,4 +370,8 @@ public class AuditTask extends AppCompatActivity implements
         return line;
     }
 
+    @Override
+    public void onDateTimeInteraction(Date date) {
+        task.date = date;
+    }
 }
