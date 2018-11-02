@@ -14,9 +14,9 @@
                         <option name="values">
                           <map>
                             <entry key="assetSourceType" value="FILE" />
-                            <entry key="outputName" value="ic_black_access_time_24px" />
+                            <entry key="outputName" value="ic_black_cached_24px" />
                             <entry key="overrideSize" value="true" />
-                            <entry key="sourceFile" value="C:\Users\eduardf\Desktop\baseline-access_time-24px.svg" />
+                            <entry key="sourceFile" value="C:\Users\eduardf\Desktop\Icons\baseline-cached-24px.svg" />
                           </map>
                         </option>
                       </PersistentState>

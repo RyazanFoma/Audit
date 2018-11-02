@@ -2,6 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.eduardf.audit">
 
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.CAMERA" />
 
     <uses-feature android:name="android.hardware.camera" />
@@ -29,11 +31,7 @@
         </activity>
         <activity android:name=".PhotoVideo" />
         <activity
-            android:name=".TaskList"
-            android:label="@string/title_activity_task_list"
-            android:theme="@style/AppTheme.NoActionBar" />
-        <activity
-            android:name=".AuditTask"
+            android:name=".TaskActivity"
             android:label="@string/title_activity_audit_task"
             android:theme="@style/AppTheme.NoActionBar" />
         <activity
@@ -41,7 +39,7 @@
             android:label="@string/title_activity_type"
             android:theme="@style/AppTheme.NoActionBar" />
         <activity
-            android:name=".ReferenceManager"
+            android:name=".ReferenceChoice"
             android:label="@string/title_activity_reference_maneger"
             android:theme="@style/AppTheme.NoActionBar" />
         <activity
@@ -51,7 +49,17 @@
         <activity
             android:name=".AnalyticActivity"
             android:label="@string/title_activity_analytic"
-            android:theme="@style/AppTheme"></activity>
+            android:theme="@style/AppTheme" />
+        <activity
+            android:name=".ReferenceEdit"
+            android:label="@string/title_activity_reference_edit"
+            android:theme="@style/AppTheme" />
+        <activity
+            android:name=".TaskListActivity"
+            android:label="@string/title_activity_task_list" />
+        <activity
+            android:name=".SettingsAudit"
+            android:label="@string/title_activity_settings_audit"></activity>
     </application>
 
 </manifest>

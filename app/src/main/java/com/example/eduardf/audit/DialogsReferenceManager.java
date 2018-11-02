@@ -1,6 +1,7 @@
 package com.example.eduardf.audit;
 
 import android.app.Dialog;
+import android.support.annotation.NonNull;
 import android.support.v4.app.DialogFragment;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -65,9 +66,11 @@ public class DialogsReferenceManager extends DialogFragment {
         public void onEditGroupPositiveClick(String name);
         public void onCreatGroupPositiveClick(String name);
         public void onDeletePositiveClick();
+        public void onDeleteNegativeClick();
     }
 
     //Строит диалог
+    @NonNull
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
 
@@ -80,7 +83,15 @@ public class DialogsReferenceManager extends DialogFragment {
                 builder.setTitle(R.string.ttl_delete)
                         .setIcon(R.drawable.ic_black_delete_sweep_24px)
                         .setMessage(message.replaceFirst("…", ""+getArguments().getInt(ARG_COUNT)))
-                        .setPositiveButton(R.string.btn_delete, new Dialog.OnClickListener() {
+                        .setNegativeButton(R.string.btn_unmark_delete, new Dialog.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                if (which == Dialog.BUTTON_NEGATIVE) {
+                                    mListener.onDeleteNegativeClick();
+                                }
+                            }
+                        })
+                        .setPositiveButton(R.string.btn_mark_delete, new Dialog.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
                                 if (which == Dialog.BUTTON_POSITIVE) {
@@ -139,7 +150,7 @@ public class DialogsReferenceManager extends DialogFragment {
                         });
                 break;
         }
-        builder.setNegativeButton(R.string.btn_cancel, null);
+        builder.setNeutralButton(R.string.btn_cancel, null);
         return builder.create();
     }
 

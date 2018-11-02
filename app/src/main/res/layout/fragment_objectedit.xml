@@ -20,11 +20,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_margin="8dp"
-            android:orientation="horizontal"><![CDATA[>
-
-
-
-            ]]>
+            android:orientation="horizontal">
 
             <LinearLayout
                 android:layout_width="match_parent"

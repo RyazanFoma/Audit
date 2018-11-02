@@ -8,6 +8,13 @@
     tools:context="com.example.eduardf.audit.MainActivity"
     tools:showIn="@layout/activity_main">
 
+    <ProgressBar
+        android:id="@+id/progressBar"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/progress_bar_height"
+        android:indeterminate="true" />
+
     <ImageView
         android:layout_width="150dp"
         android:layout_height="150dp"

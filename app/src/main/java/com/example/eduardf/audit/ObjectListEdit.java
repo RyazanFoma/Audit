@@ -1,47 +1,48 @@
 package com.example.eduardf.audit;
 
 import android.content.Context;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
-import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.DisplayMetrics;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
+import android.widget.ProgressBar;
 
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.List;
 
 // Фрагмент для просмотра и редактирования (удаления элементов) справочников
-public class ObjectListEdit extends Fragment {
+public class ObjectListEdit extends Fragment implements ReferenceChoice.OnReferenceManagerInteractionMultipleChoice {
 
+    private static final String ARG_REQUESTCODE = "requestcode"; //Запрашиваемый код, возвращается в интерапт
     private static final String ARG_TABLE = "table"; //Таблица с данными
+    private static final String ARG_TITLE = "title"; //Наименование таблициы для заголовка активности с выбором
     private static final String ARG_IDS = "ids"; //Элементы справочника
-    private static final String ARG_CODE = "code"; //Запрашиваемый код, возвращается в интерапт
-    private AuditDB db; //База данных
+    private static final String ARG_ARGS = "args"; //Все параметры в одном бандле
 
-    private int iCode; //Запрашиваемый код, возвращается в интерапт
-    private ArrayList<Integer> mIds; //Список элементов
-    private String sTable; //Таблица
-    private OnObjectListEditInteractionListener mListener;
-
-    private static final int NOT_SELECTED = -1; // идентификатор несуществующего элемента
+    private AuditOData oData; //1С:Предприятие
+    private OnObjectListEditInteractionListener mListener; //Для интеракшен по изменению списка
+    private RecyclerAdapter recyclerAdapter;
+    private Bundle bArgs; //Аргументы для загрузчика
 
     // пустой конструктор, все в Create
     public ObjectListEdit() {
     }
 
     // создает фрагмент на основе аргументов
-    public static ObjectListEdit newInstance(int requested, String table, Collection<Integer> ids) {
+    public static ObjectListEdit newInstance(int requested, String table, String title, ArrayList<String> ids) {
         ObjectListEdit fragment = new ObjectListEdit();
         Bundle args = new Bundle();
         args.putString(ARG_TABLE, table);
-        args.putInt(ARG_CODE, requested);
-        if (ids!=null && ids.size()>0) {
-            ArrayList<Integer> arrayList = new ArrayList<Integer>(ids.size());
-            for (Integer i: ids ) arrayList.add(i);
-            args.putIntegerArrayList(ARG_IDS, arrayList);
-        }
+        args.putString(ARG_TITLE, title);
+        args.putInt(ARG_REQUESTCODE, requested);
+        if (!(ids==null || ids.isEmpty())) args.putStringArrayList(ARG_IDS, ids);
         fragment.setArguments(args);
         return fragment;
     }
@@ -50,42 +51,55 @@ public class ObjectListEdit extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Bundle args = getArguments();
-        if (args != null) {
-            sTable = args.getString(ARG_TABLE);
-            iCode = args.getInt(ARG_CODE);
-            if (args.containsKey(ARG_IDS)) mIds = args.getIntegerArrayList(ARG_IDS);
-            else mIds = new ArrayList<Integer>();
+        if (savedInstanceState == null) { //Открываем впервые
+            bArgs = getArguments();
+        }
+        else { //Открываем после поворота
+            bArgs = savedInstanceState.getBundle(ARG_ARGS);
         }
     }
 
     // создает вью фрагмента
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_objectlistedit, container, false);
-
-        Context context = view.getContext();
-        // открываем подключение к БД
-        db = new AuditDB(context);
-        db.open();
-
-        // Set the adapter
-        if (view instanceof RecyclerView) {
-            RecyclerView recyclerView = (RecyclerView) view;
-            recyclerView.setLayoutManager(new LinearLayoutManager(context));
-            RecyclerAdapter recyclerAdapter;
-            if (mIds.size()>0)
-                recyclerAdapter = new RecyclerAdapter(db.getItemsPathByIds(sTable, mIds), mListener);
-            else {
-                Items items = new Items();
-                items.add(new Items.Item(NOT_SELECTED,false, NOT_SELECTED, NOT_SELECTED, NOT_SELECTED, getString(R.string.msg_is_empty),""));
-                recyclerAdapter = new RecyclerAdapter(items, null);
-            }
-
-            recyclerView.setAdapter(recyclerAdapter);
-        }
-        return view;
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        return inflater.inflate(R.layout.fragment_objectlistedit, container, false);
     }
+
+    //заполняет View фрагмента
+    @Override
+    public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        ((ImageButton) view.findViewById(R.id.add)).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivity(ReferenceChoice.intentActivity(getActivity(), ObjectListEdit.this, bArgs.getInt(ARG_REQUESTCODE),
+                        bArgs.getString(ARG_TABLE), bArgs.getString(ARG_TITLE), AuditOData.ELEMENT_HIERARCHY, null,
+                        recyclerAdapter.getItems(), null));
+                //Перенести иерархию, собственника и in в параметры
+            }
+        });
+        //Расчитываем кол-во колонок для Grid и создаем GridLayoutManager для рециклервью
+        DisplayMetrics metrics = new DisplayMetrics();
+        getActivity().getWindowManager().getDefaultDisplay().getMetrics(metrics);
+        //Настраиваем рециклервью
+        RecyclerView recyclerView = (RecyclerView) view.findViewById(R.id.list);
+        recyclerAdapter = new RecyclerAdapter(mListener);
+        recyclerView.setAdapter(recyclerAdapter);
+        recyclerView.setLayoutManager(new GridLayoutManager(view.getContext(),
+                Math.max(1, Math.round(((float) metrics.widthPixels) /
+                        getResources().getDimension(R.dimen.min_column_reference)))));
+        //Запускаем загрузчик для чтения данных
+        recyclerAdapter.load(view);
+    }
+
+    //Перед поворотом
+    @Override
+    public void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        bArgs.putStringArrayList(ARG_IDS, recyclerAdapter.getItems());
+        outState.putBundle(ARG_ARGS, bArgs);
+    }
+
 
     // когда фрагмент присоединяется к активности, проверяем, есть ли наша интеракшион?
     @Override
@@ -97,6 +111,7 @@ public class ObjectListEdit extends Fragment {
             throw new RuntimeException(context.toString()
                     + " must implement OnObjectListEditInteractionListener");
         }
+        oData = new AuditOData(context);
     }
 
     // когда фрагмент удаляется
@@ -104,65 +119,120 @@ public class ObjectListEdit extends Fragment {
     public void onDetach() {
         super.onDetach();
         mListener = null;
-        db.close();
+        oData = null;
+    }
+
+    //вызывается из активности для множественного выбора элементов справочника
+    @Override
+    public void onReferenceManagerInteractionMultipleChoice(int requestCode, Items items) {
+        recyclerAdapter.addItems(items);
+        if (null != mListener) mListener.onObjectListEditAdd(bArgs.getInt(ARG_REQUESTCODE), items);
     }
 
     //Интерфейс управления списком аналитик объекта (удаление)
     public interface OnObjectListEditInteractionListener {
-        void onObjectListEditInteractionListener(int requested, int id);
+        void onObjectListEditAdd(int requestcode, Items items);
+        void onObjectListEditDelete(int requestcode, String key);
     }
 
     //Адаптер для списка
-    public class RecyclerAdapter extends RecyclerView.Adapter<ViewHolder> {
+    public class RecyclerAdapter extends RecyclerView.Adapter<ViewHolderRefs> {
 
-        private final Items mValues;
+        private final Items items;
         private final ObjectListEdit.OnObjectListEditInteractionListener mListener;
 
-        public RecyclerAdapter(Items items, ObjectListEdit.OnObjectListEditInteractionListener listener) {
-            mValues = items;
+        private RecyclerAdapter(ObjectListEdit.OnObjectListEditInteractionListener listener) {
+            items = new Items();
             mListener = listener;
         }
 
+        //Загрузка пунктов
+        private void load(View view) {
+            List<String> ids = bArgs.getStringArrayList(ARG_IDS);
+            if (!(ids == null || ids.isEmpty()))
+                new loadItems(view, ids).execute(bArgs.getString(ARG_TABLE));
+        }
+
+        //Класс для выполнения загрузки пукнтов в потоке с обновлением рециклервью
+        private class loadItems extends AsyncTask<String, Integer, Void> {
+            List<String> list;
+            View view;
+            private loadItems(View view, List<String> list) {
+                this.list = list;
+                this.view = view;
+            }
+            protected void onPreExecute() {
+                ((ProgressBar) view.findViewById(R.id.progressBar)).setVisibility(View.VISIBLE);
+//                items.clear();
+            }
+            protected Void doInBackground(String... table) {
+                int pos = 0;
+                for(String key: list) {
+                    Items.Item item = new Items.Item();
+                    item.id = key;
+                    item.name = oData.getName(table[0], key);
+                    items.add(item);
+//                    publishProgress(pos++);
+                    if (isCancelled()) break;
+                }
+                return null;
+            }
+//            protected void onProgressUpdate(Integer... pos) { Существенно замедляет процесс загрузки
+//                notifyItemInserted(pos[0]);
+//            }
+            protected void onPostExecute(Void voids) {
+                bArgs.remove(ARG_IDS);
+                notifyDataSetChanged();
+                ((ProgressBar) view.findViewById(R.id.progressBar)).setVisibility(View.INVISIBLE);
+            }
+        }
+
+        //Возвращает список giud из текущего списка пунктов
+        private ArrayList<String> getItems() {
+            ArrayList<String> ids = new ArrayList<String>();
+            for (Items.Item item: items) ids.add(item.id);
+            return ids;
+        }
+
+        //Добавляет пункты в список
+        private void addItems(Items addition) {
+            int position = getItemCount();
+            items.addAll(addition);
+            notifyItemRangeInserted(position, getItemCount());
+        }
+
         @Override
-        public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+        public ViewHolderRefs onCreateViewHolder(ViewGroup parent, int viewType) {
             View view = LayoutInflater.from(parent.getContext())
                     .inflate(R.layout.fragment_objectedit, parent, false);
-            return new ViewHolder(view);
+            return new ViewHolderRefs(view);
         }
 
         // заполняет пункт данными
         @Override
-        public void onBindViewHolder(final ViewHolder holder, final int position) {
+        public void onBindViewHolder(final ViewHolderRefs holder, final int position) {
             //Текущий пункт
-            holder.mItem = mValues.get(position);
+            holder.item = items.get(position);
             // наименование и описание
-            holder.mNameView.setText(holder.mItem.name);
-            holder.mDescView.setText(holder.mItem.desc);
+            holder.nameView.setText(holder.item.name);
+//            holder.descView.setText(holder.mItem.desc);
+
             // только удалить
-            if (holder.mItem.id != NOT_SELECTED) { //Есть что удалить? Или это служебный элемент
-                holder.mDeleteView.setVisibility(View.VISIBLE);
-                holder.mDeleteView.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        mValues.remove(holder.mItem); // удаляем пукнт из списка
-                        notifyItemRemoved(holder.getAdapterPosition());
-                        if (null != mListener) mListener.onObjectListEditInteractionListener(iCode, holder.mItem.id); // вызываем интеракшин с id удаленного пункта
-                        if (mValues.isEmpty()) { //если удалены все пункты списка, то добавляем служебный
-                            mValues.add(new Items.Item(NOT_SELECTED,false, NOT_SELECTED, NOT_SELECTED, NOT_SELECTED, getString(R.string.msg_is_empty),""));
-                            notifyItemInserted(0);
-                        }
-                    }
-                });
-            }
-            else { //Для служебного элемента
-                holder.mDeleteView.setVisibility(View.GONE);
-                holder.mNameView.setTextColor(0xffd0d0d0);
-            }
+            holder.deleteView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (null != mListener) mListener.onObjectListEditDelete(bArgs.getInt(ARG_REQUESTCODE), holder.item.id); // вызываем интеракшин с id удаленного пункта
+                    items.remove(holder.item); // удаляем пукнт из списка
+                    notifyItemRemoved(holder.getAdapterPosition());
+                    notifyItemRangeChanged(holder.getAdapterPosition(), getItemCount());
+                }
+            });
         }
 
         @Override
         public int getItemCount() {
-            return mValues.size();
+            return items.size();
         }
     }
 }
+//Фома2018

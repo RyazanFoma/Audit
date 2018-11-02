@@ -1,16 +1,15 @@
 package com.example.eduardf.audit;
 
-import android.app.ProgressDialog;
 import android.content.Context;
-import android.support.v4.app.LoaderManager.LoaderCallbacks;
-import android.support.v4.content.CursorLoader;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.AsyncTaskLoader;
 import android.support.v4.content.Loader;
 import android.content.Intent;
-import android.database.Cursor;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
-import android.support.v4.widget.SimpleCursorAdapter;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
@@ -18,27 +17,29 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.AdapterView;
 import android.widget.EditText;
+import android.widget.ProgressBar;
+import android.widget.SimpleAdapter;
 import android.widget.Spinner;
-import android.widget.TextView;
 
-import java.util.concurrent.TimeUnit;
+import java.util.List;
+import java.util.Map;
 
-public class MainActivity extends AppCompatActivity implements LoaderCallbacks<Cursor>, View.OnClickListener, Spinner.OnItemSelectedListener {
+//Главная активность - аутентификация пользователя и установка параметров приложения
+public class MainActivity extends AppCompatActivity implements
+        LoaderManager.LoaderCallbacks<List<Map<String, Object>>>,
+        View.OnClickListener,
+        Spinner.OnItemSelectedListener {
 
-    AuditDB db;
-    SimpleCursorAdapter scAdapter;
-    ProgressDialog pd;
+    AuditOData oData; //OData для доступа в 1С
+    SimpleAdapter usersAdapter; //Адаптер для списка пользователей
+    List<Map<String, Object>> usersMap; //Список пользователей для адаптера
+
     int iPosition = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        //Создаем прогресс для ожидания загрузки
-        pd = new ProgressDialog(this);
-        pd.setTitle(R.string.progress_title);
-        pd.setMessage(getResources().getString(R.string.progress_msq));
 
         //Пока только меню
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -48,18 +49,26 @@ public class MainActivity extends AppCompatActivity implements LoaderCallbacks<C
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(this);
 
-        // открываем подключение к БД
-        db = new AuditDB(this);
-        db.open();
-
-        //Спиннер для выбора пользователя
-        scAdapter = new SimpleCursorAdapter(this, android.R.layout.simple_spinner_item, null, new String[] { AuditDB.NAME}, new int[] { android.R.id.text1 }, 0);
-        scAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        //Готовим все для спиннера
+        usersMap = AuditOData.newDataSpinner("Идет загрузка...");
+        usersAdapter = new SimpleAdapter(this, usersMap, android.R.layout.simple_spinner_item, new String[] { "name"}, new int[] { android.R.id.text1 });
+        usersAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         Spinner users = (Spinner) findViewById(R.id.user);
-        users.setAdapter(scAdapter);
+        users.setAdapter(usersAdapter);
         users.setOnItemSelectedListener(this);
 
-        // создаем загрузчик для чтения данных
+        //Неопределенный прогресс-бар движется во время загрузки (см. onCreateLoader, onLoadFinished, onLoaderReset)
+        ((ProgressBar) findViewById(R.id.progressBar)).setVisibility(View.INVISIBLE);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        //Открываем клиента
+        oData = new AuditOData(this);
+
+        //Создаем загрузчик для чтения данных
         Loader loader = getSupportLoaderManager().getLoader(0);
         if (loader != null && !loader.isReset()) {
             getSupportLoaderManager().restartLoader(0, null, this);
@@ -84,6 +93,7 @@ public class MainActivity extends AppCompatActivity implements LoaderCallbacks<C
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
+            startActivity(new Intent(this, SettingsAudit.class));
             return true;
         }
 
@@ -93,8 +103,8 @@ public class MainActivity extends AppCompatActivity implements LoaderCallbacks<C
     //Закрывает базу при закрытии активити
     protected void onDestroy() {
         super.onDestroy();
-        // закрываем подключение при выходе
-        db.close();
+        oData = null;
+        usersAdapter = null;
     }
 
     //Сохраняет текущее значение пароля перед поворотом экрана
@@ -120,24 +130,36 @@ public class MainActivity extends AppCompatActivity implements LoaderCallbacks<C
         if (v.getId()==R.id.fab) {
 
             //Текущие значения пароля и идентификатора пользователя
-            Cursor c = scAdapter.getCursor();
-            String psw = c.getString(c.getColumnIndex(AuditDB.USER_PASSWORD));
-            int id = c.getInt(c.getColumnIndex(AuditDB.ID));
-            EditText tv = (EditText) findViewById(R.id.password);
+            String id = usersMap.get(iPosition).get("id").toString();
+            String password = usersMap.get(iPosition).get("password").toString();
+
+            EditText input = (EditText) findViewById(R.id.password);
             //Пароль верный?
-            if (psw.equals(tv.getText().toString())) {
+            if (equalsPassword(password, input.getText().toString())) {
                 //Открываем список заданий
-                Intent intent = new Intent(this, TaskList.class);
-                intent.putExtra("Auditor", id);
-                startActivity(intent);
+                startActivity(TaskListActivity.intentActivity(this, id));
+//                Intent intent = new Intent(this, TaskList.class);
+//                intent.putExtra("Auditor", id);
+//                startActivity(intent);
             }
             else {
                 //Неверный пароль
                 Snackbar.make(v, R.string.msg_password, Snackbar.LENGTH_LONG)
                         .setAction("Action", null).show();
-                tv.setText("");
+                input.setText("");
             }
         }
+    }
+
+    //Сравнивает пароли
+    private boolean equalsPassword(String passwordText, String inputText) {
+        char[] password = passwordText.toCharArray();
+        char[] input = inputText.toCharArray();
+        if (password.length != input.length) return false;
+        for (int position = 0; position<password.length; position++ ) {
+            if ((int) password[position] != ((int) input[position]*13-(position+1)*7)%873) return false;
+        }
+        return true;
     }
 
     //Очищает пароль после выбора пользователя
@@ -149,45 +171,56 @@ public class MainActivity extends AppCompatActivity implements LoaderCallbacks<C
         }
     }
 
-    //Загрузчик для спиннера
-    @Override
-    public  Loader<Cursor> onCreateLoader(int id, Bundle bndl) {
-        pd.show();
-        return new MainActivity.MyCursorLoader(this, db);
-    }
-
-    @Override
-    public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
-        pd.dismiss();
-        scAdapter.swapCursor(cursor);
-        ((Spinner) findViewById(R.id.user)).setSelection(iPosition, true);
-    }
-
-    @Override
-    public void onLoaderReset(Loader<Cursor> loader) {
-        scAdapter.swapCursor(null);
-    }
-
     @Override
     public void onNothingSelected(AdapterView<?> parent) {
 
     }
 
-    //Мой загрузчик для Спинера по таблице пользователей
-    static class MyCursorLoader extends CursorLoader {
+    @NonNull
+    @Override
+    public Loader<List<Map<String, Object>>> onCreateLoader(int id, @Nullable Bundle args) {
+        ((ProgressBar) findViewById(R.id.progressBar)).setVisibility(View.VISIBLE);
+        return new MainActivity.MyLoader(this, oData);
+    }
 
-        AuditDB db;
+    @Override
+    public void onLoadFinished(@NonNull Loader<List<Map<String, Object>>> loader, List<Map<String, Object>> data) {
+        usersMap.clear();
+        usersMap.addAll(data);
+        usersAdapter.notifyDataSetChanged();
+        ((ProgressBar) findViewById(R.id.progressBar)).setVisibility(View.INVISIBLE);
+    }
 
-        public MyCursorLoader(Context context, AuditDB db) {
+    @Override
+    public void onLoaderReset(@NonNull Loader<List<Map<String, Object>>> loader) {
+        usersMap.clear();
+        ((ProgressBar) findViewById(R.id.progressBar)).setVisibility(View.INVISIBLE);
+    }
+
+    //Загрузчик списка пользователей
+    static class MyLoader extends AsyncTaskLoader<List<Map<String, Object>>> {
+
+        AuditOData oData;
+
+        public MyLoader(@NonNull Context context, AuditOData oData) {
             super(context);
-            this.db = db;
+            this.oData = oData;
         }
 
         @Override
-        public Cursor loadInBackground() {
-            return db.getAllData(AuditDB.TBL_USER);
+        protected void onStartLoading() {
+            forceLoad();
         }
 
+        @Override
+        protected void onStopLoading() {
+            cancelLoad();
+        }
+
+        @Override
+        public List<Map<String, Object>> loadInBackground() {
+            return oData.getUsers();
+        }
     }
 }
 //Фома 2018

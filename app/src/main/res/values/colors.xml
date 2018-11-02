@@ -7,5 +7,11 @@
     <color name="colorNo">#FFFF4081</color>
     <color name="colorBackgroundAccent">#d0d0d0</color>
     <color name="colorBackgroundItem">#e6e6fa</color>
+    <color name="colorBackgroundGrey">#e6e6e6</color>
+    <color name="colorBackgroundDarkGrey">#c0dae2</color>
+    <color name="colorBackgroundRed">#ffd1d2</color>
+    <color name="colorBackgroundYellow">#fff6c8</color>
+    <color name="colorBackgroundDarkYellow">#c8ffef</color>
+    <color name="colorBackgroundGreen">#e5fdbe</color>
 
 </resources>
