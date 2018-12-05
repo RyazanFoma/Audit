@@ -2,7 +2,6 @@
     <string name="app_name">Audit</string>
     <string name="title_activity_task_list">Задания</string>
     <string name="title_activity_audit_task">Задание</string>
-    <string name="title_activity_select_fttable">Выбор</string>
 
     <string name="action_settings">Настройки</string>
     <string name="msg_password">Неверный пароль!</string>
@@ -11,12 +10,7 @@
     <string name="tab_center">В работе</string>
     <string name="tab_right">Проведен</string>
 
-    <string name="progress_title">Ожидание</string>
     <string name="progress_msq">Идет загрузка…</string>
-
-    <string name="tab_task_l">Общее</string>
-    <string name="tab_task_c">Аналитика</string>
-    <string name="tab_task_r">Показатели</string>
 
     <string name="tab_com">Общее</string>
     <string name="tab_obj">Объекты</string>
@@ -42,6 +36,7 @@
     <string name="txt_openInds">Открывать с показателей</string>
     <string name="txt_clearCopy">Очищать при копировании</string>
     <string name="txt_showSubj">Показывать предметы</string>
+    <string name="txt_by_subject">По предметам </string>
 
     <string name="msg_enter_name">Наименование</string>
     <string name="msg_not_find_id">Не могу найти id!</string>
@@ -49,6 +44,7 @@
     <string name="msg_delete_n">Снять или поставить отметку на удаление у … позиции(ий)?</string>
     <string name="msg_not_selected">Нет выбраных позиций!</string>
     <string name="msg_not_fill">Не все обязательные* поля заполнены!</string>
+    <string name="msg_not_editable">Редактирование невозможно, только выбор!</string>
     <string name="msg_place_copy">Выберите папку для копирования отмеченных позиций</string>
     <string name="msg_place_move">Выберите папку для перемещения отмеченных позиций</string>
     <string name="msg_move_error">Некоторые папки не были перемещены, чтобы не нарушать целостность!</string>
@@ -62,14 +58,17 @@
     <string name="ttl_delete">Отметка на удаление</string>
     <string name="ttl_create">Новый элемент</string>
     <string name="ttl_create_group">Новая папка</string>
+    <string name="ttl_edit">Изменить элемент</string>
     <string name="ttl_edit_group">Изменить папку</string>
     <string name="ttl_status">Изменение статуса задания</string>
     <string name="ttl_status_n">Изменение статуса заданий</string>
+
     <string-array name="status_list">
         <item>Утвержден</item>
         <item>В работе</item>
         <item>Проведен</item>
     </string-array>
+
     <string name="btn_save">Сохранить</string>
     <string name="btn_addition">Добавить</string>
     <string name="btn_change">Изменить</string>
@@ -79,6 +78,7 @@
     <string name="btn_cancel">Отмена</string>
     <string name="btn_ok">OK</string>
     <string name="btn_fill">Заполнить</string>
+    <string name="btn_top">Начало</string>
 
     <string name="search_hint_name">по наименованию&#8230;</string>
     <string name="search_hint_object">по объекту&#8230;</string>
@@ -128,33 +128,16 @@
 
     <!-- Strings related to Settings -->
 
-    <!-- Example General settings -->
-    <string name="pref_header_general">General</string>
+    <!-- General settings -->
+    <string name="pref_header_general">Настройки</string>
 
-    <string name="pref_title_social_recommendations">Enable social recommendations</string>
-    <string name="pref_description_social_recommendations">Recommendations for people to contact
-        based on your message history
-    </string>
+    <string name="pref_title_dark_theme">Темная тема</string>
+    <string name="pref_description_dark_theme">Рекомендуется для экономии энергии аккумулятора и работы в темное время суток</string>
 
-    <string name="pref_title_display_name">Display name</string>
-    <string name="pref_default_display_name">John Smith</string>
+    <!-- Settings for Default -->
+    <string name="pref_header_default">По умолчанию</string>
+    <string name="pref_title_default">Значения полей для вновь созданного задания</string>
 
-    <string name="pref_title_add_friends_to_messages">Add friends to messages</string>
-    <string-array name="pref_example_list_titles">
-        <item>Always</item>
-        <item>When possible</item>
-        <item>Never</item>
-    </string-array>
-    <string-array name="pref_example_list_values">
-        <item>1</item>
-        <item>0</item>
-        <item>-1</item>
-    </string-array>
-
-    <!-- Example settings for Data & Sync -->
-    <string name="pref_header_data_sync">Data &amp; sync</string>
-
-    <string name="pref_title_sync_frequency">Sync frequency</string>
     <string-array name="pref_sync_frequency_titles">
         <item>15 minutes</item>
         <item>30 minutes</item>
@@ -188,16 +171,36 @@
 
     <string name="pref_title_system_sync_settings">System sync settings</string>
 
-    <!-- Example settings for Notifications -->
-    <string name="pref_header_notifications">Notifications</string>
+    <!-- Settings for Tasks -->
+    <string name="pref_header_tasks">Задания</string>
 
-    <string name="pref_title_new_message_notifications">New message notifications</string>
+    <string name="pref_title_tasks_tab">Текущая вкладка списка заданий</string>
+    <string-array name="pref_tasks_tab_values">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+    </string-array>
 
-    <string name="pref_title_ringtone">Ringtone</string>
-    <string name="pref_ringtone_silent">Silent</string>
+    <string name="pref_title_displace_1C_settings">Использовать настройки приложения</string>
+    <string name="pref_description_displace_1C_settings">Нижеследующие настройки будут вытеснять настройки 1С</string>
 
-    <string name="pref_title_vibrate">Vibrate</string>
+    <string name="pref_title_task_settings">Настройки приложения</string>
 
+    <string name="pref_title_fill_in_fact">Заполнять факт</string>
+    <string name="pref_description_fill_in_fact">Устанавливать фактическое значение показателя равным нормативному при заполнении задания</string>
+
+    <string name="pref_title_open_with_indicators">Открывать с показателей</string>
+    <string name="pref_description_open_with_indicators">При открытии задания начинать со вкладки Показатели</string>
+
+    <string name="pref_title_clear_when_copying">Очищать при копировании</string>
+    <string name="pref_description_clear_when_copying">Очищать вкладку Аналитика и Показатели при копировании задания</string>
+
+    <string name="pref_title_display_subject">Отображать предметы</string>
+    <string name="pref_description_display_subject">Отображать показатели по предметам аудита на вкладке Показатели</string>
+
+    <string name="pref_title_sync_frequency">Частота</string>
+
+    <!-- Settings for oData -->
     <string name="pref_header_odata">Связь с 1С</string>
 
     <string name="pref_title_odata_path">Путь к стандартному интерфейсу oData</string>
@@ -208,8 +211,5 @@
 
     <string name="pref_title_odata_password">Пароль для подключения</string>
     <string name="pref_default_odata_password">12345678</string>
-
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
 
 </resources>

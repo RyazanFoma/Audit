@@ -23,13 +23,14 @@
             android:visibility="invisible" />
 
         <LinearLayout
+            android:id="@+id/head"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:paddingBottom="@dimen/field_vertical_margin"
-            android:paddingEnd="@dimen/field_horizontal_margin"
             android:paddingStart="@dimen/field_horizontal_margin"
-            android:paddingTop="@dimen/field_vertical_margin">
+            android:paddingTop="@dimen/field_vertical_margin"
+            android:paddingEnd="@dimen/field_horizontal_margin"
+            android:paddingBottom="@dimen/field_vertical_margin">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -156,12 +157,22 @@
                                 android:layout_gravity="center_vertical"
                                 android:layout_marginStart="@dimen/field_vertical_margin"
                                 android:text="@string/btn_fill" />
+
+                            <Switch
+                                android:id="@+id/by_subject"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="center_vertical"
+                                android:gravity="right|center_vertical"
+                                android:switchPadding="@dimen/field_horizontal_margin"
+                                android:text="@string/txt_by_subject" />
                         </LinearLayout>
 
                         <FrameLayout
                             android:id="@+id/indicators"
                             android:layout_width="match_parent"
-                            android:layout_height="match_parent">
+                            android:layout_height="match_parent"
+                            android:layout_marginBottom="@dimen/indicators_margin">
 
                         </FrameLayout>
                     </LinearLayout>

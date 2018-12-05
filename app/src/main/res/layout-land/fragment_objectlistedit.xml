@@ -53,8 +53,8 @@
                 android:name="com.example.eduardf.audit.ObjectListEdit"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:layout_marginLeft="8dp"
-                android:layout_marginRight="8dp"
+                android:layout_marginEnd="@dimen/indicators_margin"
+                android:layout_marginStart="@dimen/field_vertical_margin"
                 android:layout_weight="1"
                 tools:context=".ObjectActivity"
                 tools:listitem="@layout/fragment_objectedit">

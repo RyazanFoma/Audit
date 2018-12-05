@@ -36,10 +36,10 @@ public class ObjectListEdit extends Fragment implements ReferenceChoice.OnRefere
     }
 
     // создает фрагмент на основе аргументов
-    public static ObjectListEdit newInstance(int requested, String table, String title, ArrayList<String> ids) {
+    public static ObjectListEdit newInstance(int requested, AuditOData.Set table, String title, ArrayList<String> ids) {
         ObjectListEdit fragment = new ObjectListEdit();
         Bundle args = new Bundle();
-        args.putString(ARG_TABLE, table);
+        args.putString(ARG_TABLE, table.toString());
         args.putString(ARG_TITLE, title);
         args.putInt(ARG_REQUESTCODE, requested);
         if (!(ids==null || ids.isEmpty())) args.putStringArrayList(ARG_IDS, ids);
@@ -57,6 +57,9 @@ public class ObjectListEdit extends Fragment implements ReferenceChoice.OnRefere
         else { //Открываем после поворота
             bArgs = savedInstanceState.getBundle(ARG_ARGS);
         }
+        recyclerAdapter = new RecyclerAdapter(mListener);
+        if (savedInstanceState != null)
+            recyclerAdapter.onRestoreInstanceState(savedInstanceState);
     }
 
     // создает вью фрагмента
@@ -72,9 +75,11 @@ public class ObjectListEdit extends Fragment implements ReferenceChoice.OnRefere
         ((ImageButton) view.findViewById(R.id.add)).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                startActivity(ReferenceChoice.intentActivity(getActivity(), ObjectListEdit.this, bArgs.getInt(ARG_REQUESTCODE),
-                        bArgs.getString(ARG_TABLE), bArgs.getString(ARG_TITLE), AuditOData.ELEMENT_HIERARCHY, null,
-                        recyclerAdapter.getItems(), null));
+                startActivity(ReferenceChoice.intentActivity(getActivity(), ObjectListEdit.this,
+                        bArgs.getInt(ARG_REQUESTCODE),
+                        AuditOData.Set.toValue(bArgs.getString(ARG_TABLE)),
+                        bArgs.getString(ARG_TITLE), null,
+                        recyclerAdapter.getItems()));
                 //Перенести иерархию, собственника и in в параметры
             }
         });
@@ -83,21 +88,20 @@ public class ObjectListEdit extends Fragment implements ReferenceChoice.OnRefere
         getActivity().getWindowManager().getDefaultDisplay().getMetrics(metrics);
         //Настраиваем рециклервью
         RecyclerView recyclerView = (RecyclerView) view.findViewById(R.id.list);
-        recyclerAdapter = new RecyclerAdapter(mListener);
         recyclerView.setAdapter(recyclerAdapter);
         recyclerView.setLayoutManager(new GridLayoutManager(view.getContext(),
                 Math.max(1, Math.round(((float) metrics.widthPixels) /
                         getResources().getDimension(R.dimen.min_column_reference)))));
         //Запускаем загрузчик для чтения данных
-        recyclerAdapter.load(view);
+        if (savedInstanceState == null) recyclerAdapter.load(view);
     }
 
     //Перед поворотом
     @Override
     public void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
-        bArgs.putStringArrayList(ARG_IDS, recyclerAdapter.getItems());
         outState.putBundle(ARG_ARGS, bArgs);
+        recyclerAdapter.onSaveInstanceState(outState);
     }
 
 
@@ -138,6 +142,7 @@ public class ObjectListEdit extends Fragment implements ReferenceChoice.OnRefere
     //Адаптер для списка
     public class RecyclerAdapter extends RecyclerView.Adapter<ViewHolderRefs> {
 
+        private final static String ARG_LIST = "list";
         private final Items items;
         private final ObjectListEdit.OnObjectListEditInteractionListener mListener;
 
@@ -148,13 +153,14 @@ public class ObjectListEdit extends Fragment implements ReferenceChoice.OnRefere
 
         //Загрузка пунктов
         private void load(View view) {
-            List<String> ids = bArgs.getStringArrayList(ARG_IDS);
-            if (!(ids == null || ids.isEmpty()))
-                new loadItems(view, ids).execute(bArgs.getString(ARG_TABLE));
+            final List<String> ids = bArgs.getStringArrayList(ARG_IDS);
+            if (!(ids == null || ids.isEmpty())) {
+                new loadItems(view, ids).execute(AuditOData.Set.toValue(bArgs.getString(ARG_TABLE)));
+            }
         }
 
         //Класс для выполнения загрузки пукнтов в потоке с обновлением рециклервью
-        private class loadItems extends AsyncTask<String, Integer, Void> {
+        private class loadItems extends AsyncTask<AuditOData.Set, Integer, Void> {
             List<String> list;
             View view;
             private loadItems(View view, List<String> list) {
@@ -163,25 +169,20 @@ public class ObjectListEdit extends Fragment implements ReferenceChoice.OnRefere
             }
             protected void onPreExecute() {
                 ((ProgressBar) view.findViewById(R.id.progressBar)).setVisibility(View.VISIBLE);
-//                items.clear();
             }
-            protected Void doInBackground(String... table) {
+            protected Void doInBackground(AuditOData.Set... table) {
                 int pos = 0;
                 for(String key: list) {
                     Items.Item item = new Items.Item();
                     item.id = key;
                     item.name = oData.getName(table[0], key);
                     items.add(item);
-//                    publishProgress(pos++);
                     if (isCancelled()) break;
                 }
                 return null;
             }
-//            protected void onProgressUpdate(Integer... pos) { Существенно замедляет процесс загрузки
-//                notifyItemInserted(pos[0]);
-//            }
             protected void onPostExecute(Void voids) {
-                bArgs.remove(ARG_IDS);
+                bArgs.remove(ARG_IDS); //Уже не нужны
                 notifyDataSetChanged();
                 ((ProgressBar) view.findViewById(R.id.progressBar)).setVisibility(View.INVISIBLE);
             }
@@ -201,22 +202,21 @@ public class ObjectListEdit extends Fragment implements ReferenceChoice.OnRefere
             notifyItemRangeInserted(position, getItemCount());
         }
 
-        @Override
-        public ViewHolderRefs onCreateViewHolder(ViewGroup parent, int viewType) {
-            View view = LayoutInflater.from(parent.getContext())
-                    .inflate(R.layout.fragment_objectedit, parent, false);
-            return new ViewHolderRefs(view);
+        //Упаковывает список
+        private void onSaveInstanceState(@NonNull Bundle outState) {
+            items.onSaveInstanceState(outState, ARG_LIST);
         }
 
-        // заполняет пункт данными
-        @Override
-        public void onBindViewHolder(final ViewHolderRefs holder, final int position) {
-            //Текущий пункт
-            holder.item = items.get(position);
-            // наименование и описание
-            holder.nameView.setText(holder.item.name);
-//            holder.descView.setText(holder.mItem.desc);
+        //Распаковывает список
+        private void onRestoreInstanceState(Bundle savedInstanceState) {
+            items.onRestoreInstanceState(savedInstanceState, ARG_LIST);
+        }
 
+        @Override
+        public ViewHolderRefs onCreateViewHolder(ViewGroup parent, int viewType) {
+            final View view = LayoutInflater.from(parent.getContext())
+                    .inflate(R.layout.fragment_objectedit, parent, false);
+            final ViewHolderRefs holder = new ViewHolderRefs(view);
             // только удалить
             holder.deleteView.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -227,6 +227,16 @@ public class ObjectListEdit extends Fragment implements ReferenceChoice.OnRefere
                     notifyItemRangeChanged(holder.getAdapterPosition(), getItemCount());
                 }
             });
+            return holder;
+        }
+
+        // заполняет пункт данными
+        @Override
+        public void onBindViewHolder(final ViewHolderRefs holder, final int position) {
+            //Текущий пункт
+            holder.item = items.get(position);
+            // наименование
+            holder.nameView.setText(holder.item.name);
         }
 
         @Override

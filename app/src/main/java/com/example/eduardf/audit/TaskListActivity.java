@@ -6,14 +6,12 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.BottomNavigationView;
 import android.support.design.widget.Snackbar;
 import android.support.design.widget.TabLayout;
-import android.support.v4.app.DialogFragment;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.AsyncTaskLoader;
 import android.support.v4.content.Loader;
@@ -21,36 +19,42 @@ import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.view.ActionMode;
 import android.support.v7.widget.CardView;
-import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SearchView;
+import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.support.v7.widget.Toolbar;
 import android.util.DisplayMetrics;
-import android.view.Display;
-import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
-import android.view.WindowManager;
 import android.widget.CheckBox;
-import android.widget.ProgressBar;
 
 import java.util.ArrayList;
 
-import static java.text.DateFormat.getDateInstance;
-import static java.text.DateFormat.getTimeInstance;
+import static android.support.v7.widget.RecyclerView.SCROLL_STATE_IDLE;
+import static com.example.eduardf.audit.TaskListAdapter.CHECKED_STATUS_ALL;
+import static com.example.eduardf.audit.TaskListAdapter.CHECKED_STATUS_NULL;
 
-//Активность для работы со списком заданий
+/**
+ * Список заданий
+ */
 public class TaskListActivity extends AppCompatActivity
         implements LoaderManager.LoaderCallbacks<Tasks>,
-        DialogsReferenceManager.DialogInteractionListener {
+        DialogsReferenceManager.DialogInteractionListener,
+        View.OnClickListener,
+        View.OnLongClickListener,
+        TaskListAdapter.OnInvalidateActivity {
 
     private AuditOData oData; //Объект OData для доступа к 1С:Аудитор
-    private Bundle bArgs; //Агрументы для загрузчика списка
-    private RecyclerAdapter recyclerAdapter; //Адаптер для списка
+    private String sAuditor; //guid аудитора
+    private Tasks.Task.Status mStatus; //Статус заданий текущей закладки
+    private String sLike; //Строка отбора по наименованию объекта
+    private TaskListAdapter recyclerAdapter; //Адаптер для списка
     private RecyclerView.LayoutManager mLayoutManager; //Менеджер для RecyclerView
+    private ArrayList<String> checkedIds; //Список отмеченных для копирования/переноса
+    private Tasks.Task.Status checkedFrom; //Статус заданий, откуда перемещаем/копируем отмеченные
+    private static int iScroll; //Количество скроллинга для отработки скрытия закладок
 
     private int iModeMenu = ACTION_BAR; //Текущий режим меню
     private static final int ACTION_BAR = 0; //меню действий
@@ -60,65 +64,66 @@ public class TaskListActivity extends AppCompatActivity
 
     private ActionMode mActionMode; //Контекстное меню
 
-    private final static int CHECKED_STATUS_NULL = 0; //Нет отмеченных пунктов
-    private final static int CHECKED_STATUS_ONE = 1; //Помечен один пункт
-    private final static int CHECKED_STATUS_SOME = 2; //Помечено несколько пунктов
-    private final static int CHECKED_STATUS_ALL = 3; //Помечены все пункты
-
     //Аргументы для интент и поворота экрана
     private static final String ARG_AUDITOR_KEY = "auditor_key"; //Идентификатор аудитора
     private static final String ARG_STATUS = "status"; //Текущая закладка / статус задания
     private static final String ARG_LIKE = "like"; //Строка поиска
-    private static final String ARG_CHECKED = "checked"; //Отмеченные задания
-    private static final String ARG_EXPAND = "expand"; //Развернутые задания
-    private static final String ARG_MODEMENU = "menumode"; //Режим меню
+    private static final String ARG_MODE_MENU = "menu_mode"; //Режим меню
     private static final String ARG_STATE = "state"; //Состояние списка до поворота
-    private static final String ARG_CHECKED_STATUS = "checkedStatus"; //Состояние пометок списка
+    private static final String ARG_CHECKED = "checked"; //Отмеченные задания
     private static final String ARG_FROM = "from"; //Статус, откуда копируем/перемещаем
 
-    /*Возвращает интент активности
-    auditor_key - идентификатор акдитора для отбора заданий
-    */
+    /**
+     * Интент активности списка заданий
+     * @param context - контекст
+     * @param auditor_key - guid аудитора
+     * @return - интент
+     */
     public static Intent intentActivity(Context context, String auditor_key) {
         Intent intent = new Intent(context, TaskListActivity.class);
         intent.putExtra(ARG_AUDITOR_KEY, auditor_key);
         return intent;
     }
 
-    //Обработчик выбора пункта нижнего навигационного меню
+    /**
+     * Обработчик выбора пункта нижнего навигационного меню
+     */
     private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
             = new BottomNavigationView.OnNavigationItemSelectedListener() {
 
         @Override
         public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-            boolean rezult = true;
-            iModeMenu = ACTION_MODE;
-            mActionMode.invalidate();
-            setVisibilityBNV(false);
             switch (item.getItemId()) {
-                case R.id.close:
-                    recyclerAdapter.stopRows();
-                    break;
                 case R.id.copy:
-                    recyclerAdapter.copyRows();
+                    recyclerAdapter.copyRows(checkedIds, mStatus);
                     break;
                 case R.id.move:
-                    recyclerAdapter.moveRows();
+                    if (!mStatus.equals(checkedFrom)) {
+                        recyclerAdapter.moveRows(checkedIds, mStatus);
+                    }
+                    break;
+                case R.id.close:
                     break;
                 default:
-                    rezult = false;
+                    return false;
             }
-            return rezult;
+            setVisibilityBNV(false);
+            checkedIds = null;
+            recyclerAdapter.notifyDataSetChanged(iModeMenu = ACTION_MODE);
+            mActionMode.invalidate();
+            return true;
         }
     };
 
-    //Обработчик выбора закладки по статусам
+    /**
+     * Обработчик выбора закладки по статусам
+     */
     private TabLayout.OnTabSelectedListener mOnTabSelectedListener = new TabLayout.OnTabSelectedListener() {
         @Override
         public void onTabSelected(TabLayout.Tab tab) {
-            if (bArgs.getInt(ARG_STATUS, 0) != tab.getPosition()) {
-                bArgs.putInt(ARG_STATUS, tab.getPosition());
-                getSupportLoaderManager().restartLoader(-1, bArgs, TaskListActivity.this);
+            if (mStatus.number != tab.getPosition()) {
+                mStatus = Tasks.Task.Status.toValue(tab.getPosition());
+                loader();
             }
         }
 
@@ -136,7 +141,7 @@ public class TaskListActivity extends AppCompatActivity
         setContentView(R.layout.activity_task_list);
 
         //Меню действий
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) actionBar.setDisplayHomeAsUpEnabled(true); //Отловит onSupportNavigateUp
@@ -144,27 +149,26 @@ public class TaskListActivity extends AppCompatActivity
         //Текущая закладка / статус задания - Утвержден
         int iStatus = 0;
 
-        //Аргументы для загрузчика
-        bArgs = new Bundle();
         if (savedInstanceState==null) { //активность запускается впервые
             Intent intent = getIntent();
-            bArgs.putString(ARG_AUDITOR_KEY, intent.getStringExtra(ARG_AUDITOR_KEY));
-            bArgs.putString(ARG_LIKE, "");
+            mStatus = Tasks.Task.Status.APPROVED; //Поменять на значение из настроек
+            sAuditor = intent.getStringExtra(ARG_AUDITOR_KEY);
+            sLike = "";
         }
         else { //активность восстатавливаем после поворота экрана
-            iStatus = savedInstanceState.getInt(ARG_STATUS); //Текущая закладка / статус задания
-            bArgs.putString(ARG_AUDITOR_KEY, savedInstanceState.getString(ARG_AUDITOR_KEY));
-            bArgs.putString(ARG_LIKE, savedInstanceState.getString(ARG_LIKE, ""));
+            mStatus = Tasks.Task.Status.toValue(savedInstanceState.getInt(TaskActivity.ARG_STATUS, 0));
+            sAuditor = savedInstanceState.getString(ARG_AUDITOR_KEY);
+            sLike = savedInstanceState.getString(ARG_LIKE, "");
         }
-        bArgs.putInt(ARG_STATUS, iStatus); //Текущая закладка
 
         //Закладки для отбора по статусу
-        final TabLayout tt = (TabLayout) findViewById(R.id.tabs);
-        ((TabLayout.Tab) tt.getTabAt(iStatus)).select(); //Выбираем текущую закладку
+        final TabLayout tt = findViewById(R.id.tabs);
         tt.addOnTabSelectedListener(mOnTabSelectedListener);
+        final TabLayout.Tab tab = tt.getTabAt(iStatus);
+        if (tab != null) tab.select();
 
         //Нижнее навигационное меню, используется для окончания операций копирования и перемещения
-        BottomNavigationView navigation = (BottomNavigationView) findViewById(R.id.navigation);
+        BottomNavigationView navigation = findViewById(R.id.navigation);
         navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
         setVisibilityBNV(false); //Навигационное меню появляется только при копировании и переносе
 
@@ -174,26 +178,56 @@ public class TaskListActivity extends AppCompatActivity
         //Расчитываем кол-во колонок для Grid и создаем GridLayoutManager для рециклервью
         DisplayMetrics metrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(metrics);
-        mLayoutManager = new GridLayoutManager(this, Math.max(1,
+        mLayoutManager = new StaggeredGridLayoutManager(Math.max(1,
                 Math.round(((float) metrics.widthPixels) /
-                        getResources().getDimension(R.dimen.min_column_task))));
+                        (getResources().getDimension(R.dimen.column_task)+
+                                2 * getResources().getDimension(R.dimen.field_vertical_margin)))),
+                StaggeredGridLayoutManager.VERTICAL);
+        ((StaggeredGridLayoutManager) mLayoutManager).setGapStrategy(StaggeredGridLayoutManager.GAP_HANDLING_NONE);
 
         // настраиваем список
-        RecyclerView recyclerView = (RecyclerView) findViewById(R.id.list);
-        recyclerAdapter = new RecyclerAdapter(); //Создаем адаптер для рециклервью
+        RecyclerView recyclerView = findViewById(R.id.list);
+        //Создаем адаптер для рециклервью
+        recyclerAdapter = new TaskListAdapter(this, oData, iModeMenu);
         recyclerView.setAdapter(recyclerAdapter);
         recyclerView.setLayoutManager(mLayoutManager);
-
-        //Неопределенный прогресс-бар движется во время загрузки (см. onCreateLoader, onLoadFinished, onLoaderReset)
-        ((ProgressBar) findViewById(R.id.progressBar)).setVisibility(View.INVISIBLE);
+        //Обрабатываем скролинг списка вниз, чтобы сделать закладки невидимыми
+        recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
+                super.onScrollStateChanged(recyclerView, newState);
+                if (SCROLL_STATE_IDLE == newState)
+                    findViewById(R.id.tabs).setVisibility(iScroll<=0? View.VISIBLE: View.GONE);
+            }
+            @Override
+            public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
+                super.onScrolled(recyclerView, dx, dy);
+                iScroll = dy;
+            }
+        });
 
         //Запускаем загрузчик для чтения данных
-        Loader loader = getSupportLoaderManager().getLoader(-1);
-        if (loader != null && !loader.isReset()) getSupportLoaderManager().restartLoader(-1, bArgs, this);
-        else getSupportLoaderManager().initLoader(-1, bArgs, this);
+        if (savedInstanceState == null) loader();
     }
 
-    //вызывается при уничтожении активности
+    /**
+     * Вызов загрузчика заданий
+     */
+    private void loader() {
+        final Bundle bArgs = new Bundle(); //Агрументы для загрузчика списка
+        bArgs.putInt(ARG_STATUS, mStatus.number); //Текущая закладка
+        bArgs.putString(ARG_AUDITOR_KEY, sAuditor);
+        bArgs.putString(ARG_LIKE, sLike);
+        final Loader loader = getSupportLoaderManager().getLoader(0);
+        if (loader != null && !loader.isReset())
+            getSupportLoaderManager().restartLoader(0, bArgs, TaskListActivity.this);
+        else
+            getSupportLoaderManager().initLoader(0, bArgs, TaskListActivity.this);
+    }
+
+    /**
+     * вызывается перед уничтожением активности
+     */
     @Override
     protected void onDestroy() {
         super.onDestroy();
@@ -203,7 +237,29 @@ public class TaskListActivity extends AppCompatActivity
         oData = null;
     }
 
-    //Обработчик возврата назад
+    /**
+     *  Вызывается после закрытия формы задания
+     * @param requestCode - запрашиваемый код - не используется
+     * @param resultCode - код результата
+     * @param data - результат
+     */
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (resultCode == RESULT_OK) {
+            if (data != null) { //Проверяем статус задания
+                final int status = data.getIntExtra(ARG_STATUS, 0);
+                if (status != mStatus.number) { //Задание не из текущей закладки
+                    final TabLayout.Tab tab = ((TabLayout) findViewById(R.id.tabs)).getTabAt(status);
+                    if (tab != null) tab.select();
+                }
+            }
+        }
+    }
+
+    /**
+     * Вызывается при нажатии на кнопку назад
+     * @return - true
+     */
     @Override
     public boolean onSupportNavigateUp() {
         onBackPressed();
@@ -215,22 +271,31 @@ public class TaskListActivity extends AppCompatActivity
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        outState.putInt(ARG_MODEMENU, iModeMenu);
+        outState.putString(ARG_AUDITOR_KEY, sAuditor);
+        outState.putString(ARG_LIKE, sLike);
+        outState.putInt(ARG_STATUS, mStatus.number);
         recyclerAdapter.onSaveInstanceState(outState);
-        outState.putString(ARG_AUDITOR_KEY, bArgs.getString(ARG_AUDITOR_KEY));
-        outState.putString(ARG_LIKE, bArgs.getString(ARG_LIKE, ""));
-        outState.putInt(ARG_STATUS, bArgs.getInt(ARG_STATUS, 0));
         outState.putParcelable(ARG_STATE, mLayoutManager.onSaveInstanceState());
+        outState.putInt(ARG_MODE_MENU, iModeMenu);
+        if (iModeMenu == ACTION_COPY || iModeMenu == ACTION_MOVE) {
+            outState.putStringArrayList(ARG_CHECKED, checkedIds);
+            outState.putInt(ARG_FROM, checkedFrom.number);
+        }
     }
 
     // после поворота экрана
     @Override
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
-        iModeMenu = savedInstanceState.getInt(ARG_MODEMENU, ACTION_BAR);
-        if (iModeMenu !=ACTION_BAR && mActionMode == null) mActionMode = startSupportActionMode(mActionModeCallback);
         recyclerAdapter.onRestoreInstanceState(savedInstanceState);
         mLayoutManager.onRestoreInstanceState(savedInstanceState.getParcelable(ARG_STATE)); //Состояние списка
+        iModeMenu = savedInstanceState.getInt(ARG_MODE_MENU, ACTION_BAR);
+        if (iModeMenu != ACTION_BAR && mActionMode == null) mActionMode = startSupportActionMode(mActionModeCallback);
+        if (iModeMenu == ACTION_COPY || iModeMenu == ACTION_MOVE) {
+            checkedIds = savedInstanceState.getStringArrayList(ARG_CHECKED);
+            checkedFrom = Tasks.Task.Status.toValue(savedInstanceState.getInt(ARG_FROM));
+            setVisibilityBNV(true);
+        }
     }
 
     //ВСЕ ДЛЯ МЕНЮ ДЕЙСТВИЙ:
@@ -250,10 +315,9 @@ public class TaskListActivity extends AppCompatActivity
 
             @Override
             public boolean onQueryTextSubmit(String query) {
-                if (!query.equals(bArgs.getString(ARG_LIKE, ""))) {
-                    bArgs.putString(ARG_LIKE, query);
-                    recyclerAdapter.clearChecked();
-                    getSupportLoaderManager().restartLoader(-1, bArgs, TaskListActivity.this);
+                if (!query.equals(sLike)) {
+                    sLike = query;
+                    loader();
                 }
                 return false;
             }
@@ -261,9 +325,8 @@ public class TaskListActivity extends AppCompatActivity
             @Override
             public boolean onQueryTextChange(String newText) {
                 if (newText.isEmpty()) {
-                    bArgs.putString(ARG_LIKE, "");
-                    recyclerAdapter.saveRows(-1);
-                    getSupportLoaderManager().restartLoader(-1, bArgs, TaskListActivity.this);
+                    sLike = "";
+                    loader();
                 }
                 return false;
             }
@@ -283,7 +346,6 @@ public class TaskListActivity extends AppCompatActivity
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
         //Если есть текст запроса,
-        String sLike = bArgs.getString(ARG_LIKE, "");
         if (!sLike.isEmpty()) { //то переходим в режим поиска
             MenuItem searchItem = menu.findItem(R.id.search);
             searchItem.expandActionView();
@@ -305,7 +367,8 @@ public class TaskListActivity extends AppCompatActivity
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.create:
-                startActivity(TaskActivity.intentActivityCreate(this, bArgs.getString(ARG_AUDITOR_KEY), bArgs.getInt(ARG_STATUS)));
+                startActivityForResult(TaskActivity.intentActivityCreate(this,
+                        sAuditor, mStatus), 0);
                 return true;
             case R.id.setting:
                 return true;
@@ -315,9 +378,9 @@ public class TaskListActivity extends AppCompatActivity
 
     // устанавливает видимость нижнего навигационного меню
     private void setVisibilityBNV(boolean visibility) {
-        CardView cardView = (CardView) findViewById(R.id.nav_card);
+        CardView cardView = findViewById(R.id.nav_card);
         if (visibility) {
-            BottomNavigationView bottomNavigationView = (BottomNavigationView) findViewById(R.id.navigation);
+            BottomNavigationView bottomNavigationView = findViewById(R.id.navigation);
             if (cardView.getVisibility() != View.VISIBLE) {
                 cardView.setVisibility(View.VISIBLE);
                 bottomNavigationView.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
@@ -358,19 +421,17 @@ public class TaskListActivity extends AppCompatActivity
         public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
             switch (iModeMenu) {
                 case ACTION_MODE:
-//                    mActionMode.setTitle("Title");
-//                    mActionMode.setSubtitle("Subtitle");
+                    final int checkedStatus = recyclerAdapter.getStatus();
 
                     menu.setGroupVisible(R.id.is_checked, true);
                     menu.setGroupVisible(R.id.mark, true);
 
-                    menu.setGroupEnabled(R.id.is_checked,recyclerAdapter.checkedStatus!=CHECKED_STATUS_NULL); //Доступность группы: Изменить, Копировать, Переместить, Удалить
+                    menu.setGroupEnabled(R.id.is_checked,checkedStatus != CHECKED_STATUS_NULL); //Доступность группы: Изменить, Копировать, Переместить, Удалить
 
-                    //Придется мутировать иконки - не смог запустить titn (((
                     Drawable ic_copy = getResources().getDrawable(R.drawable.ic_white_file_copy_24px);
                     Drawable ic_move = getResources().getDrawable(R.drawable.ic_white_library_books_24px);
                     Drawable ic_delete = getResources().getDrawable(R.drawable.ic_white_delete_sweep_24px);
-                    if (recyclerAdapter.checkedStatus==CHECKED_STATUS_NULL) {
+                    if (checkedStatus == CHECKED_STATUS_NULL) {
                         ic_copy.mutate().setColorFilter(Color.GRAY, PorterDuff.Mode.SRC_IN);
                         ic_move.mutate().setColorFilter(Color.GRAY, PorterDuff.Mode.SRC_IN);
                         ic_delete.mutate().setColorFilter(Color.GRAY, PorterDuff.Mode.SRC_IN);
@@ -379,7 +440,7 @@ public class TaskListActivity extends AppCompatActivity
                     (menu.findItem(R.id.move)).setIcon(ic_move);
                     (menu.findItem(R.id.delete)).setIcon(ic_delete);
                     //Триггер: Отметить/Снять
-                    (menu.findItem(R.id.allmark)).setVisible(recyclerAdapter.checkedStatus!=CHECKED_STATUS_ALL);
+                    (menu.findItem(R.id.allmark)).setVisible(checkedStatus != CHECKED_STATUS_ALL);
                     (menu.findItem(R.id.unmark)).setVisible(!(menu.findItem(R.id.allmark)).isVisible());
                     break;
                 case ACTION_COPY:
@@ -393,7 +454,6 @@ public class TaskListActivity extends AppCompatActivity
             }
 
             //Если есть текст запроса,
-            String sLike = bArgs.getString(ARG_LIKE, "");
             if (!sLike.isEmpty()) { //то переходим в режим поиска
                 MenuItem searchItem = menu.findItem(R.id.search);
                 searchItem.expandActionView();
@@ -418,39 +478,39 @@ public class TaskListActivity extends AppCompatActivity
                 case R.id.allmark: //Отметить все
                     recyclerAdapter.setCheckedAll(true);
                     mActionMode.invalidate();
-                    return true;
+                    break;
                 case R.id.unmark: //Снять все отметки
                     recyclerAdapter.setCheckedAll(false);
                     mActionMode.invalidate();
-                    return true;
+                    break;
                 case R.id.delete: //Удаление отмеченных записей
-                    int count = recyclerAdapter.tasks.checkedCount();
-                    if (count>0) {
-                        DialogFragment dialogEditGroup = DialogsReferenceManager.newInstance(TaskListActivity.this, count);
-                        dialogEditGroup.show(getSupportFragmentManager(), DialogsReferenceManager.TAG_DELETE);
-                    }
-                    return true;
+                    final int count = recyclerAdapter.checkedCount();
+                    if (count>0)
+                        DialogsReferenceManager.newInstance(TaskListActivity.this, count).
+                                show(getSupportFragmentManager(), DialogsReferenceManager.TAG_DELETE);
+                    break;
                 case R.id.copy:
-                    Snackbar.make((View) findViewById(R.id.list), R.string.msg_place_copy, Snackbar.LENGTH_LONG)
+                    Snackbar.make(findViewById(R.id.list), R.string.msg_place_copy, Snackbar.LENGTH_LONG)
                             .setAction("Action", null).show();
-                    iModeMenu = ACTION_COPY;
+                    recyclerAdapter.notifyDataSetChanged(iModeMenu = ACTION_COPY);
                     mActionMode.invalidate();
-                    recyclerAdapter.notifyDataSetChanged();
-                    recyclerAdapter.saveRows(bArgs.getInt(ARG_STATUS)); //сохраняем, что и откуда копируем
+                    checkedIds = recyclerAdapter.getChecked();
+                    checkedFrom = mStatus;
                     setVisibilityBNV(true);
-                    return true;
+                    break;
                 case R.id.move:
-                    Snackbar.make((View) findViewById(R.id.list), R.string.msg_place_move, Snackbar.LENGTH_LONG)
+                    Snackbar.make(findViewById(R.id.list), R.string.msg_place_move, Snackbar.LENGTH_LONG)
                             .setAction("Action", null).show();
-                    iModeMenu = ACTION_MOVE;
+                    recyclerAdapter.notifyDataSetChanged(iModeMenu = ACTION_MOVE);
                     mActionMode.invalidate();
-                    recyclerAdapter.notifyDataSetChanged();
-                    recyclerAdapter.saveRows(bArgs.getInt(ARG_STATUS)); //сохраняем, что и откуда перемещаем
+                    checkedIds = recyclerAdapter.getChecked();
+                    checkedFrom = mStatus;
                     setVisibilityBNV(true);
-                    return true;
+                    break;
                 default:
                     return false;
             }
+            return true;
         }
 
         // вызывается при закрытиии контекстного меню
@@ -458,7 +518,7 @@ public class TaskListActivity extends AppCompatActivity
         public void onDestroyActionMode(ActionMode mode) {
             recyclerAdapter.setCheckedAll(false); //Снимаем отметки со всех строк
             mActionMode = null;
-            iModeMenu = ACTION_BAR;
+            recyclerAdapter.notifyDataSetChanged(iModeMenu = ACTION_BAR);
             invalidateOptionsMenu();
             setVisibilityBNV(false);
         }
@@ -468,32 +528,32 @@ public class TaskListActivity extends AppCompatActivity
     @NonNull
     @Override
     public Loader<Tasks> onCreateLoader(int id, @Nullable Bundle args) {
-        if (id == -1) {
-            ((ProgressBar) findViewById(R.id.progressBar)).setVisibility(View.VISIBLE);
-            return new LoaderTasks(TaskListActivity.this, oData,
-                    args.getString(ARG_AUDITOR_KEY, ""),
-                    args.getInt(ARG_STATUS, 0),
-                    args.getString(ARG_LIKE, ""));
+        findViewById(R.id.progressBar).setVisibility(View.VISIBLE);
+        String auditor = "";
+        String like = "";
+        Tasks.Task.Status status = Tasks.Task.Status.APPROVED;
+        if (args!=null) {
+            auditor = args.getString(ARG_AUDITOR_KEY);
+            like = args.getString(ARG_LIKE);
+            status = Tasks.Task.Status.toValue(args.getInt(ARG_STATUS));
         }
-        else return null;
+        return new LoaderTasks(TaskListActivity.this, oData, auditor, status, like);
     }
 
     @Override
     public void onLoadFinished(@NonNull Loader<Tasks> loader, Tasks data) {
-        if (loader.getId() == -1) {
-            recyclerAdapter.load(data);
-            if (iModeMenu == ACTION_BAR) invalidateOptionsMenu();
-            else mActionMode.invalidate();
-            ((ProgressBar) findViewById(R.id.progressBar)).setVisibility(View.INVISIBLE);
-        }
+        recyclerAdapter.load(data);
+        if ((iModeMenu == ACTION_COPY || iModeMenu == ACTION_MOVE) && !checkedIds.isEmpty())
+            recyclerAdapter.setChecked(checkedIds);
+        if (iModeMenu == ACTION_BAR) invalidateOptionsMenu();
+        else mActionMode.invalidate();
+        findViewById(R.id.progressBar).setVisibility(View.INVISIBLE);
     }
 
     @Override
     public void onLoaderReset(@NonNull Loader<Tasks> loader) {
-        if (loader.getId() == -1) {
-            recyclerAdapter.load(null);
-            ((ProgressBar) findViewById(R.id.progressBar)).setVisibility(View.INVISIBLE);
-        }
+        recyclerAdapter.load(null);
+        findViewById(R.id.progressBar).setVisibility(View.INVISIBLE);
     }
 
     //ВСЕ интеракшин ДЛЯ ДИАЛОГА ОБ УДАЛЕНИИ
@@ -503,7 +563,17 @@ public class TaskListActivity extends AppCompatActivity
     }
 
     @Override
-    public void onCreatGroupPositiveClick(String name) {
+    public void onCreateGroupPositiveClick(String name) {
+        //не используем
+    }
+
+    @Override
+    public void onEditElementPositiveClick(String name) {
+        //не используем
+    }
+
+    @Override
+    public void onCreateElementPositiveClick(String name) {
         //не используем
     }
 
@@ -519,325 +589,62 @@ public class TaskListActivity extends AppCompatActivity
         recyclerAdapter.deleteRows(false); //Снять отметку на удаление
     }
 
-    //Адаптер для списка. Для заполнения списка используется загрузчик LoaderItems
-    private class RecyclerAdapter extends RecyclerView.Adapter<ViewHolderTasks> {
-
-        private final Tasks tasks; //Список заданий
-        private int checkedStatus; //Состояние отмеченных заданий в списке заданий
-        private ArrayList<String> expandIds = null; //Список id развернутых заданий
-        private ArrayList<String> checkedIds = null; //Список id отмеченных для копирования/переноса
-        private int checkedFrom; //Вкладка (статус заданий), откуда перемещаем/копируем отмеченные задания
-
-        private RecyclerAdapter() {
-            tasks = new Tasks();
+    @Override
+    public void onClick(View v) {
+        final Tasks.Task task = (Tasks.Task) v.getTag();
+        switch (v.getId()) {
+            case R.id.item:
+                startActivityForResult(
+                        TaskActivity.intentActivityEdit(this, task.id), 0);
+                break;
+            case R.id.checked:
+                task.checked = ((CheckBox) v).isChecked();
+                mActionMode.invalidate();
+                break;
+            case R.id.expand:
+                task.expand = !task.expand;
+                recyclerAdapter.notifyItemChanged(task);
+                break;
         }
+    }
 
-        // восстанавливает все, что нужно адаптеру, после поворота экрана
-        private void onRestoreInstanceState(Bundle savedInstanceState) {
-            checkedStatus = savedInstanceState.getInt(ARG_CHECKED_STATUS);
-            expandIds = savedInstanceState.getStringArrayList(ARG_EXPAND);
-            if (iModeMenu != ACTION_BAR) {
-                checkedIds = savedInstanceState.getStringArrayList(ARG_CHECKED);
-                checkedFrom = savedInstanceState.getInt(ARG_FROM);
-            }
+    @Override
+    public boolean onLongClick(View v) {
+        if (mActionMode != null) {
+            return false;
         }
+        recyclerAdapter.setCheckedAll(false); //Снимаем отметки со всех строк
+        ((Tasks.Task) v.getTag()).checked = true; //Отмечаем на которой долго нажимали
+        iModeMenu = ACTION_MODE;
+        recyclerAdapter.getStatus();
+        recyclerAdapter.notifyDataSetChanged(iModeMenu);
+        // Start the CAB using the ActionMode.Callback defined above
+        mActionMode = startSupportActionMode(mActionModeCallback);
 
-        // сохраняет все, что нужно адаптеру, перед поворотом экрана
-        private void onSaveInstanceState(Bundle outState) {
-            outState.putInt(ARG_CHECKED_STATUS, checkedStatus);
-            outState.putStringArrayList(ARG_EXPAND, tasks.getExpand());
-            if (iModeMenu != ACTION_BAR) {
-                outState.putStringArrayList(ARG_CHECKED, tasks.getChecked());
-                outState.putInt(ARG_FROM, checkedFrom);
-            }
-        }
+        return true;
+    }
 
-        //Загружает список заданий в адаптер
-        private void load(Tasks data) {
-            if (!tasks.isEmpty()) tasks.clear();
-            if (data!=null) tasks.addAll(data);
-            if (iModeMenu != ACTION_BAR) {
-                tasks.setChecked(checkedIds);
-                updateStatus();
-            }
-            tasks.setExpand(expandIds); expandIds = null;
-            notifyDataSetChanged();
-        }
-
-        //обновляет статус отмеченных заданий
-        private void updateStatus() {
-            int count = count = tasks.size(); //Общее количество заданий
-            int checked = tasks.checkedCount(); //Из них отмеченных
-            //Сравниваем результат
-            if (checked==0 || count==0) checkedStatus = CHECKED_STATUS_NULL;
-            else if (checked==count) checkedStatus = CHECKED_STATUS_ALL;
-            else checkedStatus = CHECKED_STATUS_SOME;
-            mActionMode.invalidate();
-        }
-
-        //Сохраняет во внешних переменных список отмеченных элементов
-        private void saveRows(int status) {
-            checkedIds = tasks.getChecked();
-            checkedFrom = status;
-        }
-
-        //Завершает операции копирования и перемещения строк
-        private void stopRows() {
-            notifyDataSetChanged();
-            checkedIds = null;
-            updateStatus();
-        }
-
-        //Класс для выполнения операций копирования заданий в новом потоке с последующим обновлением рециклервью
-        private class copyRowsAsyncTask extends AsyncTask<Integer, Void, Void> {
-            protected void onPreExecute() {
-                ((ProgressBar) findViewById(R.id.progressBar)).setVisibility(View.VISIBLE);
-            }
-            protected Void doInBackground(Integer... status) {
-                //Перенос заданий по списку
-                for (String id : checkedIds) tasks.add(oData.copyTask(id, status[0]));
-                return null;
-            }
-            protected void onPostExecute(Void voids) {
-                stopRows();
-                ((ProgressBar) findViewById(R.id.progressBar)).setVisibility(View.INVISIBLE);
-            }
-        }
-
-        //Копирует отмеченные задания с возможным с изменением статуса
-        private void copyRows() {
-            new copyRowsAsyncTask().execute(bArgs.getInt(ARG_STATUS));
-        }
-
-        //Класс для выполнения операций перемещения заданий в новом потоке с последующим обновлением рециклервью
-        private class moveRowsAsyncTask extends AsyncTask<Integer, Void, Void> {
-            protected void onPreExecute() {
-                ((ProgressBar) findViewById(R.id.progressBar)).setVisibility(View.VISIBLE);
-            }
-            protected Void doInBackground(Integer... status) {
-                //Перенос заданий по списку
-                for (String id : checkedIds) tasks.add(oData.moveTask(id, status[0]));
-                return null;
-            }
-            protected void onPostExecute(Void voids) {
-                stopRows();
-                ((ProgressBar) findViewById(R.id.progressBar)).setVisibility(View.INVISIBLE);
-            }
-        }
-
-        //Перемещает отмеченные - меняем статус заданий
-        private void moveRows() {
-            int checkedTo = bArgs.getInt(ARG_STATUS);
-            if (checkedTo != checkedFrom) new moveRowsAsyncTask().execute(checkedTo);
-            else stopRows();
-        }
-
-        //Класс для выполнения операций пометки на удаление заданий в новом потоке с последующим обновлением рециклервью
-        private class deleteRowsAsyncTask extends AsyncTask<Boolean, Void, Void> {
-            protected void onPreExecute() {
-                ((ProgressBar) findViewById(R.id.progressBar)).setVisibility(View.VISIBLE);
-            }
-            protected Void doInBackground(Boolean... delete) {
-                //Пометка на удаление отмеченных заданий
-                int i = 0;
-                for (Object task: tasks) {
-                    if (((Tasks.Task) task).checked)
-                        tasks.set(i, oData.deleteTask(((Tasks.Task) task).id, delete[0]));
-                    i++;
-                }
-                return null;
-            }
-            protected void onPostExecute(Void voids) {
-                notifyDataSetChanged();
-                ((ProgressBar) findViewById(R.id.progressBar)).setVisibility(View.INVISIBLE);
-            }
-        }
-
-        // Помечает на удаление помеченные строки
-        private void deleteRows(boolean delete) {
-            new deleteRowsAsyncTask().execute(delete);
-        }
-
-        //Помечает/отменяет отметки всех видимых элементов
-        private void setCheckedAll(boolean checked) {
-            tasks.setCheckedAll(checked);
-            notifyDataSetChanged();
-            checkedStatus = checked?CHECKED_STATUS_ALL:CHECKED_STATUS_NULL;
-        }
-
-        //Очищает список отмеченных после ввода строки отбора
-        private void clearChecked() {
-            if (!(checkedIds == null || checkedIds.isEmpty())) checkedIds.clear();
-        }
-
-        //Возвращает вью пункта списка
-        @NonNull
-        @Override
-        public ViewHolderTasks onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            View view = LayoutInflater.from(parent.getContext())
-                    .inflate(R.layout.item_task_list, parent, false);
-            return new ViewHolderTasks(view);
-        }
-
-        //Заполняет вью пунта списка
-        @Override
-        public void onBindViewHolder(@NonNull ViewHolderTasks holder, int position) {
-            //Текущий пункт
-            holder.task = (Tasks.Task) tasks.get(position);
-
-            //Иконки
-            holder.deletedView.setVisibility(holder.task.deleted? View.VISIBLE: View.INVISIBLE);
-            holder.postedView.setVisibility(holder.task.posted? View.VISIBLE: View.INVISIBLE);
-            holder.thumbView.setVisibility(View.INVISIBLE); //Пока невидима, когда будет окончательно проведенная, выведим картинку
-
-            //Выделяем карточку цветом фона цветом в зависимости от статуса и состояния
-            switch (bArgs.getInt(ARG_STATUS)) {
-                case 2: //Проведен
-                    if (holder.task.deleted) //Помеченные на удаление - серым
-                        holder.cardView.setBackgroundResource(R.color.colorBackgroundGrey);
-                    else if (holder.task.posted) { //Проведенные
-                        holder.thumbView.setVisibility(View.VISIBLE);
-                        if (holder.task.achieved) { //Достигшие цели - зеленым + иконка
-                            holder.cardView.setBackgroundResource(R.color.colorBackgroundGreen);
-                            holder.thumbView.setImageResource(R.drawable.ic_black_thumb_up_alt_24px);
-                        } else {//Не достигшие цели - красным
-                            holder.cardView.setBackgroundResource(R.color.colorBackgroundRed);
-                            holder.thumbView.setImageResource(R.drawable.ic_black_thumb_down_alt_24px);
-                        }
-                    }
-                    else //Остальное - белым
-                        holder.cardView.setBackgroundResource(R.color.cardview_light_background);
-                    break;
-                case 0: //Утвержден
-                case 1: //В работе
-                default:
-                    if (holder.task.deleted) //Помеченные на удаление - серым
-                        holder.cardView.setBackgroundResource(R.color.colorBackgroundGrey);
-                    else if (holder.task.posted) //Проведенные - желтым
-                        holder.cardView.setBackgroundResource(R.color.colorBackgroundYellow);
-                    else //Остальное - белым
-                        holder.cardView.setBackgroundResource(R.color.cardview_light_background);
-            }
-            //Дата и время задания, вид и объект аудита
-            holder.dateView.setText(getDateInstance().format(holder.task.date));
-            holder.objectView.setText(holder.task.object_name);
-            holder.typeView.setText(holder.task.type_name);
-            //Номер задания, организация, строка с аналитикой, комментарий, появляются в развернутом пункте
-            if (!holder.task.expand) { //Свернутый пукнт
-                holder.expandView.setImageResource(R.drawable.ic_black_expand_more_24px);
-                holder.numberView.setVisibility(View.GONE);
-                holder.timeView.setVisibility(View.GONE);
-                holder.analyticsView.setVisibility(View.GONE);
-                holder.commentView.setVisibility(View.GONE);
-            }
-            else { //Развернутый пукнт
-                holder.expandView.setImageResource(R.drawable.ic_black_expand_less_24px);
-                holder.numberView.setVisibility(View.VISIBLE);
-                holder.numberView.setText(holder.task.number);
-                holder.timeView.setVisibility(View.VISIBLE);
-                holder.timeView.setText(getTimeInstance().format(holder.task.date));
-                holder.analyticsView.setVisibility(View.VISIBLE);
-                holder.analyticsView.setText(holder.task.analytic_names);
-                holder.commentView.setVisibility(View.VISIBLE);
-                holder.commentView.setText(holder.task.comment);
-            }
-
-            //Чекбокс и щелчки на задании:
-            switch (iModeMenu) {
-                case ACTION_BAR: //Обычный режим:
-                    // чекбокс невидим, можно щелкнуть на задании для его редактирования, можно долго щелкнуть для перехода в режим редактирования списка заданий
-                    holder.checkedView.setVisibility(View.INVISIBLE);
-                    holder.checkedView.setTag(null);
-                    holder.checkedView.setOnClickListener(null);
-                    // короткий щелчок на задании - открытие формы задания
-                    holder.itemView.setTag(holder.task);
-                    holder.itemView.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            Tasks.Task task = ((Tasks.Task) v.getTag());
-                            startActivity(TaskActivity.intentActivityEdit(TaskListActivity.this, task.id));
-                        }
-                    });
-                    // длинный щелчок - переход в режим редактирования списка заданий
-                    holder.itemView.setOnLongClickListener(new View.OnLongClickListener() {
-                        // Вызывается, когда пользователь долго жмет на пункт для перехода в режим редактирования - action mode
-                        public boolean onLongClick(View view) {
-                            if (mActionMode != null) return false;
-                            tasks.setCheckedAll(false); //Снимаем отметки со всех строк
-                            Tasks.Task task = ((Tasks.Task) view.getTag());
-                            task.checked=true; //Отмечаем задание на котором долго нажимали
-                            notifyDataSetChanged();
-                            checkedStatus = CHECKED_STATUS_ONE;
-                            iModeMenu = ACTION_MODE; //Включаем контекстное меню
-                            mActionMode = startSupportActionMode(mActionModeCallback);
-                            return true;
-                        }
-                    });
-                    break;
-                case ACTION_MODE: //Режим контектного меню:
-                    // чекбокс доступен
-                    holder.checkedView.setVisibility(View.VISIBLE);
-                    holder.checkedView.setEnabled(true);
-                    holder.checkedView.setChecked(holder.task.checked);
-                    holder.checkedView.setTag(holder.task);
-                    holder.checkedView.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            Tasks.Task task = (Tasks.Task) v.getTag();
-                            task.checked = ((CheckBox) v).isChecked();
-                            updateStatus(); //обновляем статус отмеченных заданий для меню действий
-                        }
-                    });
-                    // недоступны щелчки на задании
-                    holder.itemView.setTag(null);
-                    holder.itemView.setOnClickListener(null);
-                    holder.itemView.setOnLongClickListener(null);
-                    break;
-                case ACTION_COPY:
-                case ACTION_MOVE: //Режим копирования или переноса
-                    // чекбокс видим, но недоступен для отмеченных заданий, для остальных чекбокс невидим
-                    holder.checkedView.setVisibility(holder.task.checked? View.VISIBLE: View.INVISIBLE);
-                    holder.checkedView.setChecked(true);
-                    holder.checkedView.setEnabled(false);
-                    holder.checkedView.setTag(null);
-                    holder.checkedView.setOnClickListener(null);
-                    // недоступны щелчки на задании
-                    holder.itemView.setTag(null);
-                    holder.itemView.setOnClickListener(null);
-                    holder.itemView.setOnLongClickListener(null);
-                    break;
-            }
-            //Кнопка, свернуть/развернуть
-            holder.expandView.setTag(holder.task);
-            holder.expandView.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    Tasks.Task task = (Tasks.Task) v.getTag();
-                    task.expand = !task.expand;
-                    notifyItemChanged(tasks.indexOf(task));
-                }
-            });
-        }
-
-        //Возвращает количество пунктов
-        @Override
-        public int getItemCount() {
-            return tasks.size();
-        }
+    /**
+     * Вызывается после завершения операций копирования или перемещения
+     */
+    @Override
+    public void onInvalidateActivity() {
+        mActionMode.invalidate();
     }
 
     //Асинхронный загрузчик списка заданий
     private static class LoaderTasks extends AsyncTaskLoader<Tasks> {
 
         AuditOData oData;
-        String auditor_key;
-        int status;
+        String auditor;
+        Tasks.Task.Status status;
         String like;
 
-        private LoaderTasks(Context context, AuditOData oData, String auditor_key, int status, String like) {
+        private LoaderTasks(Context context, AuditOData oData, String auditor, Tasks.Task.Status status,
+                            String like) {
             super(context);
             this.oData = oData;
-            this.auditor_key = auditor_key;
+            this.auditor = auditor;
             this.status = status;
             this.like = like;
         }
@@ -850,7 +657,9 @@ public class TaskListActivity extends AppCompatActivity
 
         @Override
         public Tasks loadInBackground() {
-            return oData.getTasks(auditor_key, status, like);
+            return oData.getTasks(auditor, status, like);
         }
     }
+
 }
+//Фома2018

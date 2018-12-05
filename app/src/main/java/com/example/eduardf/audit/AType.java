@@ -56,7 +56,7 @@ public class AType {
 
         @Override
         public String toString() {
-            return this.desc;
+            return desc;
         }
     };
 }

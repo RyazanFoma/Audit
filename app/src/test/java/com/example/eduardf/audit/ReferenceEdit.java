@@ -319,7 +319,7 @@ public class ReferenceEdit extends AppCompatActivity implements View.OnClickList
                 Items.Item i = recyclerAdapter.checkedItemFirst();
                 if (i.folder) { //Редактирование наименований любых папок
                     DialogFragment dialogEditGroup = DialogsReferenceManager.newInstance(ReferenceEdit.this, i.name);
-                    dialogEditGroup.show(getSupportFragmentManager(), DialogsReferenceManager.TAG_EDIT);
+                    dialogEditGroup.show(getSupportFragmentManager(), DialogsReferenceManager.TAG_EDIT_GROUP);
                     return true;
                 }
                 else switch (sTable) {
@@ -452,7 +452,7 @@ public class ReferenceEdit extends AppCompatActivity implements View.OnClickList
         switch (item.getItemId()) {
             case R.id.create_group:
                 DialogFragment dialogEditGroup = DialogsReferenceManager.newInstance(this);
-                dialogEditGroup.show(getSupportFragmentManager(), DialogsReferenceManager.TAG_CREATE);
+                dialogEditGroup.show(getSupportFragmentManager(), DialogsReferenceManager.TAG_CREATE_GROUP);
                 return true;
             case R.id.close:
                 iModeMenu = ACTION_BAR;
@@ -520,7 +520,7 @@ public class ReferenceEdit extends AppCompatActivity implements View.OnClickList
 
     //вызывается при создании группы
     @Override
-    public void onCreatGroupPositiveClick(String name) {
+    public void onCreateGroupPositiveClick(String name) {
 //        Items.Item item = new Items.Item(NOT_SELECTED, true, NOT_SELECTED, NOT_SELECTED, myStack.peek().id, name, "");
 //        item.id = db.insertRecord(sTable, item, bArgs.getString(ARG_KEY_NAME), bArgs.getInt(ARG_KEY, NOT_SELECTED));
 //        myStack.push(item);

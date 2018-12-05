@@ -13,8 +13,10 @@ import android.widget.LinearLayout;
 //Диалог для изменения наименования группы
 public class DialogsReferenceManager extends DialogFragment {
 
-    public static final String TAG_EDIT = "edit"; //Режим редактирования группы
-    public static final String TAG_CREATE = "create"; //Режим создания группы
+    public static final String TAG_EDIT_GROUP = "edit_group"; //Режим редактирования группы
+    public static final String TAG_CREATE_GROUP = "create_group"; //Режим создания группы
+    public static final String TAG_EDIT = "edit_element"; //Режим редактирования элемента
+    public static final String TAG_CREATE = "create_element"; //Режим создания элемента
     public static final String TAG_DELETE = "delete"; //Режим удаления
 
     private static final String ARG_NAME = "name"; //Аргумент Наименование
@@ -24,28 +26,27 @@ public class DialogsReferenceManager extends DialogFragment {
     private static DialogInteractionListener mListener; //Обработчик нажатия Изменить
     private EditText name; //Текстовое поле с наименованием
 
-    //Создает диалог для редактирвоания группы
+    //Создает диалог для редактирвоания
     static DialogsReferenceManager newInstance(Context context, String name) {
         instanceOf(context);
-        DialogsReferenceManager f = new DialogsReferenceManager();
+        final DialogsReferenceManager f = new DialogsReferenceManager();
         Bundle args = new Bundle();
         args.putString(ARG_NAME, name); //Старое имя группы
         f.setArguments(args);
         return f;
     }
 
-    //Создает диалог для создания группы
+    //Создает диалог для создания
     static DialogsReferenceManager newInstance(Context context) {
         instanceOf(context);
-        DialogsReferenceManager f = new DialogsReferenceManager();
-        return f;
+        return new DialogsReferenceManager();
     }
 
     //Создает диалог для удаления помеченных объектов
     static DialogsReferenceManager newInstance(Context context, int count) {
         instanceOf(context);
-        DialogsReferenceManager f = new DialogsReferenceManager();
-        Bundle args = new Bundle();
+        final DialogsReferenceManager f = new DialogsReferenceManager();
+        final Bundle args = new Bundle();
         args.putInt(ARG_COUNT, count); //Количество объектов для удаления
         f.setArguments(args);
         return f;
@@ -63,10 +64,12 @@ public class DialogsReferenceManager extends DialogFragment {
 
     //Интерфейс для нажатия кнопки Изменить. Должен присутствовать в родительском классе
     public interface DialogInteractionListener {
-        public void onEditGroupPositiveClick(String name);
-        public void onCreatGroupPositiveClick(String name);
-        public void onDeletePositiveClick();
-        public void onDeleteNegativeClick();
+        void onEditGroupPositiveClick(String name);
+        void onCreateGroupPositiveClick(String name);
+        void onEditElementPositiveClick(String name);
+        void onCreateElementPositiveClick(String name);
+        void onDeletePositiveClick();
+        void onDeleteNegativeClick();
     }
 
     //Строит диалог
@@ -100,7 +103,7 @@ public class DialogsReferenceManager extends DialogFragment {
                             }
                         });
                 break;
-            case TAG_CREATE:
+            case TAG_CREATE_GROUP:
                 //Поле для ввода наименования
                 name = new EditText(getActivity());
                 name.setLayoutParams(new LinearLayout.LayoutParams(
@@ -118,12 +121,35 @@ public class DialogsReferenceManager extends DialogFragment {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
                                 if (which == Dialog.BUTTON_POSITIVE && name.getText().length() > 0) {
-                                    mListener.onCreatGroupPositiveClick(name.getText().toString());
+                                    mListener.onCreateGroupPositiveClick(name.getText().toString());
                                 }
                             }
                         });
                 break;
-            case TAG_EDIT:
+            case TAG_CREATE:
+                //Поле для ввода наименования
+                name = new EditText(getActivity());
+                name.setLayoutParams(new LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.MATCH_PARENT));
+                name.setHint(R.string.msg_enter_name);
+                if (savedInstanceState!=null) { //после поворота экрна
+                    name.setText(savedInstanceState.getString(ARG_NAME));
+                    name.setSelection(savedInstanceState.getInt(ARG_START), savedInstanceState.getInt(ARG_END));
+                }
+                builder.setTitle(R.string.ttl_create)
+                        .setIcon(R.drawable.ic_black_add_circle_outline_24px)
+                        .setView(name)
+                        .setPositiveButton(R.string.btn_addition, new Dialog.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                if (which == Dialog.BUTTON_POSITIVE && name.getText().length() > 0) {
+                                    mListener.onCreateElementPositiveClick(name.getText().toString());
+                                }
+                            }
+                        });
+                break;
+            case TAG_EDIT_GROUP:
                 //Поле для ввода наименования
                 name = new EditText(getActivity());
                 name.setLayoutParams(new LinearLayout.LayoutParams(
@@ -145,6 +171,32 @@ public class DialogsReferenceManager extends DialogFragment {
                             public void onClick(DialogInterface dialog, int which) {
                                 if (which == Dialog.BUTTON_POSITIVE && name.getText().length() > 0) {
                                     mListener.onEditGroupPositiveClick(name.getText().toString());
+                                }
+                            }
+                        });
+                break;
+            case TAG_EDIT:
+                //Поле для ввода наименования
+                name = new EditText(getActivity());
+                name.setLayoutParams(new LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.MATCH_PARENT));
+                name.setHint(R.string.msg_enter_name);
+                if (savedInstanceState==null) { //при первом создании
+                    name.setText(getArguments().getString(ARG_NAME));
+                }
+                else { //после поворота экрна
+                    name.setText(savedInstanceState.getString(ARG_NAME));
+                    name.setSelection(savedInstanceState.getInt(ARG_START), savedInstanceState.getInt(ARG_END));
+                }
+                builder.setTitle(R.string.ttl_edit)
+                        .setIcon(R.drawable.ic_black_edit_24px)
+                        .setView(name)
+                        .setPositiveButton(R.string.btn_change, new Dialog.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                if (which == Dialog.BUTTON_POSITIVE && name.getText().length() > 0) {
+                                    mListener.onEditElementPositiveClick(name.getText().toString());
                                 }
                             }
                         });

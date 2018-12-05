@@ -12,8 +12,7 @@ import android.widget.TextView;
 //Хранилище для RecyclerView
 public class ViewHolderTasks extends RecyclerView.ViewHolder {
     public final View mView; // общий контейнер
-    public final LinearLayout itemView; // контейнер пункта
-    public final CardView cardView; // карточка
+    public final CardView itemView; // карточка
     public final TextView dateView; // дата
     public final TextView timeView; // время
     public final TextView numberView; // номер
@@ -31,20 +30,19 @@ public class ViewHolderTasks extends RecyclerView.ViewHolder {
     public ViewHolderTasks(View view) {
         super(view);
         this.mView = view;
-        itemView = (LinearLayout) view.findViewById(R.id.item);
-        cardView = (CardView) view.findViewById(R.id.card);
-        dateView = (TextView) view.findViewById(R.id.date);
-        timeView = (TextView) view.findViewById(R.id.time);
-        numberView = (TextView) view.findViewById(R.id.number);
-        typeView = (TextView) view.findViewById(R.id.type);
-        objectView = (TextView) view.findViewById(R.id.object);
-        analyticsView = (TextView) view.findViewById(R.id.analytics);
-        commentView = (TextView) view.findViewById(R.id.comment);
-        deletedView = (ImageView) view.findViewById(R.id.deleted);
-        postedView = (ImageView) view.findViewById(R.id.posted);
-        thumbView = (ImageView) view.findViewById(R.id.thumb);
-        checkedView = (CheckBox) view.findViewById(R.id.checked);
-        expandView = (ImageView) view.findViewById(R.id.expand);
+        itemView = view.findViewById(R.id.item);
+        dateView = view.findViewById(R.id.date);
+        timeView = view.findViewById(R.id.time);
+        numberView = view.findViewById(R.id.number);
+        typeView = view.findViewById(R.id.type);
+        objectView = view.findViewById(R.id.object);
+        analyticsView = view.findViewById(R.id.analytics);
+        commentView = view.findViewById(R.id.comment);
+        deletedView = view.findViewById(R.id.deleted);
+        postedView = view.findViewById(R.id.posted);
+        thumbView = view.findViewById(R.id.thumb);
+        checkedView = view.findViewById(R.id.checked);
+        expandView = view.findViewById(R.id.expand);
     }
 
     @Override

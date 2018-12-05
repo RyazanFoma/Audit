@@ -17,8 +17,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import org.apache.olingo.client.api.communication.ODataClientErrorException;
-import org.apache.olingo.client.api.communication.ODataServerErrorException;
 import org.apache.olingo.client.api.communication.request.cud.UpdateType;
 import org.apache.olingo.client.api.communication.response.ODataEntityCreateResponse;
 import org.apache.olingo.client.api.communication.response.ODataEntityUpdateResponse;
@@ -40,34 +38,80 @@ import org.apache.olingo.commons.api.format.ContentType;
 //Класс для доступа в 1С:Аудитор через OData
 public class AuditOData{
 
-    public static final String EMPTY_KEY = "00000000-0000-0000-0000-000000000000"; //Пустая ссылка
+    static final String EMPTY_KEY = "00000000-0000-0000-0000-000000000000"; //Пустая ссылка
 
     private static final String WITHOUT_TABLE = "**";
-    public static final String DATE_FORMAT_1C = "yyyy-MM-dd'T'HH:mm:ss"; //Шаблон формата даты для 1С
+    static final String DATE_FORMAT_1C = "yyyy-MM-dd'T'HH:mm:ss"; //Шаблон формата даты для 1С
 
     //Виды иерархии справочников:
-    public static final int NOT_HIERARCHY = 0; // нет иерархии
-    public static final int FOLDER_HIERARCHY = 1; // папок и элементов
-    public static final int ELEMENT_HIERARCHY = 2; // только элеметов
+    private static final int NOT_HIERARCHY = 0; // нет иерархии
+    private static final int FOLDER_HIERARCHY = 1; // папок и элементов
+    private static final int ELEMENT_HIERARCHY = 2; // только элеметов
 
-    //Коллекции
-    private static final String ENTITY_SET_TASK = "Document_Аудит_ЗаданиеНаАудит";
-    private static final String ENTITY_SET_TASK_ANALYTIC = "Document_Аудит_ЗаданиеНаАудит_АналитикаОбъекта";
-    private static final String ENTITY_SET_TASK_INDICATOR = "Document_Аудит_ЗаданиеНаАудит_Показатели";
-    private static final String ENTITY_SET_AUDITOR = "Catalog_Аудит_Аудиторы";
-    public static final String ENTITY_SET_TYPE = "Catalog_Аудит_ВидыАудитов";
-    public static final String ENTITY_SET_ORGANIZATION = "Catalog_Аудит_Организации";
-    public static final String ENTITY_SET_OBJECT = "Catalog_Аудит_Объекты";
-    public static final String ENTITY_SET_RESPONSIBLE = "Catalog_Аудит_Ответственные";
-    public static final String ENTITY_SET_ANALYTIC = "Catalog_Аудит_АналитикиОбъектов";
-    public static final String ENTITY_SET_INDICATOR = "Catalog_Аудит_ПоказателиАудитов";
-    private static final String ENTITY_SET_SUBJECT = "Catalog_Аудит_ПредметыАудитов";
-    private static final String ENTITY_SET_INDICATOR_STANDARD = "InformationRegister_Аудит_НормативыЗначенийПоказателей";
-    private static final String ENTITY_SET_UNIT = "Catalog_Аудит_ЕдиницыИзмерения";
+    //Все виды таблицы 1С
+    enum Set {
+        AUDITOR("Аудиторы", "Catalog_Аудит_Аудиторы", ELEMENT_HIERARCHY, false),
+        TYPE("ВидыАудитов", "Catalog_Аудит_ВидыАудитов", FOLDER_HIERARCHY, false),
+        ORGANIZATION("Организации", "Catalog_Аудит_Организации", ELEMENT_HIERARCHY, true),
+        OBJECT("Объекты", "Catalog_Аудит_Объекты", ELEMENT_HIERARCHY, true),
+        RESPONSIBLE("Ответственные", "Catalog_Аудит_Ответственные", ELEMENT_HIERARCHY, true),
+        ANALYTIC("АналитикиОбъектов", "Catalog_Аудит_АналитикиОбъектов", ELEMENT_HIERARCHY, true),
+        INDICATOR("ПоказателиАудитов", "Catalog_Аудит_ПоказателиАудитов", FOLDER_HIERARCHY, false),
+        SUBJECT("ПредметыАудитов", "Catalog_Аудит_ПредметыАудитов", FOLDER_HIERARCHY, false),
+        UNIT("ЕдиницыИзмерения", "Catalog_Аудит_ЕдиницыИзмерения", ELEMENT_HIERARCHY, true),
+        INDICATOR_STANDARD("НормативыПоказателей", "InformationRegister_Аудит_НормативыЗначенийПоказателей", NOT_HIERARCHY, false),
+        TASK("Задания", "Document_Аудит_ЗаданиеНаАудит", NOT_HIERARCHY, true),
+        TASK_ANALYTIC("АналитикаЗаданий", "Document_Аудит_ЗаданиеНаАудит_АналитикаОбъекта", NOT_HIERARCHY, true),
+        TASK_INDICATOR("ПоказателиЗаданий", "Document_Аудит_ЗаданиеНаАудит_Показатели", NOT_HIERARCHY, true);
+
+        String id;
+        String name;
+        int hierarchy;
+        boolean editable;
+
+        private Set(String id, String name, int hierarchy, boolean editable) {
+            this.id = id;
+            this.name = name;
+            this.hierarchy = hierarchy;
+            this.editable = editable;
+        }
+
+        @Override
+        public String toString() {
+            return this.id;
+        }
+
+        /**
+         * Определение значения перечесления по идентификатору
+         * @param key - идентификатор
+         * @return - значение перечисления
+         */
+        static public Set toValue(String key) {
+            if (key == null) return null;
+            switch (key) {
+                case "Аудиторы": return AUDITOR;
+                case "ВидыАудитов": return TYPE;
+                case "Организации": return ORGANIZATION;
+                case "Объекты": return OBJECT;
+                case "Ответственные": return RESPONSIBLE;
+                case "АналитикиОбъектов": return ANALYTIC;
+                case "ПоказателиАудитов": return INDICATOR;
+                case "ПредметыАудитов": return SUBJECT;
+                case "ЕдиницыИзмерения": return UNIT;
+                case "НормативыПоказателей": return INDICATOR_STANDARD;
+                case "Задания": return TASK;
+                case "АналитикаЗаданий": return TASK_ANALYTIC;
+                case "ПоказателиЗаданий": return TASK_INDICATOR;
+                default: return null;
+            }
+        }
+
+    }
 
     //Фильтр по справочнику аудиторов, чтобы отфильтровать пользователей мобильных приложений
     private static final String FILTER_AUDITORS = "ParentType eq 'СправочникСсылка.Аудит_Аудиторы'";
 
+    //Поля справочника аудиторы
     private static final String USERS_PASSWORD = "Пароль";
 
     //Порядок соритровки
@@ -93,17 +137,16 @@ public class AuditOData{
     private static final String COMMON_MAXIMUM = "МаксимальноеЗначение";
     private static final String COMMON_ERROR = "Погрешность";
     private static final String COMMON_ORDER = "Приоритет";
+    //Суффикс к свойству с типом
     private static final String _TYPE = "_Type";
-    public static final String UNDEFINED_TYPE = "StandardODATA.Undefined";
-    public static final String DOUBLE_TYPE = "Edm.Double";
-    public static final String BOOLEAN_TYPE = "Edm.Boolean";
-    public static final String DATE_TYPE = "Edm.DateTime";
+    //Типы данных в показателях
+    private static final String UNDEFINED_TYPE = "StandardODATA.Undefined";
+    private static final String DOUBLE_TYPE = "Edm.Double";
+    private static final String BOOLEAN_TYPE = "Edm.Boolean";
+    private static final String DATE_TYPE = "Edm.DateTime";
 
     //Поля заданий на аудит
     private static final String TASK_STATUS = "Статус";
-        private static final String ENUM_STATUS_0 = "Утвержден";
-        private static final String ENUM_STATUS_1 = "ВРаботе";
-        private static final String ENUM_STATUS_2 = "Проведен";
     private static final String TASK_DATE = "Date";
     private static final String TASK_NUMBER = "Number";
     private static final String TASK_AUDITOR_KEY = "Аудитор_Key";
@@ -158,9 +201,34 @@ public class AuditOData{
     }
 
     //Возвращает значение в виде объекта, определенного вида
-    private Object getValue(@NonNull ClientProperty value, @NonNull ClientProperty type) {
-        final String string = value.getPrimitiveValue().toString();
-        switch (type.getPrimitiveValue().toString()) {
+    private Object getValue(ClientComplexValue complexValue, String name) {
+        final String string = complexValue.get(name).getPrimitiveValue().toString();
+        switch (complexValue.get(name+_TYPE).getPrimitiveValue().toString()) {
+            case BOOLEAN_TYPE:
+                return string.equals("true");
+            case DOUBLE_TYPE:
+                try {
+                    return Float.parseFloat(string);
+                }
+                catch (NumberFormatException e) {
+                    break;
+                }
+            case DATE_TYPE:
+                try {
+                    return (new SimpleDateFormat(DATE_FORMAT_1C, Locale.US)).parse(string);
+                } catch (ParseException e) {
+                    break;
+                }
+            case UNDEFINED_TYPE: default:
+                break;
+        }
+        return null;
+    }
+
+    //Возвращает значение в виде объекта, определенного вида
+    private Object getValue(ClientEntity entity, String name) {
+        final String string = entity.getProperty(name).getPrimitiveValue().toString();
+        switch (entity.getProperty(name+_TYPE).getPrimitiveValue().toString()) {
             case BOOLEAN_TYPE:
                 return string.equals("true");
             case DOUBLE_TYPE:
@@ -186,23 +254,23 @@ public class AuditOData{
     private void addValue(@NonNull ClientComplexValue complexValue, @NonNull String property, Object value) {
         String string = "";
         String type = UNDEFINED_TYPE;
-        String type1 = value.getClass().getCanonicalName();
-        switch (type1) {
-            case "java.util.Date":
-                string = (new SimpleDateFormat(DATE_FORMAT_1C, Locale.US)).format(value);
-                type = DATE_TYPE;
-                break;
-            case "java.lang.Float": {
-                final float f = (Float) value;
-                if (f == (long)f) string = String.format(Locale.US, "%d", (long)f);
-                else string = String.format(Locale.US, "%s", f);
-                type = DOUBLE_TYPE;
-                break;
+        if (value != null)
+            switch (value.getClass().getCanonicalName()) {
+                case "java.util.Date":
+                    string = (new SimpleDateFormat(DATE_FORMAT_1C, Locale.US)).format(value);
+                    type = DATE_TYPE;
+                    break;
+                case "java.lang.Float": {
+                    final float f = (Float) value;
+                    if (f == (long)f) string = String.format(Locale.US, "%d", (long)f);
+                    else string = String.format(Locale.US, "%s", f);
+                    type = DOUBLE_TYPE;
+                    break;
+                }
+                case "java.lang.Boolean":
+                    string = (Boolean)value?"true":"false";
+                    type = BOOLEAN_TYPE;
             }
-            case "java.lang.Boolean":
-                string = (Boolean)value?"true":"false";
-                type = BOOLEAN_TYPE;
-        }
         complexValue.add(client.getObjectFactory().newPrimitiveProperty(property,
                 client.getObjectFactory().newPrimitiveValueBuilder().buildString(string)));
         complexValue.add(client.getObjectFactory().newPrimitiveProperty(property+_TYPE,
@@ -210,9 +278,9 @@ public class AuditOData{
     }
 
     //возвращает entity
-    private ClientEntity getFullEntity(String table, String key) {
+    private ClientEntity getFullEntity(Set table, String key) {
         final URI entityURI = client.newURIBuilder(serviceRoot)
-                .appendEntitySetSegment(table)
+                .appendEntitySetSegment(table.name)
                 .appendKeySegment("guid'"+key+"'")
                 .build();
         final ODataRetrieveResponse<ClientEntity> entity = client.getRetrieveRequestFactory().getEntityRequest(entityURI).execute();
@@ -220,14 +288,14 @@ public class AuditOData{
     }
 
     //Возвращает true, если ключ - пустая ссылка
-    private boolean isEmptyKey(String key) { return key==null || EMPTY_KEY.equals(key); }
+    private boolean noEmptyKey(String key) { return !(key==null || EMPTY_KEY.equals(key)); }
 
     /**
      * Для вывода служебного сообщения в спиннере на время загрузки и т.п.
      * @param message - текст служебного сообщения
      * @return - список с единственным пунктом служебного сообщения
      */
-    public static List<Map<String, Object>> newDataSpinner(String message) {
+    static List<Map<String, Object>> newDataSpinner(String message) {
         List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
         Map<String, Object> map = new HashMap<String, Object>();
         map.put("id", EMPTY_KEY);
@@ -246,14 +314,14 @@ public class AuditOData{
 
     /**
      *  Наименование элемента справочника по id
-     *  @param set Имя сущности
+     *  @param table Имя сущности
      *  @param key Guid экземпляра сущности
      *  @return Свойство Description экземпляра сущности или "", если key пустой
      */
-    public String getName(String set, String key) {
+    String getName(Set table, String key) {
         if (!(key == null || EMPTY_KEY.equals(key))) {
             final URI entityURI = client.newURIBuilder(serviceRoot)
-                    .appendEntitySetSegment(set)
+                    .appendEntitySetSegment(table.name)
                     .appendKeySegment("guid'"+key+"'")
                     .select(COMMON_NAME)
                     .build();
@@ -263,7 +331,7 @@ public class AuditOData{
             } catch (ODataRuntimeException e) {
                 if (!sayErrorMessage(e)) {
                     e.printStackTrace();
-                    throw new RuntimeException("AuditOData.getName('" + set + "', guid'" + key +
+                    throw new RuntimeException("AuditOData.getName('" + table.name + "', guid'" + key +
                             "') Error on requesting of name ." + e.getMessage());
                 }
                 return null;
@@ -285,7 +353,7 @@ public class AuditOData{
     private List<ClientEntity> getAllUsers() {
         final URI userEntitySetURI = client
                 .newURIBuilder(serviceRoot)
-                .appendEntitySetSegment(ENTITY_SET_AUDITOR)
+                .appendEntitySetSegment(Set.AUDITOR.name)
                 .filter(FILTER_AUDITORS)
                 .select(COMMON_KEY, COMMON_NAME, USERS_PASSWORD)
                 .build();
@@ -296,24 +364,18 @@ public class AuditOData{
     }
 
     //возвращает список Map с аудиторами для Spinner
-    public List<Map<String, Object>> getUsers() {
-        List<Map<String, Object>> usersMap = new ArrayList<Map<String, Object>>();
+    List<Map<String, Object>> getUsers() {
+        List<Map<String, Object>> usersMap = new ArrayList<>();
         try {
             for (ClientEntity clientEntity : getAllUsers()) {
-                Map<String, Object> user = new HashMap<String, Object>();
+                Map<String, Object> user = new HashMap<>();
                 user.put("id", clientEntity.getProperty(COMMON_KEY).getValue());
                 user.put("name", clientEntity.getProperty(COMMON_NAME).getValue());
                 user.put("password", clientEntity.getProperty(USERS_PASSWORD).getValue());
                 usersMap.add(user);
             }
         }
-        catch (HttpClientException e) {
-            if (!sayErrorMessage(e)) {
-                e.printStackTrace();
-                throw new RuntimeException("AuditOData.getAllUsers() Error on requesting of users." + e.getMessage());
-            }
-        }
-        catch (ODataRuntimeException e) {
+        catch (HttpClientException | ODataRuntimeException e) {
             if (!sayErrorMessage(e)) {
                 e.printStackTrace();
                 throw new RuntimeException("AuditOData.getAllUsers() Error on requesting of users." + e.getMessage());
@@ -324,18 +386,19 @@ public class AuditOData{
 
     //ВСЕ ДЛЯ ЗАДАНИЙ НА АУДИТ
     //возвращает список Entity с заданиями с обором по аудитору, статусу и наименованию
-    private List<ClientEntity> getAllTasks(String auditor, int status, String like) {
-        String filter = TASK_AUDITOR_KEY+" eq guid'"+auditor+"' and "+TASK_STATUS+" eq '"+ bindStatus(status)+"'";
+    private List<ClientEntity> getAllTasks(String auditor, Tasks.Task.Status status, String like, int... skip) {
+        String filter = TASK_AUDITOR_KEY+" eq guid'"+auditor+"' and "+TASK_STATUS+" eq '"+status.id+"'";
         if (!(like==null||like.isEmpty())) filter += " and substringof('"+like+"',"+TASK_OBJECT+"/"+COMMON_NAME+")";
-        final URI entitySetURI = client.newURIBuilder(serviceRoot)
-                    .appendEntitySetSegment(ENTITY_SET_TASK)
-                    .select(COMMON_KEY, TASK_DATE, COMMON_DELETED, COMMON_POSTED, TASK_ACHIEVED, TASK_NUMBER,
-                            TASK_TYPE_KEY, TASK_OBJECT_KEY, COMMON_COMMENT, TASK_ANALYTIC_NAMES,
-                            TASK_TYPE+"/"+COMMON_NAME, TASK_OBJECT+"/"+COMMON_NAME, WITHOUT_TABLE)
-                    .expand(TASK_TYPE, TASK_OBJECT)
-                    .filter(filter)
-                    .orderBy(TASK_DATE +ORDER_DESC)
-                    .build();
+        final URIBuilder uriBuilder = client.newURIBuilder(serviceRoot);
+        uriBuilder.appendEntitySetSegment(Set.TASK.name)
+                .select(COMMON_KEY, TASK_DATE, COMMON_DELETED, COMMON_POSTED, TASK_ACHIEVED, TASK_NUMBER,
+                        TASK_TYPE_KEY, TASK_OBJECT_KEY, COMMON_COMMENT, TASK_ANALYTIC_NAMES,
+                        TASK_TYPE+"/"+COMMON_NAME, TASK_OBJECT+"/"+COMMON_NAME, WITHOUT_TABLE)
+                .expand(TASK_TYPE, TASK_OBJECT)
+                .filter(filter)
+                .orderBy(TASK_DATE +ORDER_DESC);
+        if (skip.length == 2) uriBuilder.skip(skip[0]).top(skip[1]);
+        final URI entitySetURI = uriBuilder.build();
         final ODataRetrieveResponse<ClientEntitySet> entitySet =
                 client.getRetrieveRequestFactory().getEntitySetRequest(entitySetURI).execute();
         return entitySet.getBody().getEntities();
@@ -347,8 +410,6 @@ public class AuditOData{
             return (new SimpleDateFormat(DATE_FORMAT_1C, Locale.US)).parse(string);
         } catch (ParseException e) {
             return null;
-//            e.printStackTrace();
-//            throw new RuntimeException("AuditOData.parseDate('"+string+"') Error on parsing of date.");
         }
     }
 
@@ -360,27 +421,6 @@ public class AuditOData{
             Date empty = new Date();
             empty.setTime(0);
             return (new SimpleDateFormat(DATE_FORMAT_1C, Locale.US)).format(empty);
-        }
-    }
-
-    // извлекает статус из строки
-    private int parseStatus(String status) {
-        switch (status) {
-            case ENUM_STATUS_0: return 0;
-            case ENUM_STATUS_1: return 1;
-            case ENUM_STATUS_2: return 2;
-            default: throw new RuntimeException("AuditOData.parseStatus('"+status+"') Error on parsing of status.");
-        }
-    }
-
-    // возвращает строку со статусом по номеру
-    private String bindStatus(int status) {
-        switch (status) {
-            case 0: return ENUM_STATUS_0;
-            case 1: return ENUM_STATUS_1;
-            case 2: return ENUM_STATUS_2;
-            default:
-                throw new RuntimeException("AuditOData.getTasks(auditor, status): The Status parameter must have values: 0, 1 or 2");
         }
     }
 
@@ -413,38 +453,6 @@ public class AuditOData{
             addValue(complexValue, COMMON_MINIMUM, row.minimum);
             addValue(complexValue, COMMON_MAXIMUM, row.maximum);
             addValue(complexValue, TASK_INDICATOR_VALUE, row.value);
-//            complexValue.add(client.getObjectFactory().newPrimitiveProperty(COMMON_GOAL,
-//                    client.getObjectFactory().newPrimitiveValueBuilder().buildString(row.type.valueToString(row.goal))));
-//            complexValue.add(client.getObjectFactory().newPrimitiveProperty(COMMON_GOAL+_TYPE,
-//                    client.getObjectFactory().newPrimitiveValueBuilder().buildString(row.type.toEdmType())));
-//            complexValue.add(client.getObjectFactory().newPrimitiveProperty(COMMON_MINIMUM,
-//                    client.getObjectFactory().newPrimitiveValueBuilder().buildString(row.type.valueToString(row.minimum))));
-/*
- * 1С воспринимает значения минимум и максимум только с типом Edm.Double!!! Возможно это связано недоделанной конфигурацией?
- * Поэтому, пока, будем ставить Edm.Double.
- */
-//            complexValue.add(client.getObjectFactory().newPrimitiveProperty(COMMON_MINIMUM+_TYPE,
-//                    client.getObjectFactory().newPrimitiveValueBuilder().buildString(row.type.toEdmType())));
-//                    client.getObjectFactory().newPrimitiveValueBuilder().buildString("Edm.Double")));
-//            complexValue.add(client.getObjectFactory().newPrimitiveProperty(COMMON_MAXIMUM,
-//                    client.getObjectFactory().newPrimitiveValueBuilder().buildString(row.type.valueToString(row.maximum))));
-/*
- * 1С воспринимает значения минимум и максимум только с типом Edm.Double!!! Возможно это связано недоделанной конфигурацией?
- * Поэтому, пока, будем ставить Edm.Double.
- */
-//            complexValue.add(client.getObjectFactory().newPrimitiveProperty(COMMON_MAXIMUM+_TYPE,
-//                    client.getObjectFactory().newPrimitiveValueBuilder().buildString(row.type.toEdmType())));
-//                    client.getObjectFactory().newPrimitiveValueBuilder().buildString("Edm.Double")));
-//            complexValue.add(client.getObjectFactory().newPrimitiveProperty(COMMON_ERROR,
-//                    client.getObjectFactory().newPrimitiveValueBuilder().buildString(
-//                            (row.error == (long)row.error)?
-//                                    String.format(Locale.US, "%d", (long)row.error):
-//                                    String.format(Locale.US, "%s", row.error)
-//                    )));
-//            complexValue.add(client.getObjectFactory().newPrimitiveProperty(TASK_INDICATOR_VALUE,
-//                    client.getObjectFactory().newPrimitiveValueBuilder().buildString(row.type.valueToString(row.value))));
-//            complexValue.add(client.getObjectFactory().newPrimitiveProperty(TASK_INDICATOR_VALUE+_TYPE,
-//                    client.getObjectFactory().newPrimitiveValueBuilder().buildString(row.type.toEdmType())));
             complexValue.add(client.getObjectFactory().newPrimitiveProperty(COMMON_COMMENT,
                     client.getObjectFactory().newPrimitiveValueBuilder().buildString(row.comment)));
             complexValue.add(client.getObjectFactory().newPrimitiveProperty(TASK_INDICATOR_ACHIEVED,
@@ -463,7 +471,7 @@ public class AuditOData{
             properties.add(client.getObjectFactory().newPrimitiveProperty(TASK_DATE,
                     client.getObjectFactory().newPrimitiveValueBuilder().buildString(bindDate(task.date))));
             properties.add(client.getObjectFactory().newPrimitiveProperty(TASK_STATUS,
-                    client.getObjectFactory().newPrimitiveValueBuilder().buildString(bindStatus(task.status))));
+                    client.getObjectFactory().newPrimitiveValueBuilder().buildString(task.status.id)));
             properties.add(client.getObjectFactory().newPrimitiveProperty(TASK_AUDITOR_KEY,
                     client.getObjectFactory().newPrimitiveValueBuilder().buildString(bindGuid(task.auditor_key))));
             properties.add(client.getObjectFactory().newPrimitiveProperty(TASK_TYPE_KEY,
@@ -496,7 +504,7 @@ public class AuditOData{
             task.id = getKey(entity.getProperty(COMMON_KEY).getPrimitiveValue().toString());
             task.date = parseDate(entity.getProperty(TASK_DATE).getPrimitiveValue().toString());
             task.number = entity.getProperty(TASK_NUMBER).getPrimitiveValue().toString();
-            task.status = parseStatus(entity.getProperty(TASK_STATUS).getPrimitiveValue().toString());
+            task.status = Tasks.Task.Status.toValue(entity.getProperty(TASK_STATUS).getPrimitiveValue().toString());
             task.auditor_key = getKey(entity.getProperty(TASK_AUDITOR_KEY).getValue().toString());
             task.type_key = getKey(entity.getProperty(TASK_TYPE_KEY).getValue().toString());
             task.object_key = getKey(entity.getProperty(TASK_OBJECT_KEY).getValue().toString());
@@ -516,11 +524,10 @@ public class AuditOData{
             for(Object e: entity.getProperty(TASK_INDICATORS).getCollectionValue().asCollection()) {
                 Tasks.Task.IndicatorRow row = task.new IndicatorRow();
                 row.indicator = getKey(((ClientComplexValue)e).get(TASK_INDICATOR_KEY).getPrimitiveValue().toString());
-                row.type = getIndicator(row.indicator).type; //Неоптимально!!! Только из-за типа приходится запрашивать ПОЛНЫЙ вид аудита
-                row.goal = getValue(((ClientComplexValue)e).get(COMMON_GOAL), ((ClientComplexValue)e).get(COMMON_GOAL+_TYPE));
-                row.minimum = getValue(((ClientComplexValue)e).get(COMMON_MINIMUM), ((ClientComplexValue)e).get(COMMON_MINIMUM+_TYPE));
-                row.maximum = getValue(((ClientComplexValue)e).get(COMMON_MAXIMUM), ((ClientComplexValue)e).get(COMMON_MAXIMUM+_TYPE));
-                row.value = getValue(((ClientComplexValue)e).get(TASK_INDICATOR_VALUE), ((ClientComplexValue)e).get(TASK_INDICATOR_VALUE+_TYPE));
+                row.goal = getValue((ClientComplexValue)e, COMMON_GOAL);
+                row.minimum = getValue((ClientComplexValue)e, COMMON_MINIMUM);
+                row.maximum = getValue((ClientComplexValue)e, COMMON_MAXIMUM);
+                row.value = getValue((ClientComplexValue)e, TASK_INDICATOR_VALUE);
                 row.error = Float.valueOf(((ClientComplexValue)e).get(COMMON_ERROR).getPrimitiveValue().toString());
                 row.comment = ((ClientComplexValue)e).get(COMMON_COMMENT).getPrimitiveValue().toString();
                 row.achived = (boolean) ((ClientComplexValue)e).get(TASK_INDICATOR_ACHIEVED).getPrimitiveValue().toValue();
@@ -537,12 +544,13 @@ public class AuditOData{
             task = new Tasks.Task();
             task.id = entity.getProperty(COMMON_KEY).getPrimitiveValue().toString();
             task.date = parseDate(entity.getProperty(TASK_DATE).getPrimitiveValue().toString());
+            task.status = Tasks.Task.Status.toValue(entity.getProperty(TASK_STATUS).getPrimitiveValue().toString());
             task.type_key = getKey(entity.getProperty(TASK_TYPE_KEY).getValue().toString());
             if (task.type_key!=null) {
                 if (entity.getProperties().contains(entity.getProperty(TASK_TYPE)))
                     task.type_name = entity.getProperty(TASK_TYPE).getComplexValue().get(COMMON_NAME).getPrimitiveValue().toString();
                 else
-                    task.type_name = getName(ENTITY_SET_TYPE, task.type_key);
+                    task.type_name = getName(Set.TYPE, task.type_key);
             }
             else task.type_name = "";
             task.object_key = getKey(entity.getProperty(TASK_OBJECT_KEY).getValue().toString());
@@ -550,7 +558,7 @@ public class AuditOData{
                 if (entity.getProperties().contains(entity.getProperty(TASK_OBJECT)))
                     task.object_name = entity.getProperty(TASK_OBJECT).getComplexValue().get(COMMON_NAME).getPrimitiveValue().toString();
                 else
-                    task.object_name = getName(ENTITY_SET_OBJECT, task.object_key);
+                    task.object_name = getName(Set.OBJECT, task.object_key);
             }
             else task.object_name = "";
             task.achieved = (boolean) entity.getProperty(TASK_ACHIEVED).getPrimitiveValue().toValue();
@@ -578,16 +586,16 @@ public class AuditOData{
      * @param like - подстрока для отбора
      * @return - возвращает список заданий для рециклервью и не только
      */
-    public Tasks getTasks(String auditor, int status, String like) {
+    Tasks getTasks(String auditor, Tasks.Task.Status status, String like, int... skip) {
         Tasks tasks = new Tasks();
         try {
-            for (ClientEntity clientEntity: getAllTasks(auditor, status, like))
+            for (ClientEntity clientEntity: getAllTasks(auditor, status, like, skip))
                 tasks.add(parseShortTask(clientEntity, false, false)); //Не отмечен и свернут
         }
         catch (ODataRuntimeException e) {
                 if (!sayErrorMessage(e)) {
                     e.printStackTrace();
-                    throw new RuntimeException("AuditOData.getTasks() Error on requesting of tasks ." + e.getMessage());
+                    throw new RuntimeException("Error on requesting of tasks ." + e.getMessage());
                 }
             }
         return tasks;
@@ -598,10 +606,10 @@ public class AuditOData{
      * @param key - giud задания
      * @return - задание
      */
-    public Tasks.Task getTask(String key) {
+    Tasks.Task getTask(String key) {
         Tasks.Task task = null;
         try {
-            task = parseFullTask(getFullEntity(ENTITY_SET_TASK, key), false, false);
+            task = parseFullTask(getFullEntity(Set.TASK, key), false, false);
         }
         catch (ODataRuntimeException e) {
             if (!sayErrorMessage(e)) {
@@ -616,10 +624,10 @@ public class AuditOData{
      * Создание нового задания
      * @param task объект с новым заданием
      */
-    public void createTask(Tasks.Task task) {
+    void createTask(Tasks.Task task) {
         //Запрос на создание задания
         final URI entityURI = client.newURIBuilder(serviceRoot)
-                .appendEntitySetSegment(ENTITY_SET_TASK)
+                .appendEntitySetSegment(Set.TASK.name)
                 .build();
         try {
             client.getCUDRequestFactory().getEntityCreateRequest(entityURI, bindTaskEntity(task)).execute();
@@ -636,10 +644,10 @@ public class AuditOData{
      * Изменение реквизитов задания - сохранение
      * @param task задание с новыми значениями реквизитов
      */
-    public void updateTask(Tasks.Task task) {
+    void updateTask(Tasks.Task task) {
         //Запрос на изменение
         final URI entityURI = client.newURIBuilder(serviceRoot)
-                .appendEntitySetSegment(ENTITY_SET_TASK)
+                .appendEntitySetSegment(Set.TASK.name)
                 .appendKeySegment("guid'"+task.id+"'")
                 .build();
         try {
@@ -659,14 +667,14 @@ public class AuditOData{
      * @param status - новое значение статуса задания
      * @return - измененное задание с реквизитами, достаточными для отображения в списке.
      */
-    public Tasks.Task moveTask(String key, int status) {
+    Tasks.Task moveTask(String key, Tasks.Task.Status status) {
         //Создаем entity
         final ClientEntity entity = client.getObjectFactory().newEntity(null);
         entity.getProperties().add(client.getObjectFactory().newPrimitiveProperty(TASK_STATUS,
-                client.getObjectFactory().newPrimitiveValueBuilder().buildString(bindStatus(status))));
+                client.getObjectFactory().newPrimitiveValueBuilder().buildString(status.id)));
         //Запрос на изменение
         final URI entityURI = client.newURIBuilder(serviceRoot)
-                .appendEntitySetSegment(ENTITY_SET_TASK)
+                .appendEntitySetSegment(Set.TASK.name)
                 .appendKeySegment("guid'"+key+"'")
                 .build();
         final ODataEntityUpdateResponse<ClientEntity> response;
@@ -689,28 +697,31 @@ public class AuditOData{
      * @param status - нзначение статуса нового задания
      * @return - новое задание с реквизитами, достаточными для отображения в списке.
      */
-    public Tasks.Task copyTask(String key, int status) {
+    Tasks.Task copyTask(String key, Tasks.Task.Status status) {
         final ODataEntityCreateResponse<ClientEntity> response;
         try {
             //Исходное задание
-            ClientEntity entity = getFullEntity(ENTITY_SET_TASK, key);
+            ClientEntity entity = getFullEntity(Set.TASK, key);
             //Изменяем entity
             //Удаляем свойство с идентификатором - 1С присвоит новый
             entity.getProperties().remove(entity.getProperty(COMMON_KEY));
             //Удаляем свойство с номером задания - 1С присвоит новый
             entity.getProperties().remove(entity.getProperty(TASK_NUMBER));
             //Устанавливаем текущую дату и время
+            entity.getProperties().remove(entity.getProperty(TASK_DATE));
             entity.getProperties().add(client.getObjectFactory().newPrimitiveProperty(TASK_DATE,
                     client.getObjectFactory().newPrimitiveValueBuilder().buildString(bindDate(new Date()))));
             //Меняем статус
+            entity.getProperties().remove(entity.getProperty(TASK_STATUS));
             entity.getProperties().add(client.getObjectFactory().newPrimitiveProperty(TASK_STATUS,
-                    client.getObjectFactory().newPrimitiveValueBuilder().buildString(bindStatus(status))));
+                    client.getObjectFactory().newPrimitiveValueBuilder().buildString(status.id)));
             //Отметка на удаление должна быть снята
+            entity.getProperties().remove(entity.getProperty(COMMON_DELETED));
             entity.getProperties().add(client.getObjectFactory().newPrimitiveProperty(COMMON_DELETED,
                     client.getObjectFactory().newPrimitiveValueBuilder().buildBoolean(false)));
             //Запрос на создание
             final URI entityURI = client.newURIBuilder(serviceRoot)
-                    .appendEntitySetSegment(ENTITY_SET_TASK)
+                    .appendEntitySetSegment(Set.TASK.name)
                     .build();
             response = client.getCUDRequestFactory().getEntityCreateRequest(entityURI, entity).execute();
         } catch (ODataRuntimeException e) {
@@ -730,7 +741,7 @@ public class AuditOData{
      * @param delete - значение пометки на удаление
      * @return - измененное задание с реквизитами, достаточными для отображения в списке.
      */
-    public Tasks.Task deleteTask(String key, boolean delete) {
+    Tasks.Task deleteTask(String key, boolean delete) {
         //Создаем entity
         final ClientEntity entity = client.getObjectFactory().newEntity(null);
         //Устанавливаем значение пометки на удаление
@@ -738,7 +749,7 @@ public class AuditOData{
                 client.getObjectFactory().newPrimitiveValueBuilder().buildBoolean(delete)));
         //Запрос на изменение
         final URI entityURI = client.newURIBuilder(serviceRoot)
-                .appendEntitySetSegment(ENTITY_SET_TASK)
+                .appendEntitySetSegment(Set.TASK.name)
                 .appendKeySegment("guid'"+key+"'")
                 .build();
         final ODataEntityUpdateResponse<ClientEntity> response;
@@ -799,10 +810,10 @@ public class AuditOData{
      * @param key guid вида аудита
      * @return - вид аудита
      */
-    public AType getType(String key) {
+    AType getType(String key) {
         AType type = null;
         try {
-            type = parseType(getFullEntity(ENTITY_SET_TYPE, key));
+            type = parseType(getFullEntity(Set.TYPE, key));
         }
         catch (ODataRuntimeException e) {
             if (!sayErrorMessage(e)) {
@@ -817,7 +828,7 @@ public class AuditOData{
      * Изменение вида аудита.
      * @param type - измененний вид аудита
      */
-    public void updateType(AType type) {
+    void updateType(AType type) {
         //Создаем entity
         final ClientEntity entity = client.getObjectFactory().newEntity(null);
         //новые значения:
@@ -839,7 +850,7 @@ public class AuditOData{
                 client.getObjectFactory().newPrimitiveValueBuilder().buildBoolean(type.showSubject)));
         //Запрос на изменение
         final URI entityURI = client.newURIBuilder(serviceRoot)
-                .appendEntitySetSegment(ENTITY_SET_TYPE)
+                .appendEntitySetSegment(Set.TYPE.name)
                 .appendKeySegment("guid'"+type.id+"'")
                 .build();
         final ODataEntityUpdateResponse<ClientEntity> response;
@@ -858,9 +869,9 @@ public class AuditOData{
      * Создание нового вида аудита
      * @param type - новый вида аудита
      */
-    public void createType(AType type) {
+    void createType(AType type) {
         final URI entityURI = client.newURIBuilder(serviceRoot)
-                .appendEntitySetSegment(ENTITY_SET_TYPE)
+                .appendEntitySetSegment(Set.TYPE.name)
                 .build();
         final ClientEntity entity = client.getObjectFactory().newEntity(null);
         //новые значения:
@@ -900,10 +911,10 @@ public class AuditOData{
 
     //ВСЕ ДЛЯ СПРАВОЧНИКОВ
     //возвращает все пункты указанного родителя с отбором по наименованию
-    private List<ClientEntity> getAllItems(String table, int hierarchy, String owner, String pater, String like) {
+    private List<ClientEntity> getAllItems(Set table, String owner, String pater, String like, int... skip) {
         StringBuilder filter = new StringBuilder();
         final URIBuilder uriBuilder = client.newURIBuilder(serviceRoot);
-        switch (hierarchy) {
+        switch (table.hierarchy) {
             case FOLDER_HIERARCHY:
                 uriBuilder.select(COMMON_FOLDER, COMMON_KEY, COMMON_DELETED, COMMON_NAME,
                                 COMMON_PARENT, COMMON_PREDEFINED, COMMON_PRENAMED);
@@ -929,8 +940,9 @@ public class AuditOData{
             if (filter.length()>0) filter.append(" and ");
             filter.append(COMMON_OWNER).append(" eq guid'").append(owner).append("'");
         }
+        if (skip.length == 2) uriBuilder.skip(skip[0]).top(skip[1]);
         final URI entitySetURI = uriBuilder
-                .appendEntitySetSegment(table)
+                .appendEntitySetSegment(table.name)
                 .filter(filter.toString())
                 .orderBy(COMMON_NAME+ORDER_ASC)
                 .build();
@@ -958,9 +970,9 @@ public class AuditOData{
     }
 
     //возвращает пункт справочника для списка
-    private ClientEntity getShortItem(String table, int hierarchy, String key) {
+    private ClientEntity getShortItem(Set table, String key) {
         final URIBuilder uriBuilder = client.newURIBuilder(serviceRoot);
-        switch (hierarchy) {
+        switch (table.hierarchy) {
             case FOLDER_HIERARCHY:
                 uriBuilder.select(COMMON_FOLDER, COMMON_KEY, COMMON_DELETED, COMMON_NAME,
                         COMMON_PARENT, COMMON_PREDEFINED, COMMON_PRENAMED);
@@ -974,7 +986,7 @@ public class AuditOData{
                         COMMON_PARENT, COMMON_PREDEFINED, COMMON_PRENAMED);
         }
         final URI entityURI = uriBuilder
-                .appendEntitySetSegment(table)
+                .appendEntitySetSegment(table.name)
                 .appendKeySegment("guid'"+key+"'")
                 .build();
         final ODataRetrieveResponse<ClientEntity> entity =
@@ -996,44 +1008,17 @@ public class AuditOData{
     /**
      * Извлечение списка элементов справочника
      * @param table - имя сущности
-     * @param hierarchy - вид иерархии справочника
      * @param owner - guid владелеца / null
      * @param pater - guid нового родителя
      * @param like - строка для отбора по наименованию / null
+     * @param skip - массив из 2х элементов: 0 - сколько пропустить, 1 - сколько загрузить пунктов
      * @return - список пунтов
      */
-    public Items getItems(String table, int hierarchy, String owner, String pater, String like) {
+    Items getItems(Set table, String owner, String pater, String like, int... skip) {
         Items items = new Items();
         try {
-            for (ClientEntity entity: getAllItems(table, hierarchy, owner, pater, like))
-                items.add(parseItem(entity, hierarchy,false, false));
-        }
-        catch (ODataRuntimeException e) {
-            if (!sayErrorMessage(e)) {
-                e.printStackTrace();
-                throw new RuntimeException("AuditOData.getItems() Error on requesting of items." + e.getMessage());
-            }
-        }
-        return items;
-    }
-
-    /**
-     * Извлечение списка элементов справочника
-     * @param table - имя сущности
-     * @param hierarchy - вид иерархии справочника
-     * @param owner - guid владелеца / null
-     * @param pater - guid нового родителя
-     * @param like - строка для отбора по наименованию / null
-     * @param in - список guid папок первого уровня для отбора
-     * @return - список пунтов
-     */
-    public Items getItems(String table, int hierarchy, String owner, String pater, String like, List<String> in) {
-        Items items = new Items();
-        try {
-            if (!(in == null || in.isEmpty()))
-                for (ClientEntity entity: getAllItems(table, hierarchy, owner, pater, like))
-                    if (in.contains(entity.getProperty(COMMON_KEY).getPrimitiveValue().toString()))
-                        items.add(parseItem(entity, hierarchy, false, false));
+            for (ClientEntity entity: getAllItems(table, owner, pater, like, skip))
+                items.add(parseItem(entity, table.hierarchy,false, false));
         }
         catch (ODataRuntimeException e) {
             if (!sayErrorMessage(e)) {
@@ -1047,19 +1032,18 @@ public class AuditOData{
     /**
      * Извлечение элемента справочника
      * @param table - имя сущности
-     * @param hierarchy - вид иерархии справочника
      * @param key - guid пункта
      * @return - пункт справочника
      */
-    public Items.Item getItem(String table, int hierarchy, String key) {
+    Items.Item getItem(Set table, String key) {
         Items.Item item = new Items.Item();
         try {
-            item = parseItem(getShortItem(table, hierarchy, key), hierarchy, false, false);
+            item = parseItem(getShortItem(table, key), table.hierarchy, false, false);
         }
         catch (ODataRuntimeException e) {
             if (!sayErrorMessage(e)) {
                 e.printStackTrace();
-                throw new RuntimeException("AuditOData.getItem() Error on requesting of item." + e.getMessage());
+                throw new RuntimeException("Error on requesting of item." + e.getMessage());
             }
         }
         return item;
@@ -1068,12 +1052,11 @@ public class AuditOData{
     /**
      * Копирование пункта справочника в эту же или другую папку
      * @param table - имя сущности
-     * @param hierarchy - вид иерархии справочника
      * @param key - guid пункта
      * @param pater - guid нового родителя
      * @return - копию пункта
      */
-    public Items.Item copyItem(String table, int hierarchy, String key, String pater) {
+    Items.Item copyItem(Set table, String key, String pater) {
         final ODataEntityCreateResponse<ClientEntity> response;
         try {
             final ClientEntity entity = getFullEntity(table, key);
@@ -1091,35 +1074,34 @@ public class AuditOData{
             entity.getProperties().add(client.getObjectFactory().newPrimitiveProperty(COMMON_PRENAMED,
                     client.getObjectFactory().newPrimitiveValueBuilder().buildString("")));
             final URI entityURI = client.newURIBuilder(serviceRoot)
-                    .appendEntitySetSegment(table)
+                    .appendEntitySetSegment(table.name)
                     .build();
             response = client.getCUDRequestFactory().getEntityCreateRequest(entityURI, entity).execute();
         } catch (ODataRuntimeException e) {
             if (!sayErrorMessage(e)) {
                 e.printStackTrace();
-                throw new RuntimeException("AuditOData.copyItem('"+table+"', "+hierarchy+", guid'"+key+"', guid'"+pater+
+                throw new RuntimeException("AuditOData.copyItem('"+table+"', guid'"+key+"', guid'"+pater+
                         "') Error on copy of item. "+e.getMessage());
             }
             return new Items.Item();
         }
-        return parseItem(response.getBody(), hierarchy,false, false); //Новый пункт будет в списке свернут и не отмечен
+        return parseItem(response.getBody(), table.hierarchy,false, false); //Новый пункт будет в списке свернут и не отмечен
     }
 
     /**
      * Перемещение пункта справочника в эту же или другую папку - изменение родителя
      * Контроль зацикливания ссылок осуществляется в ReferenceChoice!!!
      * @param table - имя сущности
-     * @param hierarchy - вид иерархии справочника
      * @param key - guid пункта
      * @param pater - guid нового родителя
      * @return - измененный пукнт / null, если была попытка переместить папку, когда not_folders == true
      */
-    public Items.Item moveItem(String table, int hierarchy, String key, String pater) {
-        if (hierarchy==NOT_HIERARCHY) { //Если набор не является иерархией!!!
-            throw new RuntimeException("AuditOData.moveItem('"+table+"', "+hierarchy+", guid'"+key+"', guid'"+pater+"') Entity set '"+table+"' is not the hierarchy.");
+    Items.Item moveItem(Set table, String key, String pater) {
+        if (table.hierarchy==NOT_HIERARCHY) { //Если набор не является иерархией!!!
+            throw new RuntimeException("AuditOData.moveItem('"+table+"', guid'"+key+"', guid'"+pater+"') Entity set '"+table+"' is not the hierarchy.");
         }
         final URI entityURI = client.newURIBuilder(serviceRoot)
-                .appendEntitySetSegment(table)
+                .appendEntitySetSegment(table.name)
                 .appendKeySegment("guid'"+key+"'")
                 .build();
         final ClientEntity entity = client.getObjectFactory().newEntity(null);
@@ -1132,25 +1114,24 @@ public class AuditOData{
         } catch (ODataRuntimeException e) {
             if (!sayErrorMessage(e)) {
                 e.printStackTrace();
-                throw new RuntimeException("AuditOData.moveItem('"+table+"', "+hierarchy+", guid'"+key+"', guid'"+pater+
+                throw new RuntimeException("AuditOData.moveItem('"+table+"', guid'"+key+"', guid'"+pater+
                         "') Error on move of item. "+e.getMessage());
             }
             return null;
         }
-        return parseItem(response.getBody(), hierarchy, true, false); //Помечен в списке, свернут
+        return parseItem(response.getBody(), table.hierarchy, true, false); //Помечен в списке, свернут
     }
 
     /**
      * Изменение отметки на удаление у пункта справочнка
      * @param table - имя сущности
-     * @param hierarchy - вид иерархии справочника
      * @param key - guid пункта справочника
      * @param delete - значение пометки на удаление
      * @return - измененный пункт
      */
-    public Items.Item deleteItem(String table, int hierarchy, String key, boolean delete) {
+    Items.Item deleteItem(Set table, String key, boolean delete) {
         final URI entityURI = client.newURIBuilder(serviceRoot)
-                .appendEntitySetSegment(table)
+                .appendEntitySetSegment(table.name)
                 .appendKeySegment("guid'"+key+"'")
                 .build();
         final ClientEntity entity = client.getObjectFactory().newEntity(null);
@@ -1163,24 +1144,23 @@ public class AuditOData{
         } catch (ODataRuntimeException e) {
             if (!sayErrorMessage(e)) {
                 e.printStackTrace();
-                throw new RuntimeException("AuditOData.deleteItem('"+table+"', "+hierarchy+", guid'"+key+"', "+delete+
+                throw new RuntimeException("AuditOData.deleteItem('"+table+"', guid'"+key+"', "+delete+
                         ") Error on delete of item ."+e.getMessage());
             }
             return null;
         }
-        return parseItem(response.getBody(), hierarchy, true, false); //Помечен в списке, свернут
+        return parseItem(response.getBody(), table.hierarchy, true, false); //Помечен в списке, свернут
     }
 
     /**
      * Изменение пункта справочника (только наименование). Подходит для изменения наименования группы
      * @param table - имя сущности
-     * @param hierarchy - вид иерархии справочника
      * @param item - объект пункт справочника, с новым наименованием
      * @return - измененный пункт
      */
-    public Items.Item updateItem(String table, int hierarchy, Items.Item item) {
+    Items.Item updateItem(Set table, Items.Item item) {
         final URI entityURI = client.newURIBuilder(serviceRoot)
-                .appendEntitySetSegment(table)
+                .appendEntitySetSegment(table.name)
                 .appendKeySegment("guid'"+item.id+"'")
                 .build();
         final ClientEntity entity = client.getObjectFactory().newEntity(null);
@@ -1193,43 +1173,44 @@ public class AuditOData{
         } catch (ODataRuntimeException e) {
             if (!sayErrorMessage(e)) {
                 e.printStackTrace();
-                throw new RuntimeException("AuditOData.updateItem('"+table+"', "+hierarchy+", '"+item.toString()+
+                throw new RuntimeException("AuditOData.updateItem('"+table+"', '"+item.toString()+
                         "') Error on update of item. "+e.getMessage());
             }
             return null;
         }
-        return parseItem(response.getBody(), hierarchy, true, false); //Помечен в списке, свернут
+        return parseItem(response.getBody(), table.hierarchy, true, false); //Помечен в списке, свернут
     }
 
     /**
      * Создание пункта справочника (только наименование и родитель)
      * Подходит для создания группы
      * @param table - имя сущности
-     * @param hierarchy - вид иерархии справочника
      * @param pater - guid нового родителя
-     * @param name - наименование группы
+     * @param name - наименование
+     * @param isFolder - признак группы
      * @return - созданный пункт
      */
-    public Items.Item createItem(String table, int hierarchy, String pater, String name) {
+    Items.Item createItem(Set table, String pater, String name, boolean isFolder) {
         final URI entityURI = client.newURIBuilder(serviceRoot)
-                .appendEntitySetSegment(table)
+                .appendEntitySetSegment(table.name)
                 .build();
         final ClientEntity entity = client.getObjectFactory().newEntity(null);
         entity.getProperties().add(client.getObjectFactory().newPrimitiveProperty(COMMON_NAME,
                 client.getObjectFactory().newPrimitiveValueBuilder().buildString(name)));
         //Устанавливаем признак группы
-        switch (hierarchy) {
+        switch (table.hierarchy) {
             case FOLDER_HIERARCHY:
                 entity.getProperties().add(client.getObjectFactory().newPrimitiveProperty(COMMON_FOLDER,
-                        client.getObjectFactory().newPrimitiveValueBuilder().buildBoolean(true)));
+                        client.getObjectFactory().newPrimitiveValueBuilder().buildBoolean(isFolder)));
                 break;
             case ELEMENT_HIERARCHY:
                 entity.getProperties().add(client.getObjectFactory().newPrimitiveProperty(COMMON_GROUP,
-                        client.getObjectFactory().newPrimitiveValueBuilder().buildBoolean(true)));
+                        client.getObjectFactory().newPrimitiveValueBuilder().buildBoolean(isFolder)));
                 break;
             case NOT_HIERARCHY: default:
-                throw new RuntimeException("AuditOData.createItem('"+table+"', "+hierarchy+", '"+pater+"', '"+name+
-                        "') Error on create of item group. The '"+table+"' set do not have hierarchy.");
+                if (isFolder)
+                    throw new RuntimeException("AuditOData.createItem('"+table+"', '"+pater+"', '"+name+
+                            "', "+isFolder+"') Error on create of item group. The '"+table+"' set do not have hierarchy.");
         }
         //Родитель
         entity.getProperties().add(client.getObjectFactory().newPrimitiveProperty(COMMON_PARENT,
@@ -1243,70 +1224,19 @@ public class AuditOData{
         } catch (ODataRuntimeException e) {
             if (!sayErrorMessage(e)) {
                 e.printStackTrace();
-                throw new RuntimeException("AuditOData.createItem('"+table+"', "+hierarchy+", '"+pater+"', '"+name+
+                throw new RuntimeException("AuditOData.createItem('"+table+"', '"+pater+"', '"+name+
                         "') Error on create of item group ."+e.getMessage());
             }
             return null;
         }
-        return parseItem(response.getBody(), hierarchy, false, false); //Не помечен в списке, свернут
-    }
-
-    //ВСЕ ДЛЯ ТАБЛИЧНОЙ ЧАСТИ ЗАДАНИЯ "АНАЛИТИКА ОБЪЕКТА"
-   /**
-     * Получить аналитику задания
-     * @param task - giud задания
-     * @return - возвращает список entity
-     */
-    private List<ClientEntity> getAllTaskAnalytics(String task) {
-        final URI entitySetURI = client.newURIBuilder(serviceRoot)
-                .appendEntitySetSegment(ENTITY_SET_TASK_ANALYTIC)
-                .filter(COMMON_KEY+" eq guid'"+task+"'")
-                .orderBy(COMMON_LINE+ORDER_ASC)
-                .build();
-        final ODataRetrieveResponse<ClientEntitySet> entitySet;
-        try {
-            entitySet = client.getRetrieveRequestFactory().getEntitySetRequest(entitySetURI).execute();
-        } catch (ODataRuntimeException e) {
-            e.printStackTrace();
-            throw new RuntimeException("AuditOData.getAllTaskAnalytics('"+task+
-                    "'): Error on execute request of task analytics. "+e.getMessage());
-        }
-        return entitySet.getBody().getEntities();
-    }
-
-    /**
-     * Разбор entity с аналитикой
-     * @param entity - со ссылкой на аналитику обхекта
-     * @return - возвращает пункт с аналитикой для рециклервью
-     */
-    private Items.Item parseTaskAnalytic(ClientEntity entity) {
-        Items.Item item = null;
-        if (entity!=null) {
-            item = new Items.Item();
-            item.id = getKey(entity.getProperty(TASK_ANALYTIC_VALUE).getPrimitiveValue().toString());
-            item.name = getName(ENTITY_SET_ANALYTIC, item.id);
-        }
-        return item;
-    }
-
-    /**
-     * Получить аналитику задания
-     * @param task - guid задания
-     * @return - список пунктов с аналитикой для рециклервью
-     */
-    public Items getTaskAnalytics(String task) {
-        Items items = new Items();
-        for (ClientEntity clientEntity: getAllTaskAnalytics(task)) {
-            items.add(parseTaskAnalytic(clientEntity));
-        }
-        return items;
+        return parseItem(response.getBody(), table.hierarchy, false, false); //Не помечен в списке, свернут
     }
 
     //ВСЕ ДЛЯ НОРМАТИВОВ ПОКАЗАТЕЛЕЙ АУДИТА
     //Возвращает список entity с нормативными значениями
     private List<ClientEntity> getAllIndicatorStandard(String type, String object) {
         final URI entitySetURI = client.newURIBuilder(serviceRoot)
-                .appendEntitySetSegment(ENTITY_SET_INDICATOR_STANDARD)
+                .appendEntitySetSegment(Set.INDICATOR_STANDARD.name)
                 .filter(INDICATOR_STANDARD_TYPE+" eq guid'"+type+"' and "+INDICATOR_STANDARD_OBJECT+" eq guid'"+object+"'")
                 .build();
         final ODataRetrieveResponse<ClientEntitySet> entitySet = client.getRetrieveRequestFactory().getEntitySetRequest(entitySetURI).execute();
@@ -1318,9 +1248,9 @@ public class AuditOData{
         final Tasks.Task.IndicatorRow row = new Tasks.Task(). new IndicatorRow();
         if (entity != null) {
             row.indicator = getKey(entity.getProperty(INDICATOR_STANDARD_INDICATOR).getPrimitiveValue().toString());
-            row.goal = getValue(entity.getProperty(COMMON_GOAL), entity.getProperty(COMMON_GOAL+_TYPE));
-            row.minimum = getValue(entity.getProperty(COMMON_MINIMUM), entity.getProperty(COMMON_MINIMUM+_TYPE));
-            row.maximum = getValue(entity.getProperty(COMMON_MAXIMUM), entity.getProperty(COMMON_MAXIMUM+_TYPE));
+            row.goal = getValue(entity, COMMON_GOAL);
+            row.minimum = getValue(entity, COMMON_MINIMUM);
+            row.maximum = getValue(entity, COMMON_MAXIMUM);
             row.error = Float.valueOf(entity.getProperty(COMMON_ERROR).getPrimitiveValue().toString());
         }
         return row;
@@ -1332,7 +1262,7 @@ public class AuditOData{
      * @param object - guid объекта аудита
      * @return - список нормативов показателей
      */
-    public Map<String, Tasks.Task.IndicatorRow> getIndicatorStandard(String type, String object) {
+    private Map<String, Tasks.Task.IndicatorRow> getIndicatorStandard(String type, String object) {
         final Map<String, Tasks.Task.IndicatorRow> list = new HashMap<>();
         try {
             for (ClientEntity entity : getAllIndicatorStandard(type, object)) {
@@ -1353,7 +1283,7 @@ public class AuditOData{
     //Возвращает список entity показателей задания
     private List<ClientEntity> getAllTaskIndicators(String task) {
         final URI entitySetURI = client.newURIBuilder(serviceRoot)
-                .appendEntitySetSegment(ENTITY_SET_TASK_INDICATOR)
+                .appendEntitySetSegment(Set.TASK_INDICATOR.name)
                 .filter(COMMON_KEY+" eq guid'"+task+"'")
                 .orderBy(COMMON_LINE+ORDER_ASC)
                 .build();
@@ -1366,10 +1296,10 @@ public class AuditOData{
         final Tasks.Task.IndicatorRow row = new Tasks.Task(). new IndicatorRow();
         if (entity != null) {
             row.indicator = getKey(entity.getProperty(TASK_INDICATOR_KEY).getPrimitiveValue().toString());
-            row.goal = getValue(entity.getProperty(COMMON_GOAL), entity.getProperty(COMMON_GOAL+_TYPE));
-            row.minimum = getValue(entity.getProperty(COMMON_MINIMUM), entity.getProperty(COMMON_MINIMUM+_TYPE));
-            row.maximum = getValue(entity.getProperty(COMMON_MAXIMUM), entity.getProperty(COMMON_MAXIMUM+_TYPE));
-            row.value = getValue(entity.getProperty(TASK_INDICATOR_VALUE), entity.getProperty(TASK_INDICATOR_VALUE+_TYPE));
+            row.goal = getValue(entity, COMMON_GOAL);
+            row.minimum = getValue(entity, COMMON_MINIMUM);
+            row.maximum = getValue(entity, COMMON_MAXIMUM);
+            row.value = getValue(entity, TASK_INDICATOR_VALUE);
             row.error = Float.valueOf(entity.getProperty(COMMON_ERROR).getPrimitiveValue().toString());
             row.comment = entity.getProperty(COMMON_COMMENT).getPrimitiveValue().toString();
             row.achived = (boolean) entity.getProperty(TASK_INDICATOR_ACHIEVED).getPrimitiveValue().toValue();
@@ -1406,11 +1336,11 @@ public class AuditOData{
     public ArrayList<Tasks.Task.IndicatorRow> getStandardIndicators(String type, String object) {
         final ArrayList<Tasks.Task.IndicatorRow> rows = new ArrayList<Tasks.Task.IndicatorRow>();
         //заполняем показателями из справочника
-        if (!isEmptyKey(type)) {
+        if (noEmptyKey(type)) {
             for (ClientEntity entity: getAllIndicators(type))
                 rows.add(parseIndicatorRow(entity));
             //уточняем значения из регистра нормативов
-            if (!isEmptyKey(object)) {
+            if (noEmptyKey(object)) {
                 final Map<String, Tasks.Task.IndicatorRow> map = getIndicatorStandard(type, object);
                 for (Tasks.Task.IndicatorRow row: rows)
                     if (map.containsKey(row.indicator)) {
@@ -1442,9 +1372,9 @@ public class AuditOData{
                 indicator.subject = getKey(entity.getProperty(INDICATOR_SUBJECT).getPrimitiveValue().toString());
                 indicator.criterion = Indicators.Criterions.toValue(entity.getProperty(INDICATOR_CRITERION).getPrimitiveValue().toString());
                 indicator.unit = getKey(entity.getProperty(INDICATOR_UNIT).getPrimitiveValue().toString());
-                indicator.goal = getValue(entity.getProperty(COMMON_GOAL), entity.getProperty(COMMON_GOAL+_TYPE));
-                indicator.minimum = getValue(entity.getProperty(COMMON_MINIMUM), entity.getProperty(COMMON_MINIMUM+_TYPE));
-                indicator.maximum = getValue(entity.getProperty(COMMON_MAXIMUM), entity.getProperty(COMMON_MAXIMUM+_TYPE));
+                indicator.goal = getValue(entity, COMMON_GOAL);
+                indicator.minimum = getValue(entity, COMMON_MINIMUM);
+                indicator.maximum = getValue(entity, COMMON_MAXIMUM);
                 indicator.error = Float.valueOf(entity.getProperty(COMMON_ERROR).getPrimitiveValue().toString());
                 indicator.deleted = (boolean) entity.getProperty(COMMON_DELETED).getPrimitiveValue().toValue();
                 indicator.predefined = (boolean) entity.getProperty(COMMON_PREDEFINED).getPrimitiveValue().toValue();
@@ -1467,12 +1397,10 @@ public class AuditOData{
         if (entity != null) {
             try {
                 row.indicator = getKey(entity.getProperty(COMMON_KEY).getPrimitiveValue().toString());
-                row.type = Indicators.Types.toValue(entity.getProperty(INDICATOR_TYPE).getPrimitiveValue().toString());
-                row.goal = getValue(entity.getProperty(COMMON_GOAL), entity.getProperty(COMMON_GOAL+_TYPE));
-                row.minimum = getValue(entity.getProperty(COMMON_MINIMUM), entity.getProperty(COMMON_MINIMUM+_TYPE));
-                row.maximum = getValue(entity.getProperty(COMMON_MAXIMUM), entity.getProperty(COMMON_MAXIMUM+_TYPE));
+                row.goal = getValue(entity, COMMON_GOAL);
+                row.minimum = getValue(entity, COMMON_MINIMUM);
+                row.maximum = getValue(entity, COMMON_MAXIMUM);
                 row.error = Float.valueOf(entity.getProperty(COMMON_ERROR).getPrimitiveValue().toString());
-                row.value = row.type.stringToValue(""); //Здесь можно присваивать факт норме!!!
             }
             catch (ODataRuntimeException e) {
                 if (!sayErrorMessage(e)) {
@@ -1488,27 +1416,16 @@ public class AuditOData{
     private Indicators.Indicator parseShortIndicator(ClientEntity entity) {
         final Indicators.Indicator indicator = new Indicators(). new Indicator();
         if (entity != null) {
-            try {
-                indicator.id = getKey(entity.getProperty(COMMON_KEY).getPrimitiveValue().toString());
-                indicator.name = entity.getProperty(COMMON_NAME).getPrimitiveValue().toString();
-                indicator.pater = getKey(entity.getProperty(COMMON_PARENT).getPrimitiveValue().toString());
-                indicator.folder = (boolean) entity.getProperty(COMMON_FOLDER).getPrimitiveValue().toValue();
-                if (!indicator.folder) {
-                    String key;
-                    indicator.desc = entity.getProperty(COMMON_COMMENT).getPrimitiveValue().toString();
-                    indicator.type = Indicators.Types.toValue(entity.getProperty(INDICATOR_TYPE).getPrimitiveValue().toString());
-                    //Вместо guid наименование!!!
-                    indicator.subject = getName(ENTITY_SET_SUBJECT, getKey(entity.getProperty(INDICATOR_SUBJECT).getPrimitiveValue().toString()));
-                    indicator.criterion = Indicators.Criterions.toValue(entity.getProperty(INDICATOR_CRITERION).getPrimitiveValue().toString());
-                    //Вместо guid наименование!!!
-                    indicator.unit = getName(ENTITY_SET_UNIT, getKey(entity.getProperty(INDICATOR_UNIT).getPrimitiveValue().toString()));
-                }
-            }
-            catch (ODataRuntimeException e) {
-                if (!sayErrorMessage(e)) {
-                    e.printStackTrace();
-                    throw new RuntimeException("AuditOData.parseShortIndicator() Error on requesting of indicator ." + e.getMessage());
-                }
+            indicator.id = getKey(entity.getProperty(COMMON_KEY).getPrimitiveValue().toString());
+            indicator.name = entity.getProperty(COMMON_NAME).getPrimitiveValue().toString();
+            indicator.pater = getKey(entity.getProperty(COMMON_PARENT).getPrimitiveValue().toString());
+            indicator.folder = (boolean) entity.getProperty(COMMON_FOLDER).getPrimitiveValue().toValue();
+            if (!indicator.folder) {
+                indicator.desc = entity.getProperty(COMMON_COMMENT).getPrimitiveValue().toString();
+                indicator.type = Indicators.Types.toValue(entity.getProperty(INDICATOR_TYPE).getPrimitiveValue().toString());
+//                    indicator.subject = getKey(entity.getProperty(INDICATOR_SUBJECT).getPrimitiveValue().toString());
+                indicator.criterion = Indicators.Criterions.toValue(entity.getProperty(INDICATOR_CRITERION).getPrimitiveValue().toString());
+                indicator.unit = getName(Set.UNIT, getKey(entity.getProperty(INDICATOR_UNIT).getPrimitiveValue().toString()));
             }
         }
         return indicator;
@@ -1521,7 +1438,7 @@ public class AuditOData{
      */
     public Indicators.Indicator getIndicator(String key) {
         try {
-            return parseFullIndicator(getFullEntity(ENTITY_SET_INDICATOR, key));
+            return parseFullIndicator(getFullEntity(Set.INDICATOR, key));
         }
         catch (ODataRuntimeException e) {
             if (!sayErrorMessage(e)) {
@@ -1535,7 +1452,7 @@ public class AuditOData{
     //Возвращает список entity с показателями аудита
     private List<ClientEntity> getAllIndicators(String type) {
         final URI entitySetURI = client.newURIBuilder(serviceRoot)
-                .appendEntitySetSegment(ENTITY_SET_INDICATOR)
+                .appendEntitySetSegment(Set.INDICATOR.name)
                 .filter(COMMON_OWNER+" eq guid'"+type+"' and "+
                         COMMON_DELETED+" eq false and "+
                         COMMON_FOLDER+" eq false")
@@ -1555,12 +1472,14 @@ public class AuditOData{
     private List<ClientEntity> getAllIndicators(String type, String pater, String subject) {
         final StringBuilder filter = new StringBuilder();
         filter.append(COMMON_OWNER).append(" eq guid'").append(type).append("'");
-        filter.append(" and ").append(COMMON_PARENT).append(" eq guid'").append(pater).append("'");
-//        filter.append(" and ").append(COMMON_DELETED).append(" eq false");
-        if (!isEmptyKey(subject))
+        if (pater != null)
+            filter.append(" and ").append(COMMON_PARENT).append(" eq guid'").append(pater).append("'");
+        if (subject != null) {
             filter.append(" and ").append(INDICATOR_SUBJECT).append(" eq guid'").append(subject).append("'");
+            filter.append(" and ").append(COMMON_FOLDER).append(" eq false");
+        }
         final URI entitySetURI = client.newURIBuilder(serviceRoot)
-                .appendEntitySetSegment(ENTITY_SET_INDICATOR)
+                .appendEntitySetSegment(Set.INDICATOR.name)
                 .filter(filter.toString())
                 .orderBy(COMMON_ORDER+ORDER_ASC)
                 .build();
@@ -1571,11 +1490,11 @@ public class AuditOData{
     /**
      * Получить показатели аудита
      * @param type - guid вида аудита
-     * @param pater - guid родителя (папка)
+     * @param pater - guid родителя (папка) / null
      * @param subject - guid предмета аудита для отбора показателей / null
      * @return - список показателей аудита
      */
-    public Indicators getIndicators(String type, String pater, String subject) {
+    Indicators getIndicators(String type, String pater, String subject) {
         final Indicators indicators = new Indicators();
         try {
             for (ClientEntity clientEntity: getAllIndicators(type, pater, subject))
@@ -1592,9 +1511,9 @@ public class AuditOData{
     }
 
     //Возвращает список entity с папками Показателей 1го уровня
-    private List<ClientEntity> getAllIndicatorFolders(String type) {
+    private List<ClientEntity> getAllIndicatorFoldersFirstLayer(String type) {
         final URI entitySetURI = client.newURIBuilder(serviceRoot)
-                .appendEntitySetSegment(ENTITY_SET_INDICATOR)
+                .appendEntitySetSegment(Set.INDICATOR.name)
                 .filter(COMMON_OWNER+" eq guid'"+type+"' and "+
                         COMMON_PARENT+" eq guid'"+EMPTY_KEY+"' and "+
                         COMMON_FOLDER+" eq true")
@@ -1609,19 +1528,89 @@ public class AuditOData{
      * @param type - guid вида аудита
      * @return - список пунктов с папками
      */
-    public Items getIndicatorFolders(String type) {
+    Items getIndicatorFoldersFirstLayer(String type) {
         final Items items = new Items();
         try {
-            for (ClientEntity clientEntity: getAllIndicatorFolders(type))
+            for (ClientEntity clientEntity: getAllIndicatorFoldersFirstLayer(type))
                 items.add(parseItem(clientEntity, FOLDER_HIERARCHY, false, false));
         }
         catch(ODataRuntimeException e) {
             if (!sayErrorMessage(e)) {
                 e.printStackTrace();
-                throw new RuntimeException("AuditOData.getIndicatorFolders() Error on requesting of indicator folders. " + e.getMessage());
+                throw new RuntimeException("AuditOData.getIndicatorFoldersFirstLayer() Error on requesting of indicator folders. " + e.getMessage());
             }
         }
         return items;
+    }
+
+    //ВСЕ ДЛЯ ПРЕДМЕТОВ
+    //Возвращает список entity
+    private List<ClientEntity> getAllSubjects(@NonNull String type, @NonNull String pater) {
+        final URI entitySetURI = client.newURIBuilder(serviceRoot)
+                .appendEntitySetSegment(Set.SUBJECT.name)
+                .filter(COMMON_OWNER+" eq guid'"+type+"' and "+
+                        COMMON_PARENT+" eq guid'"+pater+"'")
+                .orderBy(COMMON_ORDER+ORDER_ASC)
+                .build();
+        final ODataRetrieveResponse<ClientEntitySet> entitySet = client.getRetrieveRequestFactory().getEntitySetRequest(entitySetURI).execute();
+        return entitySet.getBody().getEntities();
+    }
+
+    //Возвращает предмет аудита в виде папок показателей по entity
+    private Indicators.Indicator parseShortSubject(ClientEntity entity) {
+        final Indicators.Indicator indicator = new Indicators(). new Indicator();
+        if (entity != null) {
+            indicator.id = getKey(entity.getProperty(COMMON_KEY).getPrimitiveValue().toString());
+            indicator.name = entity.getProperty(COMMON_NAME).getPrimitiveValue().toString();
+            indicator.pater = getKey(entity.getProperty(COMMON_PARENT).getPrimitiveValue().toString());
+            indicator.folder = true;
+        }
+        return indicator;
+    }
+
+    /**
+     * Получить все содержимое Предметов 1го уровня в виде папок
+     * @param type - guid вида аудита
+     * @return - список пунктов в виде папок
+     */
+    Items getSubjectFirstLayer(String type) {
+        final Items items = new Items();
+        try {
+            for (ClientEntity clientEntity: getAllSubjects(type, EMPTY_KEY)) {
+                final Items.Item item = parseItem(clientEntity, FOLDER_HIERARCHY, false, false);
+                item.folder = true;
+                items.add(item);
+            }
+        }
+        catch(ODataRuntimeException e) {
+            if (!sayErrorMessage(e)) {
+                e.printStackTrace();
+                throw new RuntimeException("AuditOData.getSubjectFirstLayer() Error on requesting of indicator folders. " + e.getMessage());
+            }
+        }
+        return items;
+    }
+
+    /**
+     * Получить все содержимое Предметов родителя в виде папок
+     * @param type - guid вида аудита
+     * @param pater - guid родителя (папка)
+     * @return - список предметов в виде папок показателей
+     */
+    Indicators getSubjects(@NonNull String type, @NonNull String pater) {
+        final Indicators indicators = new Indicators();
+        try {
+            for (ClientEntity clientEntity: getAllSubjects(type, pater))
+                indicators.add(parseShortSubject(clientEntity));
+        }
+        catch(ODataRuntimeException e) {
+            if (!sayErrorMessage(e)) {
+                e.printStackTrace();
+                throw new RuntimeException("AuditOData.getSubjects(guid'"+type+"', guid'"+pater+
+                        "') Error on requesting of subjects. "+e.getMessage());
+            }
+        }
+        return indicators;
     }
 }
 //Фома2018

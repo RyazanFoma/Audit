@@ -24,7 +24,6 @@ public class ViewHolderInds extends RecyclerView.ViewHolder {
     public final ImageView achived; //Цель достигнута
     public final TextView criterion; // условие
     public final TextView desc; // описание
-    public final TextView subject; // предмет
     public final TextInputLayout commentLayout; // контейнер пункта
     public final TextInputEditText comment; // комментарий
     public final ImageView expand; //Кнопка раскрыть/закрыть
@@ -44,7 +43,6 @@ public class ViewHolderInds extends RecyclerView.ViewHolder {
         achived = (ImageView) view.findViewById(R.id.achived);
         criterion = (TextView) view.findViewById(R.id.criterion);
         desc = (TextView) view.findViewById(R.id.desc);
-        subject = (TextView) view.findViewById(R.id.sublect);
         commentLayout = (TextInputLayout) view.findViewById(R.id.comment_layout);
         comment = (TextInputEditText) view.findViewById(R.id.comment);
         expand = (ImageView) view.findViewById(R.id.expand);

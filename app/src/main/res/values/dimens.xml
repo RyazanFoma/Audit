@@ -8,11 +8,10 @@
     <dimen name="field_horizontal_margin">16dp</dimen>
     <!-- Default progress bar height, for data loading wait with animation. -->
     <dimen name="progress_bar_height">8dp</dimen>
-    <dimen name="date_field_width">250dp</dimen>
     <dimen name="number_field_width">110dp</dimen>
-    <dimen name="unit_field_width">90dp</dimen>
+    <dimen name="indicators_margin">64dp</dimen>
     <dimen name="min_width_grandpaterns">5in</dimen>
     <dimen name="min_width_datetime">2in</dimen>
-    <dimen name="min_column_task">2.5in</dimen>
-    <dimen name="min_column_reference">2.5in</dimen>
+    <dimen name="column_task">3in</dimen>
+    <dimen name="min_column_reference">3in</dimen>
 </resources>

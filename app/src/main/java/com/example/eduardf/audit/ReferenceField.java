@@ -11,28 +11,23 @@ import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.ImageView;
 
-import java.util.ArrayList;
-
 /**
  * Фрагмент для организации поля с выбором элемента справочника
  */
-public class ReferenceField extends Fragment implements ReferenceChoice.OnReferenceManagerInteractionSingleChoice {
+public class ReferenceField extends Fragment implements
+        ReferenceChoice.OnReferenceManagerInteractionSingleChoice {
 
     //Аргументы для передачи параметров поля
     private static final String ARG_REQUESTCODE = "requestcode";
     private static final String ARG_TABLE = "table";
     private static final String ARG_TITLE = "title";
-    private static final String ARG_HIERARCHY = "hierarchy";
     private static final String ARG_OWNER = "owner";
     private static final String ARG_ID = "id";
-    private static final String ARG_IN = "in";
 
     private int requestCode; //Код для идентификации фрагмента. Присваиваем при создании. Возвращаем при выборе
-    private String table; //Наименование таблицы справочника
+    private AuditOData.Set table; //Наименование таблицы справочника
     private String title; //Заголовой поля
-    private int hierarchy; //Вид иерархии справочника
     private String owner; //Giud собственника
-    private ArrayList<String> in; //Список guid папок первого уровня для отбора
     private String id; //Guid выбранного элемента
     private EditText viewName; //Поле с наименованием выбранного элемента
     private boolean afterRotation; //true - признак прошедшего поворота, false - после фокуса на поле с наименованием
@@ -52,28 +47,20 @@ public class ReferenceField extends Fragment implements ReferenceChoice.OnRefere
      * @param requestCode Уникальный код, для идентификации фрагментов
      * @param table Таблица в oData
      * @param title Наименование поля для hint и заголовка активности
-     * @param hierarchy Вид иерархии справочника
      * @param owner Guid владельца справочника
      * @param id Guid текущего выбранного элемента
-     * @param in Список giud папок первого уровня для отбора
      * @return A new instance of fragment ReferenceField.
      */
-    public static ReferenceField newInstance(int requestCode, String table, String title, int hierarchy, String owner, String id, ArrayList<String> in) {
+    public static ReferenceField newInstance(int requestCode, AuditOData.Set table, String title, String owner, String id) {
         ReferenceField fragment = new ReferenceField();
         Bundle args = new Bundle();
         args.putInt(ARG_REQUESTCODE, requestCode);
-        args.putString(ARG_TABLE, table);
+        args.putString(ARG_TABLE, table.toString());
         args.putString(ARG_TITLE, title);
-        args.putInt(ARG_HIERARCHY, hierarchy);
         args.putString(ARG_OWNER, owner);
         args.putString(ARG_ID, id);
-        if (in != null) args.putStringArrayList(ARG_IN, in);
         fragment.setArguments(args);
         return fragment;
-    }
-    // То-же, но без возможносои отбора по список guid папок первого уровня
-    public static ReferenceField newInstance(int requestCode, String table, String title, int hierarchy, String owner, String id) {
-        return newInstance(requestCode, table, title, hierarchy, owner, id, null);
     }
 
     //создает фрагмент
@@ -83,11 +70,9 @@ public class ReferenceField extends Fragment implements ReferenceChoice.OnRefere
         Bundle args = getArguments();
         if (args != null) {
             requestCode = args.getInt(ARG_REQUESTCODE);
-            table = args.getString(ARG_TABLE);
+            table = AuditOData.Set.toValue(args.getString(ARG_TABLE));
             title = args.getString(ARG_TITLE);
-            hierarchy = args.getInt(ARG_HIERARCHY);
             owner = args.getString(ARG_OWNER);
-            if (args.containsKey(ARG_IN)) in = args.getStringArrayList(ARG_IN);
             if (savedInstanceState != null && savedInstanceState.containsKey(ARG_ID))
                 id = savedInstanceState.getString(ARG_ID);
             else
@@ -118,7 +103,8 @@ public class ReferenceField extends Fragment implements ReferenceChoice.OnRefere
         viewName.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                startActivity(ReferenceChoice.intentActivity(ReferenceField.this, table, title, hierarchy, owner, id, in));
+                startActivity(ReferenceChoice.intentActivity(ReferenceField.this,
+                        table, title, owner, id));
             }
         });
         viewName.setOnFocusChangeListener(new View.OnFocusChangeListener() {
@@ -126,7 +112,8 @@ public class ReferenceField extends Fragment implements ReferenceChoice.OnRefere
             public void onFocusChange(View v, boolean hasFocus) {
                 if (hasFocus)
                     if (!afterRotation) //Чтобы после поворота не открывалась активность выбора
-                        startActivity(ReferenceChoice.intentActivity(ReferenceField.this, table, title, hierarchy, owner, id, in));
+                        startActivity(ReferenceChoice.intentActivity(ReferenceField.this,
+                                table, title, owner, id));
                     else
                         afterRotation = false;
             }
@@ -187,7 +174,6 @@ public class ReferenceField extends Fragment implements ReferenceChoice.OnRefere
     public void onDetach() {
         super.onDetach();
         mListener = null;
-        in = null;
         viewName = null;
         oData = null;
     }

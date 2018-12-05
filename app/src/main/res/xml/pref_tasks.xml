@@ -1,0 +1,42 @@
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <ListPreference
+        android:defaultValue="180"
+        android:entries="@array/status_list"
+        android:entryValues="@array/pref_tasks_tab_values"
+        android:key="tasks_tab"
+        android:negativeButtonText="@null"
+        android:positiveButtonText="@null"
+        android:title="@string/pref_title_tasks_tab"/>
+
+    <SwitchPreference
+        android:defaultValue="false"
+        android:key="displace_1C_settings"
+        android:title="@string/pref_title_displace_1C_settings"
+        android:summary="@string/pref_description_displace_1C_settings" />
+
+    <PreferenceCategory android:title="@string/pref_title_task_settings"
+        android:dependency="displace_1C_settings" >
+        <SwitchPreference
+            android:defaultValue="false"
+            android:key="fill_in_fact"
+            android:title="@string/pref_title_fill_in_fact"
+            android:summary="@string/pref_description_fill_in_fact" />
+        <SwitchPreference
+            android:defaultValue="false"
+            android:key="open_with_indicators"
+            android:title="@string/pref_title_open_with_indicators"
+            android:summary="@string/pref_description_open_with_indicators" />
+        <SwitchPreference
+            android:defaultValue="false"
+            android:key="clear_when_copying"
+            android:title="@string/pref_title_clear_when_copying"
+            android:summary="@string/pref_description_clear_when_copying" />
+        <SwitchPreference
+            android:defaultValue="false"
+            android:key="display_subject"
+            android:title="@string/pref_title_display_subject"
+            android:summary="@string/pref_description_display_subject" />
+    </PreferenceCategory>
+
+</PreferenceScreen>

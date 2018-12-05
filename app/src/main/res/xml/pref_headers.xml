@@ -4,18 +4,18 @@
 
     <header
         android:fragment="com.example.eduardf.audit.SettingsAudit$GeneralPreferenceFragment"
-        android:icon="@drawable/ic_info_black_24dp"
+        android:icon="@drawable/ic_black_phonelink_setup_24px"
         android:title="@string/pref_header_general" />
 
     <header
-        android:fragment="com.example.eduardf.audit.SettingsAudit$NotificationPreferenceFragment"
-        android:icon="@drawable/ic_notifications_black_24dp"
-        android:title="@string/pref_header_notifications" />
+        android:fragment="com.example.eduardf.audit.SettingsAudit$TasksPreferenceFragment"
+        android:icon="@drawable/ic_black_table_chart_24px"
+        android:title="@string/pref_header_tasks" />
 
     <header
-        android:fragment="com.example.eduardf.audit.SettingsAudit$DataSyncPreferenceFragment"
-        android:icon="@drawable/ic_sync_black_24dp"
-        android:title="@string/pref_header_data_sync" />
+        android:fragment="com.example.eduardf.audit.SettingsAudit$DefaultPreferenceFragment"
+        android:icon="@drawable/ic_black_tune_24px"
+        android:title="@string/pref_header_default" />
 
     <header
         android:fragment="com.example.eduardf.audit.SettingsAudit$oDataPreferenceFragment"

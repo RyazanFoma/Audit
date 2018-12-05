@@ -1,6 +1,7 @@
 package com.example.eduardf.audit;
 
 import android.content.Context;
+import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.LoaderManager;
@@ -51,7 +52,7 @@ public class MainActivity extends AppCompatActivity implements
 
         //Готовим все для спиннера
         usersMap = AuditOData.newDataSpinner("Идет загрузка...");
-        usersAdapter = new SimpleAdapter(this, usersMap, android.R.layout.simple_spinner_item, new String[] { "name"}, new int[] { android.R.id.text1 });
+        usersAdapter = new SimpleAdapter(this, usersMap, android.R.layout.simple_spinner_item, new String[]{"name"}, new int[]{android.R.id.text1});
         usersAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         Spinner users = (Spinner) findViewById(R.id.user);
         users.setAdapter(usersAdapter);
@@ -59,6 +60,10 @@ public class MainActivity extends AppCompatActivity implements
 
         //Неопределенный прогресс-бар движется во время загрузки (см. onCreateLoader, onLoadFinished, onLoaderReset)
         ((ProgressBar) findViewById(R.id.progressBar)).setVisibility(View.INVISIBLE);
+        // ATTENTION: This was auto-generated to handle app links.
+        Intent appLinkIntent = getIntent();
+        String appLinkAction = appLinkIntent.getAction();
+        Uri appLinkData = appLinkIntent.getData();
     }
 
     @Override

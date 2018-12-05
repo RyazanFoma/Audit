@@ -4,7 +4,6 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.os.AsyncTask;
-import android.os.Parcelable;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
@@ -22,26 +21,24 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
-import android.widget.ProgressBar;
 import android.widget.Spinner;
+import android.widget.Switch;
 import android.widget.TabHost;
 import android.widget.TextView;
 
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
-
-import static java.text.DateFormat.getDateTimeInstance;
 
 //Форма для редактирвоания задания на аудит
 public class TaskActivity extends AppCompatActivity implements
         ReferenceField.OnFragmentChoiceListener,
         ObjectListEdit.OnObjectListEditInteractionListener,
         IndicatorFragment.OnListFragmentInteractionListener,
+        IndicatorFragment.OnScrollUpListener,
         DateTime.OnDateTimeInteractionListener,
         LoaderManager.LoaderCallbacks<Tasks.Task>{
 
@@ -55,19 +52,9 @@ public class TaskActivity extends AppCompatActivity implements
     //Аргументы интент и поворота экрана
     private final static String ARG_MODE = "mode"; //Режим открытия формы
     private final static String ARG_AUDITOR = "auditor"; //Аудитор задания на аудит
-    private final static String ARG_DATE = "date"; //Дата задания на аудит
     private final static String ARG_ID = "id"; //Идентификатор задания на аудит
-    private final static String ARG_NUMBER = "number"; //Номер задания
-    private final static String ARG_STATUS = "status"; //Статус задания на аудит
-    private final static String ARG_TYPE = "type"; //Вид аудита
-    private final static String ARG_ORGANIZATION = "organization"; //Организация
-    private final static String ARG_OBJECT = "object"; //Объект аудита
-    private final static String ARG_RESPONSIBLE = "responsible"; //Ответственный за объект
-    private final static String ARG_ANALYTICS = "analytics"; //Аналитика объекта аудита
-    private final static String ARG_INDICATORS = "indicators"; //Показатели аудита
-    private final static String ARG_DELETED = "deleted"; //Пометка на удаление
-    private final static String ARG_POSTED = "posted"; //Документ проведен
-    private final static String ARG_ACHIVED = "achived"; //Цель достигнута
+    final static String ARG_STATUS = "status"; //Статус задания на аудит
+    private final static String ARG_TASK = "task"; //Задание
     private final static String ARG_TAG = "tag"; //Текущая закладка
     private static final String ARG_FILLED = "filled"; //Признаки заполнения закладок
 
@@ -87,10 +74,10 @@ public class TaskActivity extends AppCompatActivity implements
     private boolean[] filledTag = {false, false, false};
 
     // возвращает Интент для создания нового задания на аудит
-    public static Intent intentActivityCreate(Context context, String auditor, int status) {
+    public static Intent intentActivityCreate(Context context, String auditor, Tasks.Task.Status status) {
         Intent intent = new Intent(context, TaskActivity.class);
         intent.putExtra(ARG_MODE, CREATE_MODE);
-        intent.putExtra(ARG_STATUS, status);
+        intent.putExtra(ARG_STATUS, status.id);
         intent.putExtra(ARG_AUDITOR, auditor);
         return intent;
     }
@@ -118,7 +105,7 @@ public class TaskActivity extends AppCompatActivity implements
         ab.setDisplayHomeAsUpEnabled(true); //Отловит onSupportNavigateUp
 
         //ВСЕ ДЛЯ ВЫБОРА СТАТУСА
-        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, getResources().getStringArray(R.array.status_list));
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, getResources().getStringArray(R.array.status_list));
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         Spinner status = (Spinner) findViewById(R.id.status);
         status.setAdapter(adapter);
@@ -126,7 +113,7 @@ public class TaskActivity extends AppCompatActivity implements
 
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                if (task!=null) task.status = position;
+                if (task!=null) task.status = Tasks.Task.Status.toValue(position);
             }
 
             @Override
@@ -139,7 +126,7 @@ public class TaskActivity extends AppCompatActivity implements
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View view) { saveTask(view); }
+            public void onClick(View view) { saveTask(); }
         });
 
         //ВСЕ ДЛЯ ЗАКЛАДОК
@@ -176,7 +163,7 @@ public class TaskActivity extends AppCompatActivity implements
                 case CREATE_MODE:
                     task = new Tasks.Task();
                     task.date = new Date();
-                    task.status = intent.getIntExtra(ARG_STATUS, 1);
+                    task.status = Tasks.Task.Status.toValue(intent.getStringExtra(ARG_STATUS));
                     task.auditor_key = intent.getStringExtra(ARG_AUDITOR);
                     task.number = "Новое";
                     task.comment = "";
@@ -201,31 +188,11 @@ public class TaskActivity extends AppCompatActivity implements
         }
         else { // открываем после поворота.
             //Успели загрузить-сохранить задание?
-            if (savedInstanceState.containsKey(ARG_DATE)) { //Восстанавливаем:
+            if (savedInstanceState.containsKey(ARG_TASK)) { //Восстанавливаем:
                 task = new Tasks.Task();
-                try {
-                    task.date = getDateTimeInstance().parse(savedInstanceState.getString(ARG_DATE));
-                } catch (ParseException e) {
-                    e.printStackTrace(); //Здесь нужно сообщить о неправильной дате
-                    throw new RuntimeException("TaskActivity.Create() Error on parsing of date '"+savedInstanceState.getString(ARG_DATE)+"'.");
-                }
-                task.id = savedInstanceState.getString(ARG_ID);
-                task.status = savedInstanceState.getInt(ARG_STATUS, 1);
-                task.auditor_key = savedInstanceState.getString(ARG_AUDITOR);
-                task.number = savedInstanceState.getString(ARG_NUMBER);
+                task.onRestoreInstanceState(savedInstanceState, ARG_TASK);
                 //В заголовок активности добавим номер
                 setTitle(getString(R.string.title_activity_audit_task)+" ("+task.number+")");
-                task.type_key = savedInstanceState.getString(ARG_TYPE);
-                task.organization_key = savedInstanceState.getString(ARG_ORGANIZATION);
-                task.object_key = savedInstanceState.getString(ARG_OBJECT);
-                task.responsible_key = savedInstanceState.getString(ARG_RESPONSIBLE);
-                task.deleted = savedInstanceState.getBoolean(ARG_DELETED, false);
-                task.posted = savedInstanceState.getBoolean(ARG_POSTED, false);
-                task.achieved = savedInstanceState.getBoolean(ARG_ACHIVED, false);
-                task.analytics = savedInstanceState.getStringArrayList(ARG_ANALYTICS);
-                task.indicators = new ArrayList<Tasks.Task.IndicatorRow>();
-                for (Parcelable row: savedInstanceState.getParcelableArray(ARG_INDICATORS))
-                    task.indicators.add(((ParcelableIndicator)row).indicatorRow);
                 filledTag = savedInstanceState.getBooleanArray(ARG_FILLED);
             }
             else { //Не успели - грузим по новой
@@ -249,13 +216,6 @@ public class TaskActivity extends AppCompatActivity implements
             }
         });
 
-        //Обработчик нажатия на кнопку заполнить показатели
-        ((ImageButton) findViewById(R.id.fill)).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                new FillIndicators().execute(task.type_key, task.object_key);
-            }
-        });
     }
 
     //Запускает одноразовый загрузчик задания
@@ -264,7 +224,7 @@ public class TaskActivity extends AppCompatActivity implements
         if (loader != null && !loader.isReset()) getSupportLoaderManager().restartLoader(-1, new Bundle(arg), this);
         else getSupportLoaderManager().initLoader(-1, new Bundle(arg), this);
         //Загрузчик cработает, только при первом открытии задания, потом будет убит в onLoadFinished
-        //Там же будет вызван fillViews(""); //Общие поля и первую закладку
+        //Там же будет вызван fillViews(""); - Общие поля и первая закладка
     }
 
     //Заполняет поля активности
@@ -279,12 +239,12 @@ public class TaskActivity extends AppCompatActivity implements
                         //для выбора даты и времени
                                 add(R.id.datetime, DateTime.newInstance(task.date)).
                         commit();
-                ((Spinner) findViewById(R.id.status)).setSelection(task.status);
+                ((Spinner) findViewById(R.id.status)).setSelection(task.status.number);
                 ((EditText) findViewById(R.id.comment)).setText(task.comment);
                 //Иконки
                 ((ImageView) findViewById(R.id.deleted)).setVisibility(task.deleted?View.VISIBLE:View.GONE);
                 ((ImageView) findViewById(R.id.posted)).setVisibility(task.posted?View.VISIBLE:View.GONE);
-                if (!task.deleted && task.posted && task.status == 2) {
+                if (!task.deleted && task.posted && task.status == Tasks.Task.Status.IN_WORK) {
                     ((ImageView) findViewById(R.id.thumb)).setVisibility(View.VISIBLE);
                     ((ImageView) findViewById(R.id.thumb)).setImageResource(task.achieved?
                             R.drawable.ic_black_thumb_up_alt_24px:
@@ -300,27 +260,23 @@ public class TaskActivity extends AppCompatActivity implements
                             //для выбора вида аудита
                                     add(R.id.type,
                                     ReferenceField.newInstance(SELECT_TYPE,
-                                            AuditOData.ENTITY_SET_TYPE,
-                                            getString(R.string.txt_tp),
-                                            AuditOData.FOLDER_HIERARCHY, null, task.type_key)).
+                                            AuditOData.Set.TYPE,
+                                            getString(R.string.txt_tp), null, task.type_key)).
                             //для выбора организации
                                     add(R.id.organization,
                                     ReferenceField.newInstance(SELECT_ORGANIZATION,
-                                            AuditOData.ENTITY_SET_ORGANIZATION,
-                                            getString(R.string.txt_org),
-                                            AuditOData.ELEMENT_HIERARCHY, null, task.organization_key)).
+                                            AuditOData.Set.ORGANIZATION,
+                                            getString(R.string.txt_org),null, task.organization_key)).
                             //для выбора объекта аудита
                                     add(R.id.object,
                                     ReferenceField.newInstance(SELECT_OBJECT,
-                                            AuditOData.ENTITY_SET_OBJECT,
-                                            getString(R.string.txt_obj),
-                                            AuditOData.ELEMENT_HIERARCHY, null, task.object_key)).
+                                            AuditOData.Set.OBJECT,
+                                            getString(R.string.txt_obj), null, task.object_key)).
                             //для выбора ответственного за объект
                                     add(R.id.responsible,
                                     ReferenceField.newInstance(SELECT_RESPONSIBLE,
-                                            AuditOData.ENTITY_SET_RESPONSIBLE,
-                                            getString(R.string.txt_rsp),
-                                            AuditOData.ELEMENT_HIERARCHY, null, task.responsible_key)).
+                                            AuditOData.Set.RESPONSIBLE,
+                                            getString(R.string.txt_rsp),null, task.responsible_key)).
                             commit();
                 }
                 break;
@@ -331,17 +287,38 @@ public class TaskActivity extends AppCompatActivity implements
                             beginTransaction().
                             add(R.id.analytics,
                                     ObjectListEdit.newInstance(SELECT_ANALYTICS,
-                                            AuditOData.ENTITY_SET_ANALYTIC, getString(R.string.tab_anl), task.analytics)).
+                                            AuditOData.Set.ANALYTIC, getString(R.string.tab_anl), task.analytics)).
                             commit();
                 }
                 break;
             case TAG3: //поля закладки Показатели
+                //Обработчик кнопки Заполнить
+                ((ImageButton) findViewById(R.id.fill)).setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        new FillIndicators().execute(task.type_key, task.object_key);
+                    }
+                });
+
+                //Переключатель По предметам
+//                final Switch aSwitch = findViewById(R.id.by_subject);
+//        aSwitch.setChecked(false); //Здесь нужно установить значение по умолчанию из вида аудита
+                //Обработчик переключателя По предметам
+                ((Switch) findViewById(R.id.by_subject)).setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                    @Override
+                    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                        if (buttonView.isPressed())
+                            updateIndicators();
+                    }
+                });
+
                 if (!filledTag[2]) {
                     filledTag[2] = true;
                     getSupportFragmentManager().
                             beginTransaction().
                             add(R.id.indicators,
-                                    IndicatorFragment.newInstance(task.type_key, task.indicators)).
+                                    IndicatorFragment.newInstance(task.type_key, task.indicators,
+                                            ((Switch) findViewById(R.id.by_subject)).isChecked())).
                             commit();
                 }
                 break;
@@ -349,30 +326,23 @@ public class TaskActivity extends AppCompatActivity implements
         visibilityView(); //Устанвилаем доступность в зависимости от реквизитов задания
     }
 
+    //Обновляет фрагмент с показателями
+    private void updateIndicators() {
+        getSupportFragmentManager().
+                beginTransaction().
+                replace(R.id.indicators,
+                        IndicatorFragment.newInstance(task.type_key, task.indicators,
+                                ((Switch) findViewById(R.id.by_subject)).isChecked())).
+                commit();
+    }
+
     //Сохраняет все, что можно, перед поворотом экрана:
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        if (task != null) {
-            outState.putString(ARG_DATE, getDateTimeInstance().format(task.date));
-            outState.putString(ARG_ID, task.id);
-            outState.putInt(ARG_STATUS, task.status);
-            outState.putString(ARG_AUDITOR, task.auditor_key);
-            outState.putString(ARG_NUMBER, task.number);
-            outState.putString(ARG_TYPE, task.type_key);
-            outState.putString(ARG_ORGANIZATION, task.organization_key);
-            outState.putString(ARG_OBJECT, task.object_key);
-            outState.putString(ARG_RESPONSIBLE, task.responsible_key);
-            outState.putBoolean(ARG_DELETED, task.deleted);
-            outState.putBoolean(ARG_POSTED, task.posted);
-            outState.putBoolean(ARG_ACHIVED, task.achieved);
-            outState.putStringArrayList(ARG_ANALYTICS, task.analytics);
-            final Parcelable[] parcelables = new Parcelable[task.indicators.size()];
-            int i = 0;
-            for (Tasks.Task.IndicatorRow indicatorRow: task.indicators) parcelables[i++] = new ParcelableIndicator(indicatorRow);
-            outState.putParcelableArray(ARG_INDICATORS, parcelables);
-            outState.putBooleanArray(ARG_FILLED, filledTag);
-        }
+        if (task != null)
+            task.onSaveInstanceState(outState, ARG_TASK);
+        outState.putBooleanArray(ARG_FILLED, filledTag);
         outState.putString(ARG_TAG, ((TabHost) findViewById(android.R.id.tabhost)).getCurrentTabTag()); //текущую закладку восстанавливаем в Create()
     }
 
@@ -408,7 +378,7 @@ public class TaskActivity extends AppCompatActivity implements
         //noinspection SimplifiableIfStatement
         switch (item.getItemId()) {
             case R.id.save:
-                saveTask((View) findViewById(R.id.fab));
+                saveTask();
                 return true;
         }
         return super.onOptionsItemSelected(item);
@@ -427,17 +397,52 @@ public class TaskActivity extends AppCompatActivity implements
 //        ((LinearLayout) findViewById(R.id.line_anl)).setVisibility(anl);
     }
 
-    // сохраняет задание и закрывает активити
-    private void saveTask(View v) {
+    //Обработчик скроллинга показателей
+    @Override
+    public void onScrollUpListener(int visibility) {
+        findViewById(R.id.head).setVisibility(visibility);
+        findViewById(android.R.id.tabs).setVisibility(visibility);
+    }
+
+    /**
+     * Класс для операций создания/сохранения задания в потоке
+     * с последующим закрытием активности
+     * Входные параметры: задание
+     */
+    private class SaveTask extends AsyncTask<Void, Void, Void> {
+        private final Tasks.Task task;
+        //Конструктор
+        private SaveTask(Tasks.Task task) {
+            this.task = task;
+        }
+        //Показывает прогрессбар
+        protected void onPreExecute() {
+            findViewById(R.id.progressBar).setVisibility(View.VISIBLE);
+        }
+        //Сохраняет новое или существующее задание
+        protected Void doInBackground(Void... voids) {
+            if (task.id != null) //Обновляем существующее задание
+                new Thread(new Runnable() {  public void run() { oData.updateTask(task); } }).start();
+            else //Создаем новое задание
+                new Thread(new Runnable() {  public void run() { oData.createTask(task); } }).start();
+            return null;
+        }
+        //Закрывает активность
+        protected void onPostExecute(Void voids) {
+            Intent intent = new Intent();
+            intent.putExtra(ARG_STATUS, task.status.number);
+            setResult(RESULT_OK, intent);
+            finish(); //Закрываем активность
+        }
+    }
+
+    /**
+     * Сохраняет задание
+     */
+    private void saveTask() {
         //НУЖНО ДОБАВИТЬ ПРОВЕРКУ ЗАПОЛНЕНИЯ ОБЯЗАТЕЛЬНЫХ ПОЛЕЙ!!!
         task.comment = ((EditText) findViewById(R.id.comment)).getText().toString();
-        if (task.id != null) { //Обновляем существующее задание
-            new Thread(new Runnable() {  public void run() { oData.updateTask(task); } }).start();
-        }
-        else { //Создаем новое задание
-            new Thread(new Runnable() {  public void run() { oData.createTask(task); } }).start();
-        }
-        finish(); //Закрываем активность
+        new SaveTask(task).execute();
     }
 
     //вызывается при изменении даты во фрагменте
@@ -538,7 +543,7 @@ public class TaskActivity extends AppCompatActivity implements
         }
     }
 
-    //Класс для заполнения показателей задания
+    //Класс для перезаполнения показателей задания
     private class FillIndicators extends AsyncTask<String, Void, ArrayList<Tasks.Task.IndicatorRow>> {
         @Override
         protected void onPreExecute() {
@@ -553,12 +558,7 @@ public class TaskActivity extends AppCompatActivity implements
         protected void onPostExecute(ArrayList<Tasks.Task.IndicatorRow> rows) {
             task.indicators.clear();
             task.indicators.addAll(rows);
-            //поля закладки Показатели
-            getSupportFragmentManager().
-                    beginTransaction().
-                            replace(R.id.indicators,
-                            IndicatorFragment.newInstance(task.type_key, task.indicators)).
-                    commit();
+            updateIndicators(); //обновим Показатели
             findViewById(R.id.progressBar).setVisibility(View.INVISIBLE);
             findViewById(R.id.indicators).setVisibility(View.VISIBLE);
         }

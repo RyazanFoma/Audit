@@ -1,5 +1,7 @@
 package com.example.eduardf.audit;
 
+import android.nfc.FormatException;
+
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -12,9 +14,9 @@ import static com.example.eduardf.audit.AuditOData.DATE_FORMAT_1C;
 /**
  * Список показателей аудита
  */
-public class Indicators extends ArrayList<Indicators.Indicator> {
+class Indicators extends ArrayList<Indicators.Indicator> {
 
-    public class Indicator {
+    class Indicator {
         String id; //Giud показателя
         String code; //Код в 1С
         String name; //Наименование
@@ -98,26 +100,13 @@ public class Indicators extends ArrayList<Indicators.Indicator> {
 
         String id;
 
-        private Types(String name) {
+        Types(String name) {
             this.id = name;
         }
 
         @Override
         public String toString() {
             return this.id;
-        }
-
-        public String toEdmType() {
-            //Edm.Boolean Edm.Double Edm.Date
-            switch (id) {
-                case "Булево":
-                    return AuditOData.BOOLEAN_TYPE;
-                case "Число":
-                    return AuditOData.DOUBLE_TYPE;
-                case "Дата":
-                    return AuditOData.DATE_TYPE;
-            }
-            return AuditOData.UNDEFINED_TYPE;
         }
 
         /**
@@ -127,73 +116,13 @@ public class Indicators extends ArrayList<Indicators.Indicator> {
          */
         static public Types toValue(String key) {
             switch (key) {
-                case "Булево":
-                    return IS_BOOLEAN;
-                case "Число":
-                    return IS_NUMERIC;
-                case "Дата":
-                    return IS_DATE;
-            }
-            return null;
-        }
-
-        /**
-         * Преобразует значение объекта в строку в соответствии с типом
-         * @param value - объект
-         * @return - строку со значением, соответвтующим типу
-         */
-        public String valueToString(Object value) {
-            switch (this) {
-                case IS_DATE:
-                    if (value != null)
-                        return (new SimpleDateFormat(DATE_FORMAT_1C, Locale.US)).format(value);
-                    else {
-                        Date empty = new Date();
-                        empty.setTime(0);
-                        return (new SimpleDateFormat(DATE_FORMAT_1C, Locale.US)).format(empty);
-                    }
-                case IS_BOOLEAN:
-                    return ((Boolean) value)? "true": "false";
-                case IS_NUMERIC: {
-                    final float a = (Float) value;
-                    if (a == (long) a) return String.format(Locale.US, "%d", (long) a);
-                    else return String.format(Locale.US, "%s", a);
-                }
-                default:
-                    throw new RuntimeException("Indicators.valueToString('"+value.toString()+"') Error on binding of value from type '"+this.id+"'.");
+                case "Булево": return IS_BOOLEAN;
+                case "Число": return IS_NUMERIC;
+                case "Дата": return IS_DATE;
+                default: return null;
             }
         }
 
-        /**
-         * Разбор строки со значением объекта в соответствии с типом
-         * @param string - строка
-         * @return - значение объекта
-         */
-        public Object stringToValue(String string) {
-            Object result = null;
-            switch (this) {
-                case IS_DATE:
-                    try {
-                        result = (new SimpleDateFormat(DATE_FORMAT_1C, Locale.US)).parse(string);
-                    } catch (ParseException e) {
-                        final Date empty = new Date();
-                        empty.setTime(0);
-                        result = (Date) empty;
-                    }
-                    break;
-                case IS_BOOLEAN:
-                    result = (Boolean) string.equals("true");
-                    break;
-                case IS_NUMERIC:
-                    try {
-                        result = Float.parseFloat(string);
-                    }
-                    catch (NumberFormatException e) {
-                        result = Float.valueOf(0);
-                    }
-            }
-            return result;
-        }
     }
 }
 //Фома2018
