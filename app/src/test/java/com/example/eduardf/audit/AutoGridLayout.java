@@ -5,6 +5,14 @@ import android.content.res.TypedArray;
 import android.support.v7.widget.GridLayout;
 import android.util.AttributeSet;
 
+/*
+ * *
+ *  * Created by Eduard Fomin on 05.02.19 9:42
+ *  * Copyright (c) 2019 . All rights reserved.
+ *  * Last modified 19.09.18 15:56
+ *
+ */
+
 //Расширение класса GridLayout с автоматическим подбором количества колонок
 //All right https://github.com/kevinmeresse/AutoGridLayout
 public class AutoGridLayout extends GridLayout {

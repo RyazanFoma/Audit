@@ -8,7 +8,6 @@ import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.TextInputEditText;
 import android.support.design.widget.TextInputLayout;
-import android.support.v4.app.FragmentTransaction;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.AsyncTaskLoader;
 import android.support.v4.content.Loader;
@@ -25,6 +24,14 @@ import android.widget.Switch;
 import android.widget.TabHost;
 
 import java.util.Locale;
+
+/*
+ * *
+ *  * Created by Eduard Fomin on 05.02.19 9:42
+ *  * Copyright (c) 2019 . All rights reserved.
+ *  * Last modified 10.01.19 15:57
+ *
+ */
 
 //Форма редактирования вида аудита
 public class TypeActivity extends AppCompatActivity implements
@@ -173,7 +180,7 @@ public class TypeActivity extends AppCompatActivity implements
 //        object.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
 //            @Override
 //            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-//                iObject = (int) mObjects.get(position).get("_id");;
+//                iObject = (int) mObjects.getItem(position).getItem("_id");;
 //                updateAnalytic(((Switch) findViewById(R.id.switch_analytic)).isChecked());
 //            }
 //            @Override
@@ -376,7 +383,7 @@ public class TypeActivity extends AppCompatActivity implements
 //    private Parcelable[] putTypeObjects() {
 //        Parcelable[] result = new Parcelable[type.objects.size()];
 //        int i = 0;
-//        for (Integer key:  type.objects.keySet()) result[i++] = new ParcelableObject(key, type.objects.get(key));
+//        for (Integer key:  type.objects.keySet()) result[i++] = new ParcelableObject(key, type.objects.getItem(key));
 //        return result;
 //    }
 //
@@ -397,7 +404,7 @@ public class TypeActivity extends AppCompatActivity implements
 //            key = in.readInt(); //Считываем объект
 //            int size_analytic = in.readInt(); //Считываем количество аналитик
 //            analytics = new ArraySet<Integer>(in.readInt());
-//            for(int i=0;i<size_analytic;i++) analytics.add(in.readInt()); //Добавляем все аналитики
+//            for(int i=0;i<size_analytic;i++) analytics.addItem(in.readInt()); //Добавляем все аналитики
 //        }
 //
 //        //Пишем объект в парсель
@@ -495,15 +502,15 @@ public class TypeActivity extends AppCompatActivity implements
 //
 //        // Устанавливаем текущий объект в спиннере
 //        int position = 0;
-//        if (iObject != NOT_SELECTED) for (Map<String, Object> map: mObjects) if ((int) map.get("_id") == iObject) break; else position++;
+//        if (iObject != NOT_SELECTED) for (Map<String, Object> map: mObjects) if ((int) map.getItem("_id") == iObject) break; else position++;
 //        ((Spinner) findViewById(R.id.object)).setSelection(position,true);
 //
 //        //Фрагмент с типами аналитик объекта аудита на редактирование или только на просмотр в зависимости от состояния флага Изменить (переключатель Изменить)
 //        android.support.v4.app.Fragment typeAnalytic;
 //        if (isChecked)
-//            typeAnalytic = TypeListEdit.newInstance(CODE_ANALYTIC, AuditDB.TBL_ANALYTIC, type.objects.get(iObject));
+//            typeAnalytic = TypeListEdit.newInstance(CODE_ANALYTIC, AuditDB.TBL_ANALYTIC, type.objects.getItem(iObject));
 //        else
-//            typeAnalytic = TypeListView.newInstance(AuditDB.TBL_ANALYTIC, type.objects.get(iObject));
+//            typeAnalytic = TypeListView.newInstance(AuditDB.TBL_ANALYTIC, type.objects.getItem(iObject));
 //        FragmentTransaction fTrans = getSupportFragmentManager().beginTransaction();
 //        fTrans.replace(R.id.typeanalytic, typeAnalytic);
 //        fTrans.commit();
@@ -549,7 +556,7 @@ public class TypeActivity extends AppCompatActivity implements
         @Nullable
         @Override
         public AType loadInBackground() {
-            return oData.getType(key);
+            return oData.getAType(key);
         }
     }
 }

@@ -21,6 +21,14 @@ import static com.example.eduardf.audit.ReferenceChoice.ACTION_MOVE;
 import static com.example.eduardf.audit.ReferenceChoice.MODE_MULTIPLE_CHOICE;
 import static com.example.eduardf.audit.ReferenceChoice.MODE_SINGLE_CHOICE;
 
+/*
+ * *
+ *  * Created by Eduard Fomin on 05.02.19 9:42
+ *  * Copyright (c) 2019 . All rights reserved.
+ *  * Last modified 27.11.18 11:19
+ *
+ */
+
 /**
  * Адаптер для списка элементов/групп
  */

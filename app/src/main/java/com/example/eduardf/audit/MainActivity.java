@@ -1,7 +1,10 @@
 package com.example.eduardf.audit;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.net.Uri;
+import android.preference.Preference;
+import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.LoaderManager;
@@ -24,6 +27,14 @@ import android.widget.Spinner;
 
 import java.util.List;
 import java.util.Map;
+
+/*
+ * *
+ *  * Created by Eduard Fomin on 05.02.19 9:42
+ *  * Copyright (c) 2019 . All rights reserved.
+ *  * Last modified 07.12.18 15:47
+ *
+ */
 
 //Главная активность - аутентификация пользователя и установка параметров приложения
 public class MainActivity extends AppCompatActivity implements
@@ -133,19 +144,26 @@ public class MainActivity extends AppCompatActivity implements
     public void onClick(View v) {
         //Нажата именно Вперед?
         if (v.getId()==R.id.fab) {
-
-            //Текущие значения пароля и идентификатора пользователя
-            String id = usersMap.get(iPosition).get("id").toString();
-            String password = usersMap.get(iPosition).get("password").toString();
+            //Текущие значения пароля
+            final String password = usersMap.get(iPosition).get("password").toString();
 
             EditText input = (EditText) findViewById(R.id.password);
             //Пароль верный?
             if (equalsPassword(password, input.getText().toString())) {
+                final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
+                final SharedPreferences.Editor editor = preferences.edit();
+                editor.putString(SettingTask.DEFAULT_TYPE,
+                        usersMap.get(iPosition).get("type").toString());
+                editor.putString(SettingTask.DEFAULT_ORGANIZATION,
+                        usersMap.get(iPosition).get("organization").toString());
+                editor.putString(SettingTask.DEFAULT_OBJECT,
+                        usersMap.get(iPosition).get("object").toString());
+                editor.putString(SettingTask.DEFAULT_RESPONSIBLE,
+                        usersMap.get(iPosition).get("responsible").toString());
+                editor.apply();
                 //Открываем список заданий
-                startActivity(TaskListActivity.intentActivity(this, id));
-//                Intent intent = new Intent(this, TaskList.class);
-//                intent.putExtra("Auditor", id);
-//                startActivity(intent);
+                startActivity(TaskListActivity.intentActivity(this,
+                        usersMap.get(iPosition).get("id").toString()));
             }
             else {
                 //Неверный пароль

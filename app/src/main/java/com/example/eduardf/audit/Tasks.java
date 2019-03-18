@@ -3,23 +3,26 @@ package com.example.eduardf.audit;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-
-import org.apache.commons.lang3.ObjectUtils;
-import org.jetbrains.annotations.NotNull;
 
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 
 import static java.text.DateFormat.getDateTimeInstance;
 
+/*
+ * *
+ *  * Created by Eduard Fomin on 05.02.19 9:42
+ *  * Copyright (c) 2019 . All rights reserved.
+ *  * Last modified 30.01.19 10:35
+ *
+ */
+
 //Класс - список заданий на аудит, предназначен для рециклервью
-public class Tasks extends ArrayList<Tasks.Task> {
+class Tasks extends ArrayList<Tasks.Task> {
 
     //Класс - задание на аудит:
-    public static class Task {
+    static class Task {
         String id; //Идентификатор
         Date date; //Дата
         String number; //Номер
@@ -38,13 +41,14 @@ public class Tasks extends ArrayList<Tasks.Task> {
         boolean posted; //Проведен
         boolean checked; //Отмечен в списке
         boolean expand; //Карточка в списке развернута
+        boolean full; //Карточка в списке занимает все колонки
         ArrayList<String> analytics; //Аналитика списком
         ArrayList<IndicatorRow> indicators; //Покаказели задания
 
         //Конструктор
-        public Task() {
-            analytics = new ArrayList<String>();
-            indicators = new ArrayList<IndicatorRow>();
+        Task() {
+            analytics = new ArrayList<>();
+            indicators = new ArrayList<>();
         }
 
         //Идентификаторы статуса задания из 1С
@@ -60,11 +64,11 @@ public class Tasks extends ArrayList<Tasks.Task> {
             IN_WORK(1, ENUM_STATUS_1, "В работе"),
             POSTED(2, ENUM_STATUS_2, "Проведен");
 
-            int number; //Номер закладки
-            String id; //Идентификатор
-            private String desc; //Описание
+            final int number; //Номер закладки
+            final String id; //Идентификатор
+            private String desc; //Наименование
 
-            private Status(int number, String id, String desc) {
+            Status(int number, String id, String desc) {
                 this.number = number;
                 this.id = id;
                 this.desc = desc;
@@ -72,14 +76,14 @@ public class Tasks extends ArrayList<Tasks.Task> {
 
             /**
              * Представление статуса в виде строки
-             * @return
+             * @return наименование статуса
              */
             @Override
             public String toString() {
                 return desc;
             }
 
-            static Status toValue(String id) {
+            static Status toValue(@NonNull String id) {
                 switch (id) {
                     case ENUM_STATUS_0: return APPROVED;
                     case ENUM_STATUS_1: return IN_WORK;
@@ -102,7 +106,7 @@ public class Tasks extends ArrayList<Tasks.Task> {
         /**
          * Класс - строка таблицы показателей
          */
-        public class IndicatorRow {
+        class IndicatorRow {
             String indicator; //guid показателя
             Object goal; //Целевое значение
             Object minimum; //Минимальное значение
@@ -165,19 +169,20 @@ public class Tasks extends ArrayList<Tasks.Task> {
         public void onRestoreInstanceState(Bundle savedInstanceState, String argName) {
             if (savedInstanceState.containsKey(argName)) {
                 final Bundle bundle = savedInstanceState.getBundle(argName);
+                if (bundle == null) throw new RuntimeException("Error on parsing of task.");
                 try {
                     this.date = getDateTimeInstance().parse(bundle.getString(ARG_DATE));
-                }
-                catch (NullPointerException e) {
-                    e.printStackTrace(); //Здесь нужно сообщить о неправильной дате
-                    throw new RuntimeException("Error on parsing of date 'null'.");
                 }
                 catch (ParseException e) {
                     e.printStackTrace(); //Здесь нужно сообщить о неправильной дате
                     throw new RuntimeException("Error on parsing of date '"+bundle.getString(ARG_DATE)+"'.");
                 }
                 this.id = bundle.getString(ARG_ID);
-                this.status = Status.toValue(bundle.getString(ARG_STATUS));
+                final String status_id = bundle.getString(ARG_STATUS);
+                if (status_id != null)
+                    this.status = Status.toValue(status_id);
+                else
+                    throw new RuntimeException("Can't restore task status");
                 this.auditor_key = bundle.getString(ARG_AUDITOR);
                 this.number = bundle.getString(ARG_NUMBER);
                 this.type_key = bundle.getString(ARG_TYPE);
@@ -216,7 +221,7 @@ public class Tasks extends ArrayList<Tasks.Task> {
      * @param argName - имя ParcelableArray
      */
     public void onRestoreInstanceState(Bundle savedInstanceState, String argName) {
-        if (this != null && savedInstanceState.containsKey(argName)) {
+        if (savedInstanceState.containsKey(argName)) {
             if (!isEmpty()) clear();
             Parcelable[] parcelables = savedInstanceState.getParcelableArray(argName);
             if (parcelables != null)
@@ -225,7 +230,7 @@ public class Tasks extends ArrayList<Tasks.Task> {
     }
 
         //возвращает количество отмеченных заданий
-    public int checkedCount() {
+    int checkedCount() {
         int checked = 0;
         for(Task task: this) if (task.checked) checked++;
         return checked;
@@ -233,32 +238,32 @@ public class Tasks extends ArrayList<Tasks.Task> {
 
     //Возвращает список идентификаторов отмеченных заданий
     public ArrayList<String> getChecked() {
-        ArrayList<String> checked = new ArrayList<String>();
+        ArrayList<String> checked = new ArrayList<>();
         for(Task task: this) if (task.checked) checked.add(task.id);
         return checked;
     }
 
     //Отмечает задания по списку
     public void setChecked(ArrayList<String> checked) {
-        if (!(this == null || checked == null || checked.isEmpty()))
+        if (!(checked == null || checked.isEmpty()))
             for(Task task: this) task.checked = checked.contains(task.id);
     }
 
     //Возвращает список идентификаторов развернутых заданий
     public ArrayList<String> getExpand() {
-        ArrayList<String> expand = new ArrayList<String>();
+        ArrayList<String> expand = new ArrayList<>();
         for(Task task: this) if (task.expand) expand.add(task.id);
         return expand;
     }
 
     //Разворачивает задания по списку
     public void setExpand(ArrayList<String> expand) {
-        if (!(this == null || expand == null || expand.isEmpty()))
+        if (!(expand == null || expand.isEmpty()))
             for(Task task: this) task.expand = expand.contains(task.id);
     }
 
     //Помечает/отменяет все задания
-    public void setCheckedAll(boolean checked) {
+    void setCheckedAll(boolean checked) {
         for(Task task: this) task.checked=checked;
     }
 }

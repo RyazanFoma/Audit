@@ -1,4 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ /**
+  ~  * Created by Eduard Fomin on 05.02.19 9:42
+  ~  * Copyright (c) 2019 . All rights reserved.
+  ~  * Last modified 23.11.18 12:33
+  ~  */
+  -->
+
 <android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"

@@ -1,4 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ /**
+  ~  * Created by Eduard Fomin on 05.02.19 9:42
+  ~  * Copyright (c) 2019 . All rights reserved.
+  ~  * Last modified 31.01.19 11:47
+  ~  */
+  -->
+
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -32,7 +40,9 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="@dimen/field_vertical_margin"
-                    android:orientation="horizontal">
+                    android:orientation="horizontal"
+                    android:paddingTop="@dimen/field_vertical_margin"
+                    android:paddingBottom="@dimen/field_vertical_margin">
 
                     <TextView
                         android:id="@+id/name"
@@ -46,8 +56,6 @@
                         android:id="@+id/folder"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginBottom="@dimen/field_horizontal_margin"
-                        android:layout_marginTop="@dimen/field_horizontal_margin"
                         app:srcCompat="@drawable/ic_baseline_navigate_next_24px" />
 
                     <TextView
@@ -76,6 +84,7 @@
                     android:layout_height="wrap_content"
                     android:gravity="left"
                     android:layoutDirection="rtl"
+                    android:padding="@dimen/field_vertical_margin"
                     android:textAppearance="?attr/textAppearanceListItem" />
 
                 <LinearLayout
@@ -136,13 +145,20 @@
 
             </LinearLayout>
 
-            <ImageView
+            <LinearLayout
                 android:id="@+id/expand"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="bottom"
-                android:layout_marginBottom="@dimen/field_vertical_margin"
-                app:srcCompat="@drawable/ic_black_expand_more_24px" />
+                android:layout_height="match_parent"
+                android:gravity="bottom"
+                android:orientation="vertical"
+                android:padding="@dimen/field_vertical_margin">
+
+                <ImageView
+                    android:id="@+id/expand_image"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    app:srcCompat="@drawable/ic_black_expand_more_24px" />
+            </LinearLayout>
 
         </LinearLayout>
     </android.support.v7.widget.CardView>

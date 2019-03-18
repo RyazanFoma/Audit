@@ -5,6 +5,14 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.Set;
 
+/*
+ * *
+ *  * Created by Eduard Fomin on 05.02.19 9:42
+ *  * Copyright (c) 2019 . All rights reserved.
+ *  * Last modified 25.09.18 16:45
+ *
+ */
+
 /** УДАЛИТЬ -  УСТАРЕЛО!!!
  * Created by eduardf on 13.04.2018.
  */

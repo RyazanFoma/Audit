@@ -1,10 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ /**
+  ~  * Created by Eduard Fomin on 05.02.19 9:42
+  ~  * Copyright (c) 2019 . All rights reserved.
+  ~  * Last modified 17.12.18 10:08
+  ~  */
+  -->
+
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".ObjectListEdit">
+    tools:context=".Objects">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -57,7 +65,7 @@
                 android:layout_marginStart="@dimen/field_vertical_margin"
                 android:layout_weight="1"
                 tools:context=".ObjectActivity"
-                tools:listitem="@layout/fragment_objectedit">
+                tools:listitem="@layout/fragment_object">
 
             </android.support.v7.widget.RecyclerView>
 

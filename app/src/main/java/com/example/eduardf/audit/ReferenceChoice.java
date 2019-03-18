@@ -1,5 +1,6 @@
 package com.example.eduardf.audit;
 
+import android.app.Activity;
 import android.os.AsyncTask;
 import android.support.annotation.Nullable;
 import android.app.SearchManager;
@@ -33,6 +34,14 @@ import android.widget.CheckBox;
 import android.widget.LinearLayout;
 
 import java.util.ArrayList;
+
+/*
+ * *
+ *  * Created by Eduard Fomin on 05.02.19 9:42
+ *  * Copyright (c) 2019 . All rights reserved.
+ *  * Last modified 07.12.18 10:25
+ *
+ */
 
 //Выбор и редактирование справочников: Виды аудита, Объекты, Аналитика
 public class ReferenceChoice extends AppCompatActivity implements
@@ -161,6 +170,7 @@ public class ReferenceChoice extends AppCompatActivity implements
         else intent.putExtra(ARG_ID, new ArrayList<String>());
         return intent;
     }
+
     //Проверяет наличие обработчика выбора в предыдущей активности
     private static void instanceOf(Object context, int mode) {
         switch (mode) {
@@ -169,7 +179,7 @@ public class ReferenceChoice extends AppCompatActivity implements
                     mSingleChoice = (OnReferenceManagerInteractionSingleChoice) context;
                 } else {
                     throw new RuntimeException(context.toString()
-                            + " must implement OnListFragmentInteractionSingleChoice");
+                            + " must implement OnReferenceManagerInteractionSingleChoice");
                 }
                 break;
             case MODE_MULTIPLE_CHOICE:
@@ -177,7 +187,7 @@ public class ReferenceChoice extends AppCompatActivity implements
                     mMultipleChoice = (OnReferenceManagerInteractionMultipleChoice) context;
                 } else {
                     throw new RuntimeException(context.toString()
-                            + " must implement OnListFragmentInteractionMultipleChoice");
+                            + " must implement OnReferenceManagerInteractionMultipleChoice");
                 }
                 break;
         }

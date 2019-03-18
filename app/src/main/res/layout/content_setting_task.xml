@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ /**
+  ~  * Created by Eduard Fomin on 05.02.19 9:42
+  ~  * Copyright (c) 2019 . All rights reserved.
+  ~  * Last modified 24.01.19 14:52
+  ~  */
+  -->
+
+<android.support.constraint.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    app:layout_behavior="@string/appbar_scrolling_view_behavior"
+    tools:context="com.example.eduardf.audit.SettingTask"
+    tools:showIn="@layout/activity_setting_task" >
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1" />
+
+        <View
+            android:id="@+id/divider"
+            android:layout_width="1dp"
+            android:layout_height="match_parent"
+            android:background="?android:attr/listDivider" />
+
+        <LinearLayout
+            android:id="@+id/setting"
+            xmlns:tools="http://schemas.android.com/tools"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            <TextView
+                style="@style/Base.TextAppearance.AppCompat.Title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/activity_horizontal_margin"
+                android:layout_marginTop="@dimen/field_vertical_margin"
+                android:layout_marginEnd="@dimen/field_horizontal_margin"
+                android:layout_marginBottom="@dimen/field_horizontal_margin"
+                android:text="@string/pref_header_default" />
+
+            <fragment class="com.example.eduardf.audit.Reference"
+                android:id="@+id/type"
+                tools:layout="@layout/fragment_reference_field"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/field_horizontal_margin"
+                android:layout_marginTop="@dimen/field_horizontal_margin"
+                android:layout_marginEnd="@dimen/field_horizontal_margin"
+                android:layout_marginBottom="@dimen/field_vertical_margin"
+                app:set="ВидыАудитов"
+                app:title="Вид аудита" />
+
+            <fragment class="com.example.eduardf.audit.Reference"
+                android:id="@+id/organization"
+                tools:layout="@layout/fragment_reference_field"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/field_horizontal_margin"
+                android:layout_marginTop="@dimen/field_horizontal_margin"
+                android:layout_marginEnd="@dimen/field_horizontal_margin"
+                android:layout_marginBottom="@dimen/field_vertical_margin"
+                app:set="Организации"
+                app:title="Организация" />
+
+            <fragment class="com.example.eduardf.audit.Reference"
+                android:id="@+id/object"
+                tools:layout="@layout/fragment_reference_field"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/field_horizontal_margin"
+                android:layout_marginTop="@dimen/field_horizontal_margin"
+                android:layout_marginEnd="@dimen/field_horizontal_margin"
+                android:layout_marginBottom="@dimen/field_vertical_margin"
+                app:set="Объекты"
+                app:title="Объект аудита" />
+
+            <fragment class="com.example.eduardf.audit.Reference"
+                android:id="@+id/responsible"
+                tools:layout="@layout/fragment_reference_field"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/field_horizontal_margin"
+                android:layout_marginTop="@dimen/field_horizontal_margin"
+                android:layout_marginEnd="@dimen/field_horizontal_margin"
+                android:layout_marginBottom="@dimen/field_vertical_margin"
+                app:set="Ответственные"
+                app:title="Ответственный за объект" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</android.support.constraint.ConstraintLayout>

@@ -2,46 +2,79 @@ package com.example.eduardf.audit;
 
 import android.annotation.SuppressLint;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.design.widget.TextInputEditText;
 import android.support.design.widget.TextInputLayout;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
-import android.widget.FrameLayout;
-import android.widget.LinearLayout;
 import android.widget.TextView;
+
+import org.jetbrains.annotations.NotNull;
+
 import java.util.Date;
 import java.util.Locale;
 
-//Диалог для изменения наименования группы
-public class DialogIndicator extends DialogFragment
-        implements DateTime.OnDateTimeInteractionListener {
+/*
+ * *
+ *  * Created by Eduard Fomin on 05.02.19 9:42
+ *  * Copyright (c) 2019 . All rights reserved.
+ *  * Last modified 10.01.19 15:57
+ *
+ */
 
+/**
+ * Ввод значений: числового показателя, показателя с датой и комментария к показателю
+ */
+public class DialogIndicator extends DialogFragment {
+
+    /**
+     * Тэги диалога
+     */
     public static final String TAG_NUMBER = "number"; //Режим редактирования числа
     public static final String TAG_DATE = "date"; //Режим редактирования даты
     public static final String TAG_COMMENT = "comment"; //Режим редактирования комментария
 
+    //Аргументы
     private static final String ARG_POSITION = "position"; //Аргумент Позиция показателя
     private static final String ARG_TITLE = "title"; //Аргумент Число
     private static final String ARG_NUMBER = "number"; //Аргумент Число
     private static final String ARG_UNIT = "unit"; //Аргумент ед. измерения
     private static final String ARG_DATE = "date"; //Аргумент Дата
     private static final String ARG_COMMENT = "comment"; //Аргумент комментарий
+
     private static DialogInteractionListener mListener; //Обработчик нажатия Изменить
 
-    private int position;
+    private int position; //Позиция показателя, возращается в обработчик нажатия Изменить
+
+    //Переменные для заполнения полей при создании фрагмента
     private String title;
     private float number;
     private String comment;
     private String unit;
     private Date date;
 
-    //Создает диалог для редактирвоания числа
+    /**
+     * Признак начала процесса поворота экрана.
+     * Устанавливается в true в {@link DialogIndicator#onSaveInstanceState(android.os.Bundle)}.
+     * Измользуется в {@link DialogIndicator#onDestroyView()}
+     */
+    private boolean afterRotate = false;
+
+    /**
+     * Создание диалога для ввода числа
+     * @param context - текущй контекст с обработчиком нажатия Изменить
+     * @param position - позиция показателя в задании
+     * @param title - наименование показателя
+     * @param number - значение числа
+     * @param unit - единица изменения
+     * @return - экземпляр диалогового фрагмента
+     */
     static DialogIndicator newInstance(Fragment context, int position, String title, float number, String unit) {
         instanceOf(context);
         final DialogIndicator f = new DialogIndicator();
@@ -55,7 +88,14 @@ public class DialogIndicator extends DialogFragment
         return f;
     }
 
-    //Создает диалог для редактирвоания комментария
+    /**
+     * Создание диалога для ввода комментария
+     * @param context - текущй контекст с обработчиком нажатия Изменить
+     * @param position - позиция показателя в задании
+     * @param title - наименование показателя
+     * @param comment - комментарий
+     * @return - экземпляр диалогового фрагмента
+     */
     static DialogIndicator newInstance(Fragment context, int position, String title, String comment) {
         instanceOf(context);
         final DialogIndicator f = new DialogIndicator();
@@ -67,7 +107,14 @@ public class DialogIndicator extends DialogFragment
         return f;
     }
 
-    //Создает диалог для редактирвоания даты
+    /**
+     * Создание диалога для редактирования даты
+     * @param context - текущй контекст с обработчиком нажатия Изменить
+     * @param position - позиция показателя в задании
+     * @param title - наименование показателя
+     * @param date - значение даты
+     * @return - экземпляр диалогового фрагмента
+     */
     static DialogIndicator newInstance(Fragment context, int position, String title, Date date) {
         instanceOf(context);
         final DialogIndicator f = new DialogIndicator();
@@ -81,6 +128,11 @@ public class DialogIndicator extends DialogFragment
     }
 
     //Проверяем наличие интеракшин в родительском классе
+
+    /**
+     * Проверка наличия обработчика кнопки Изменить в контексте
+     * @param context - текущй контекст с обработчиком нажатия Изменить
+     */
     static private void instanceOf(Fragment context) {
         if (context instanceof DialogIndicator.DialogInteractionListener) {
             mListener = (DialogIndicator.DialogInteractionListener) context;
@@ -90,57 +142,51 @@ public class DialogIndicator extends DialogFragment
         }
     }
 
-    //Обработчик изменения даты
-    @Override
-    public void onDateTimeInteraction(Date date) {
-        this.date = date;
-    }
-
-    //Интерфейс для нажатия кнопки Изменить. Должен присутствовать в родительском классе
+    /**
+     * Интерфейс обработчика кнопки Изменить, должен присутствовать в текущем контектсе
+     */
     public interface DialogInteractionListener {
-        public void onChangedIndicatorValue(int position, Object value);
-        public void onChangedIndicatorComment(int position, String value);
+        void onChangedIndicatorValue(int position, Object value);
+        void onChangedIndicatorComment(int position, String value);
     }
 
+    /**
+     * Создание диалога
+     * @param savedInstanceState - среда для хранения
+     */
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         final  Bundle args = savedInstanceState == null? getArguments(): savedInstanceState;
-        position = args.getInt(ARG_POSITION);
-        title = args.getString(ARG_TITLE);
-        number = args.getFloat(ARG_NUMBER, 0);
-        comment = args.getString(ARG_COMMENT, "");
-        unit = args.getString(ARG_UNIT, "");
-        date = new Date();
-        date.setTime(args.getLong(ARG_DATE, 0));
+        if (args != null) {
+            position = args.getInt(ARG_POSITION);
+            title = args.getString(ARG_TITLE);
+            number = args.getFloat(ARG_NUMBER, 0);
+            comment = args.getString(ARG_COMMENT, "");
+            unit = args.getString(ARG_UNIT, "");
+            date = new Date();
+            date.setTime(args.getLong(ARG_DATE, 0));
+        }
     }
 
-    @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.dialog_indicator, container, false);
-    }
-
+    /**
+     * Создание вью диалога
+     * @param inflater - выдуватель
+     * @param container - контейтер для вью
+     * @param savedInstanceState - среда для хранения
+     * @return - вию диалога
+     */
     @SuppressLint("ClickableViewAccessibility") //Чтобы для onTouch не возникало предупреждение о performClick
     @Override
-    public void onViewCreated(View view, Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
-
-        final LinearLayout layoutNumber = view.findViewById(R.id.layout_number);
-        final TextInputLayout layoutComment = view.findViewById(R.id.layout_comment);
-        final FrameLayout layoutDate = view.findViewById(R.id.datetime);
-
-        ((TextView) view.findViewById(R.id.title)).setText(title);
+    public View onCreateView(@NotNull LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
+        View view;
+        if (getTag() == null) throw new RuntimeException("Tag for DialogIndicator not installed");
         switch (getTag()) {
             case TAG_NUMBER: {
+                view = inflater.inflate(R.layout.dialog_indicator_number, container, false);
                 final TextInputLayout layoutValue = view.findViewById(R.id.layout_value);
                 final TextInputEditText textValue = view.findViewById(R.id.text_value);
-                final String text = (number == (long)number)?
-                        String.format(Locale.US,"%d", (long) number):
-                        String.format(Locale.US,"%s", number);
-                textValue.setText(text);
-                textValue.setSelection(text.length());
                 //The listener of  a drawableEnd button for clear a TextInputEditText
                 textValue.setOnTouchListener(new View.OnTouchListener() {
                     @Override
@@ -165,15 +211,13 @@ public class DialogIndicator extends DialogFragment
                 });
                 if (!unit.isEmpty()) layoutValue.setHint(unit);
                 layoutValue.setCounterMaxLength(getResources().getInteger(R.integer.max_length_number));
-                //Остальное скрываем
-                layoutComment.setVisibility(View.GONE);
-                layoutDate.setVisibility(View.GONE);
                 //Обработчик нажатия на кнопку Изменить
-                ((Button) view.findViewById(R.id.positive)).setOnClickListener(new View.OnClickListener() {
+                view.findViewById(R.id.positive).setOnClickListener(new View.OnClickListener() {
                     public void onClick(View v) {
                         //Добавить проверку и сообщение об ошибке!!!
                         try {
-                            mListener.onChangedIndicatorValue(position, Float.parseFloat(textValue.getText().toString()));
+                            mListener.onChangedIndicatorValue(position,
+                                    Float.parseFloat(textValue.getText().toString()));
                             dismiss();
                         }
                         catch (NumberFormatException e) {
@@ -185,9 +229,9 @@ public class DialogIndicator extends DialogFragment
                 break;
             }
             case TAG_COMMENT: {
+                view = inflater.inflate(R.layout.dialog_indicator_comment, container, false);
+                final TextInputLayout layoutComment = view.findViewById(R.id.layout_comment);
                 final TextInputEditText textComment = view.findViewById(R.id.text_comment);
-                textComment.setText(comment);
-                textComment.setSelection(comment.length());
                 // Реализация кнопки очистить
                 textComment.setOnTouchListener(new View.OnTouchListener() {
                     @Override
@@ -203,9 +247,7 @@ public class DialogIndicator extends DialogFragment
                     }
                 });
                 layoutComment.setCounterMaxLength(getResources().getInteger(R.integer.max_length_comment));
-                layoutNumber.setVisibility(View.GONE);
-                layoutDate.setVisibility(View.GONE);
-                ((Button) view.findViewById(R.id.positive)).setOnClickListener(new View.OnClickListener() {
+                view.findViewById(R.id.positive).setOnClickListener(new View.OnClickListener() {
                     public void onClick(View v) {
                         mListener.onChangedIndicatorComment(position, textComment.getText().toString());
                         dismiss();
@@ -213,40 +255,121 @@ public class DialogIndicator extends DialogFragment
                 });
                 break;
             }
-            case TAG_DATE:
-                layoutNumber.setVisibility(View.GONE);
-                layoutComment.setVisibility(View.GONE);
-                getChildFragmentManager().
-                        beginTransaction().
-                        add(R.id.datetime, DateTime.newInstance(date)).
-                        commit();
-                ((Button) view.findViewById(R.id.positive)).setOnClickListener(new View.OnClickListener() {
+            case TAG_DATE: {
+                view = inflater.inflate(R.layout.dialog_indicator_date, container, false);
+                view.findViewById(R.id.positive).setOnClickListener(new View.OnClickListener() {
                     public void onClick(View v) {
-                        mListener.onChangedIndicatorValue(position, date);
+                        if (getActivity() != null) {
+                            final DateTime dateTime = (DateTime) getActivity().
+                                    getSupportFragmentManager().findFragmentById(R.id.fragment_date);
+                            mListener.onChangedIndicatorValue(position, dateTime.getDate());
+                        }
                         dismiss();
                     }
                 });
                 break;
+            }
+            default:
+                throw new RuntimeException("The is unknown tag for a DialogIndicator");
         }
-        ((Button) view.findViewById(R.id.negative)).setOnClickListener(new View.OnClickListener() {
+        view.findViewById(R.id.negative).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 dismiss();
             }
         });
+        afterRotate = false;
+        return view;
     }
 
-    //Перед поворотом экрана
+    /**
+     * Заполнение вью диалога значениями
+     * @param view - вью диалога
+     * @param savedInstanceState - среда для хранения
+     */
+    @Override
+    public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        ((TextView) view.findViewById(R.id.title)).setText(title);
+        final String tag = getTag();
+        if (tag != null) {
+            switch (tag) {
+                case TAG_NUMBER: {
+                    final TextInputEditText textValue = view.findViewById(R.id.text_value);
+                    final String text = (number == (long)number)?
+                            String.format(Locale.US,"%d", (long) number):
+                            String.format(Locale.US,"%s", number);
+                    textValue.setText(text);
+                    textValue.setSelection(text.length());
+                    break;
+                }
+                case TAG_COMMENT: {
+                    final TextInputEditText textComment = view.findViewById(R.id.text_comment);
+                    textComment.setText(comment);
+                    textComment.setSelection(comment.length());
+                    break;
+                }
+                case TAG_DATE: {
+                    if (getActivity() != null) {
+                        final DateTime dateTime = (DateTime) getActivity().
+                                getSupportFragmentManager().findFragmentById(R.id.fragment_date);
+                        dateTime.setDate(date);
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
+    /**
+     * Сохранение значений полей перед поворотом экрана
+     * @param outState - среда для хранения
+     */
     @Override
     public void onSaveInstanceState (Bundle outState) {
         super.onSaveInstanceState(outState);
-
         outState.putInt(ARG_POSITION, position);
         outState.putString(ARG_TITLE, title);
-        outState.putFloat(ARG_NUMBER, number);
-        outState.putString(ARG_COMMENT, comment);
-        outState.putString(ARG_UNIT, unit);
-        outState.putLong(ARG_DATE, date.getTime());
+        final String tag = getTag();
+        if (!(tag == null || getView() == null))
+            switch (tag) {
+                case TAG_NUMBER: {
+                    outState.putFloat(ARG_NUMBER, Float.parseFloat(
+                            ((TextInputEditText) getView().findViewById(R.id.text_value)).
+                                    getText().toString()));
+                    outState.putString(ARG_UNIT, unit);
+                    break;
+                }
+                case TAG_COMMENT: {
+                    outState.putString(ARG_COMMENT,
+                            ((TextInputEditText) getView().findViewById(R.id.text_comment)).
+                                    getText().toString());
+                    break;
+                }
+                case TAG_DATE: {
+                    if (getActivity() != null) {
+                        final DateTime dateTime = (DateTime) getActivity().
+                                getSupportFragmentManager().findFragmentById(R.id.fragment_date);
+                        outState.putLong(ARG_DATE, dateTime.getDate().getTime());
+                    }
+                    break;
+                }
+            }
+        afterRotate = true; //Поворот начался
+    }
+
+    /**
+     * Удаление фрагмента, чтобы при последующем открытии не было ошибок вдувания
+     */
+    @Override
+    public void onDestroyView () {
+        if (!(afterRotate || getActivity() == null)) {
+            final FragmentManager fragmentManager = getActivity().getSupportFragmentManager();
+            final Fragment fragment = fragmentManager.findFragmentById(R.id.fragment_date);
+            if (fragment != null)
+                fragmentManager.beginTransaction().remove(fragment).commit();
+        }
+        super.onDestroyView();
     }
 }
-
+//Фома2018

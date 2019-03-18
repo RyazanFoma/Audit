@@ -9,6 +9,14 @@ import org.junit.runner.RunWith;
 
 import static org.junit.Assert.*;
 
+/*
+ * *
+ *  * Created by Eduard Fomin on 05.02.19 9:42
+ *  * Copyright (c) 2019 . All rights reserved.
+ *  * Last modified 15.02.18 14:52
+ *
+ */
+
 /**
  * Instrumented test, which will execute on an Android device.
  *

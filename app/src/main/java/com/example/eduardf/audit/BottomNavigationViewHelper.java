@@ -7,6 +7,14 @@ import android.support.design.widget.BottomNavigationView;
 
 import java.lang.reflect.Field;
 
+/*
+ * *
+ *  * Created by Eduard Fomin on 05.02.19 9:42
+ *  * Copyright (c) 2019 . All rights reserved.
+ *  * Last modified 26.06.18 14:44
+ *
+ */
+
 //Отключает режим shifting у пунктов меню Bottom Navigation
 // BottomNavigationViewHelper.disableShiftMode(bottomNavigationView); //При создании меню
 public class BottomNavigationViewHelper {

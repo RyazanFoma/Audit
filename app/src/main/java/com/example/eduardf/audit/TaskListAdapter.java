@@ -6,6 +6,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,6 +19,14 @@ import static com.example.eduardf.audit.ReferenceChoice.ACTION_COPY;
 import static com.example.eduardf.audit.ReferenceChoice.ACTION_MOVE;
 import static java.text.DateFormat.getDateInstance;
 import static java.text.DateFormat.getTimeInstance;
+
+/*
+ * *
+ *  * Created by Eduard Fomin on 05.02.19 9:42
+ *  * Copyright (c) 2019 . All rights reserved.
+ *  * Last modified 31.01.19 11:07
+ *
+ */
 
 //Адаптер для списка. Для заполнения списка используется загрузчик LoaderItems
 class TaskListAdapter extends RecyclerView.Adapter<ViewHolderTasks> {
@@ -294,15 +303,8 @@ class TaskListAdapter extends RecyclerView.Adapter<ViewHolderTasks> {
         holder.objectView.setText(holder.task.object_name);
         holder.typeView.setText(holder.task.type_name);
         //Номер задания, организация, строка с аналитикой, комментарий, появляются в развернутом пункте
-        if (!holder.task.expand) { //Свернутый пукнт
-            holder.expandView.setImageResource(R.drawable.ic_black_expand_more_24px);
-            holder.numberView.setVisibility(View.GONE);
-            holder.timeView.setVisibility(View.GONE);
-            holder.analyticsView.setVisibility(View.GONE);
-            holder.commentView.setVisibility(View.GONE);
-        }
-        else { //Развернутый пукнт
-            holder.expandView.setImageResource(R.drawable.ic_black_expand_less_24px);
+        if (holder.task.expand) { //Развернутый пукнт
+            holder.expandImage.setImageResource(R.drawable.ic_black_expand_less_24px);
             holder.numberView.setVisibility(View.VISIBLE);
             holder.numberView.setText(holder.task.number);
             holder.timeView.setVisibility(View.VISIBLE);
@@ -312,6 +314,15 @@ class TaskListAdapter extends RecyclerView.Adapter<ViewHolderTasks> {
             holder.commentView.setVisibility(View.VISIBLE);
             holder.commentView.setText(holder.task.comment);
         }
+        else { //Свернутый пукнт
+            holder.expandImage.setImageResource(R.drawable.ic_black_expand_more_24px);
+            holder.numberView.setVisibility(View.GONE);
+            holder.timeView.setVisibility(View.GONE);
+            holder.analyticsView.setVisibility(View.GONE);
+            holder.commentView.setVisibility(View.GONE);
+        }
+        //Первое задание в группировке по датам занимает все колонки в списке
+        ((StaggeredGridLayoutManager.LayoutParams) holder.mView.getLayoutParams()).setFullSpan(holder.task.full);
 
         //Чекбокс и щелчки на задании:
         switch (modeMenu) {
@@ -352,7 +363,7 @@ class TaskListAdapter extends RecyclerView.Adapter<ViewHolderTasks> {
                 holder.itemView.setOnLongClickListener(null);
                 break;
         }
-        //Кнопка, свернуть/развернуть
+        //Область, свернуть/развернуть
         holder.expandView.setTag(holder.task);
         holder.expandView.setOnClickListener(onClickListener);
     }

@@ -1,8 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ /**
+  ~  * Created by Eduard Fomin on 05.02.19 9:42
+  ~  * Copyright (c) 2019 . All rights reserved.
+  ~  * Last modified 12.12.18 13:47
+  ~  */
+  -->
+
 <resources>
         <!-- ... -->
 
-        <declare-styleable name="AutoGridLayout">
-            <attr name="columnWidth" format="dimension" />
-        </declare-styleable>
+    <declare-styleable name="AutoGridLayout">
+        <attr name="columnWidth" format="dimension" />
+    </declare-styleable>
+
+    <declare-styleable name="Reference">
+        <attr name="set" format="string" />
+        <attr name="title" format="string" />
+    </declare-styleable>
+
 </resources>

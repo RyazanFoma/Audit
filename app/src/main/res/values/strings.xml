@@ -1,7 +1,17 @@
+<!--
+  ~ /**
+  ~  * Created by Eduard Fomin on 05.02.19 9:42
+  ~  * Copyright (c) 2019 . All rights reserved.
+  ~  * Last modified 31.01.19 16:38
+  ~  */
+  -->
+
 <resources>
     <string name="app_name">Audit</string>
     <string name="title_activity_task_list">Задания</string>
     <string name="title_activity_audit_task">Задание</string>
+
+    <string name="EMPTY_KEY">00000000-0000-0000-0000-000000000000</string>
 
     <string name="action_settings">Настройки</string>
     <string name="msg_password">Неверный пароль!</string>
@@ -23,12 +33,12 @@
     <string name="txt_val">Значение*</string>
     <string name="txt_val_float">Процент(ов)*</string>
     <string name="txt_val_int">Предмет(ов)*</string>
-    <string name="txt_slct">Отбор*</string>
-    <string name="txt_dt">Дата*</string>
-    <string name="txt_sts">Статус*</string>
-    <string name="txt_tp">Вид аудита*</string>
-    <string name="txt_org">Организация*</string>
-    <string name="txt_obj">Объект*</string>
+    <string name="txt_slct">Отбор</string>
+    <string name="txt_dt">Дата</string>
+    <string name="txt_sts">Статус</string>
+    <string name="txt_tp">Вид аудита</string>
+    <string name="txt_org">Организация</string>
+    <string name="txt_obj">Объект</string>
     <string name="txt_sbj">Предмет</string>
     <string name="txt_rsp">Ответственный</string>
     <string name="txt_cmt">Комментарий</string>
@@ -36,17 +46,20 @@
     <string name="txt_openInds">Открывать с показателей</string>
     <string name="txt_clearCopy">Очищать при копировании</string>
     <string name="txt_showSubj">Показывать предметы</string>
-    <string name="txt_by_subject">По предметам </string>
+    <string name="txt_by_subject">По предметам</string>
+    <string name="txt_clear">Очистить значение поля</string>
+
 
     <string name="msg_enter_name">Наименование</string>
     <string name="msg_not_find_id">Не могу найти id!</string>
     <string name="msg_delete">Удалить текущую строку?</string>
     <string name="msg_delete_n">Снять или поставить отметку на удаление у … позиции(ий)?</string>
     <string name="msg_not_selected">Нет выбраных позиций!</string>
-    <string name="msg_not_fill">Не все обязательные* поля заполнены!</string>
+    <string name="msg_not_fill">Не все обязательные поля заполнены!</string>
     <string name="msg_not_editable">Редактирование невозможно, только выбор!</string>
     <string name="msg_place_copy">Выберите папку для копирования отмеченных позиций</string>
     <string name="msg_place_move">Выберите папку для перемещения отмеченных позиций</string>
+    <string name="msg_select">Выберите значение</string>
     <string name="msg_move_error">Некоторые папки не были перемещены, чтобы не нарушать целостность!</string>
     <string name="msg_is_empty">НЕТ ЭЛЕМЕНТОВ ДЛЯ ОТОБРАЖЕНИЯ</string>
     <string name="msg_input_number">Введите число!</string>
@@ -124,9 +137,12 @@
     <string name="title_activity_object">Объект аудита</string>
     <string name="title_activity_analytic">Аналитика объекта</string>
     <string name="title_date_select">Выберите дату</string>
-    <string name="title_activity_settings_audit">Settings</string>
+    <string name="title_activity_settings_audit">Аудит</string>
+    <string name="title_activity_settings_task">Значения</string>
 
     <!-- Strings related to Settings -->
+
+    <string name="pref_header_default">Для нового задания</string>
 
     <!-- General settings -->
     <string name="pref_header_general">Настройки</string>
@@ -134,52 +150,20 @@
     <string name="pref_title_dark_theme">Темная тема</string>
     <string name="pref_description_dark_theme">Рекомендуется для экономии энергии аккумулятора и работы в темное время суток</string>
 
-    <!-- Settings for Default -->
-    <string name="pref_header_default">По умолчанию</string>
-    <string name="pref_title_default">Значения полей для вновь созданного задания</string>
-
-    <string-array name="pref_sync_frequency_titles">
-        <item>15 minutes</item>
-        <item>30 minutes</item>
-        <item>1 hour</item>
-        <item>3 hours</item>
-        <item>6 hours</item>
-        <item>Never</item>
-    </string-array>
-    <string-array name="pref_sync_frequency_values">
-        <item>15</item>
-        <item>30</item>
-        <item>60</item>
-        <item>180</item>
-        <item>360</item>
-        <item>-1</item>
-    </string-array>
-
-    <string-array name="list_preference_entries">
-        <item>Entry 1</item>
-        <item>Entry 2</item>
-        <item>Entry 3</item>
-    </string-array>
-
-    <string-array name="list_preference_entry_values">
-        <item>1</item>
-        <item>2</item>
-        <item>3</item>
-    </string-array>
-
-    <string-array name="multi_select_list_preference_default_value" />
-
-    <string name="pref_title_system_sync_settings">System sync settings</string>
-
     <!-- Settings for Tasks -->
     <string name="pref_header_tasks">Задания</string>
 
-    <string name="pref_title_tasks_tab">Текущая вкладка списка заданий</string>
+    <string name="pref_title_tasks_tab">Начальная вкладка списка заданий</string>
+    <string name="pref_key_tasks_tab">tasks_tab</string>
     <string-array name="pref_tasks_tab_values">
         <item>0</item>
         <item>1</item>
         <item>2</item>
     </string-array>
+
+    <string name="pref_key_tasks_group_by_date">tasks_group_by_date</string>
+    <string name="pref_title_tasks_group_by_date">Группировать задания по датам</string>
+    <string name="pref_description_tasks_group_by_date">Первое задание в группе будет занимать все колонки списка</string>
 
     <string name="pref_title_displace_1C_settings">Использовать настройки приложения</string>
     <string name="pref_description_displace_1C_settings">Нижеследующие настройки будут вытеснять настройки 1С</string>
@@ -189,14 +173,24 @@
     <string name="pref_title_fill_in_fact">Заполнять факт</string>
     <string name="pref_description_fill_in_fact">Устанавливать фактическое значение показателя равным нормативному при заполнении задания</string>
 
-    <string name="pref_title_open_with_indicators">Открывать с показателей</string>
-    <string name="pref_description_open_with_indicators">При открытии задания начинать со вкладки Показатели</string>
+    <string name="pref_title_task_tab">Начальная вкладка задания</string>
+    <string name="pref_key_task_tab">task_tab</string>
+    <string-array name="pref_value_task_tab">
+        <item>tag1</item>
+        <item>tag2</item>
+        <item>tag3</item>
+    </string-array>
+    <string-array name="pref_list_task_tab">
+        <item>@string/tab_com</item>
+        <item>@string/tab_anl</item>
+        <item>@string/tab_ind</item>
+    </string-array>
 
     <string name="pref_title_clear_when_copying">Очищать при копировании</string>
     <string name="pref_description_clear_when_copying">Очищать вкладку Аналитика и Показатели при копировании задания</string>
 
-    <string name="pref_title_display_subject">Отображать предметы</string>
-    <string name="pref_description_display_subject">Отображать показатели по предметам аудита на вкладке Показатели</string>
+    <string name="pref_title_display_subject">Отображать по предметам</string>
+    <string name="pref_description_display_subject">Отображать показатели в задании по предметам аудита</string>
 
     <string name="pref_title_sync_frequency">Частота</string>
 

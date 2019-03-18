@@ -10,6 +10,14 @@ import android.support.v7.app.AlertDialog;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 
+/*
+ * *
+ *  * Created by Eduard Fomin on 05.02.19 9:42
+ *  * Copyright (c) 2019 . All rights reserved.
+ *  * Last modified 27.11.18 16:23
+ *
+ */
+
 //Диалог для изменения наименования группы
 public class DialogsReferenceManager extends DialogFragment {
 

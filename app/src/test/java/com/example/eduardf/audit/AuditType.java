@@ -8,6 +8,14 @@ import java.util.Map;
 import java.util.Set;
 
 
+/*
+ * *
+ *  * Created by Eduard Fomin on 05.02.19 9:42
+ *  * Copyright (c) 2019 . All rights reserved.
+ *  * Last modified 31.10.18 10:21
+ *
+ */
+
 //Вид аудита:
 //УСТАРЕЛО!!! нужно удалить
 public class AuditType {

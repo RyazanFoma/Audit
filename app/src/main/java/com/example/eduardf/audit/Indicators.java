@@ -1,22 +1,21 @@
 package com.example.eduardf.audit;
 
-import android.nfc.FormatException;
-
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Locale;
 
-import static com.example.eduardf.audit.AuditOData.DATE_FORMAT_1C;
+/*
+ * *
+ *  * Created by Eduard Fomin on 05.02.19 9:42
+ *  * Copyright (c) 2019 . All rights reserved.
+ *  * Last modified 30.01.19 14:55
+ *
+ */
 
 /**
  * Список показателей аудита
  */
 class Indicators extends ArrayList<Indicators.Indicator> {
 
-    class Indicator {
+    static class Indicator {
         String id; //Giud показателя
         String code; //Код в 1С
         String name; //Наименование
@@ -26,9 +25,11 @@ class Indicators extends ArrayList<Indicators.Indicator> {
         String desc; //Описание
         Types type; //Тип показателя
         String subject; //предмет аудита
+        boolean not_involved; //Не участвует
         Criterions criterion; //Критерий достижения цели
         String unit; //Единица измерения
         Object goal; //Целевое значение
+        Object value; //Значение по умолчанию
         Object minimum; //Минимальное значение
         Object maximum; //Максимальное значение
         float error; //Погрешность
@@ -39,7 +40,7 @@ class Indicators extends ArrayList<Indicators.Indicator> {
 
     //Критерии достижения цели по показателю
     enum Criterions {
-        NOT_ACCOUNT("НеУчаствует", "Не участвует"),
+        NOT_INVOLVED("НеУчаствует", "Не участвует"),
         EQUALLY("Равно","Равно"),
         NOT_EQUAL("НеРавно", "Не равно"),
         MORE("Больше", "Больше"),
@@ -49,10 +50,10 @@ class Indicators extends ArrayList<Indicators.Indicator> {
         IN_RANGE("ВДиапозоне", "В диапазоне"),
         IN_ERROR("ВПределахПогрешности", "В пределах погрешности");
 
-        String id; //Наименование
+        String id; //Идентификатор
         private String desc; //Описание
 
-        private Criterions(String id, String desc) {
+        Criterions(String id, String desc) {
             this.id = id;
             this.desc = desc;
         }
@@ -70,7 +71,7 @@ class Indicators extends ArrayList<Indicators.Indicator> {
         static public Criterions toValue(String id) {
             switch (id) {
                 case "НеУчаствует":
-                    return NOT_ACCOUNT;
+                    return NOT_INVOLVED;
                 case "Равно":
                     return EQUALLY;
                 case "НеРавно":

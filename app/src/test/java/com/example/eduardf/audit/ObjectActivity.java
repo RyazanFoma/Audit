@@ -14,9 +14,17 @@ import android.widget.TabHost;
 
 import java.util.ArrayList;
 
+/*
+ * *
+ *  * Created by Eduard Fomin on 05.02.19 9:42
+ *  * Copyright (c) 2019 . All rights reserved.
+ *  * Last modified 14.12.18 14:22
+ *
+ */
+
 //Форма для редактирования объекта аудита
 public class ObjectActivity extends AppCompatActivity implements
-        /*ObjectListEdit.OnObjectListEditInteractionListener,*/
+        /*Objects.OnObjectListEditInteractionListener,*/
         ReferenceChoice.OnReferenceManagerInteractionMultipleChoice {
 
     private AuditObject object; //Объект аудита
@@ -192,7 +200,7 @@ public class ObjectActivity extends AppCompatActivity implements
         getSupportFragmentManager().
                 beginTransaction().
 //                replace(R.id.objectanalytics,
-//                        ObjectListEdit.newInstance(0, AuditDB.TBL_ANALYTIC, object.analytics)).
+//                        Objects.newInstance(0, AuditDB.TBL_ANALYTIC, object.analytics)).
                 commit();
     }
 

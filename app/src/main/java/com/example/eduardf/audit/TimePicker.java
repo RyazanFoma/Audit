@@ -9,6 +9,14 @@ import android.support.v4.app.DialogFragment;
 import java.util.Calendar;
 import java.util.Date;
 
+/*
+ * *
+ *  * Created by Eduard Fomin on 05.02.19 9:42
+ *  * Copyright (c) 2019 . All rights reserved.
+ *  * Last modified 03.08.18 14:28
+ *
+ */
+
 //Класс для выбора даты через DatePickerDialog
 public class TimePicker extends DialogFragment implements TimePickerDialog.OnTimeSetListener {
 

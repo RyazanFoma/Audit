@@ -31,6 +31,14 @@ import android.widget.LinearLayout;
 
 import java.util.ArrayList;
 
+/*
+ * *
+ *  * Created by Eduard Fomin on 05.02.19 9:42
+ *  * Copyright (c) 2019 . All rights reserved.
+ *  * Last modified 10.01.19 15:57
+ *
+ */
+
 //Редактирование справочников с владельцем (ключ): Предметы, Показатели
 public class ReferenceEdit extends AppCompatActivity implements View.OnClickListener,
         BottomNavigationView.OnNavigationItemSelectedListener,
@@ -626,7 +634,7 @@ public class ReferenceEdit extends AppCompatActivity implements View.OnClickList
         //Возвращает список отмеченных пунктов
         private ArrayList<Integer> getChecked() {
             ArrayList<Integer> checked = new ArrayList<Integer>();
-//            for(Items.Item item:mValues) if (item.checked) checked.add(item.id);
+//            for(Items.Item item:mValues) if (item.checked) checked.addItem(item.id);
             return checked;
         }
 
@@ -710,7 +718,7 @@ public class ReferenceEdit extends AppCompatActivity implements View.OnClickList
         @Override
         public void onBindViewHolder(@NonNull final ViewHolderRefs holder, int position) {
 //            //Текущий пункт
-//            holder.mItem = mValues.get(position);
+//            holder.mItem = mValues.getItem(position);
 //
 //            //Иконка + / -
 //            holder.mImageView.setImageResource(holder.mItem.folder?

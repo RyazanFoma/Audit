@@ -1,5 +1,13 @@
 package com.example.eduardf.audit;
 
+/*
+ * *
+ *  * Created by Eduard Fomin on 05.02.19 9:42
+ *  * Copyright (c) 2019 . All rights reserved.
+ *  * Last modified 06.08.18 14:18
+ *
+ */
+
 //Класс - предмет аудита:
 public class AuditSubject {
     public int id; // идентификатор

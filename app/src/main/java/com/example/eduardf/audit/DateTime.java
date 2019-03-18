@@ -1,16 +1,15 @@
 package com.example.eduardf.audit;
 
-import android.content.Context;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
 import android.view.LayoutInflater;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
-import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.PopupMenu;
 import android.widget.TextView;
@@ -24,31 +23,70 @@ import static java.text.DateFormat.getDateTimeInstance;
 import static java.text.DateFormat.getTimeInstance;
 
 //Фрагмент для ввода даты и времени
+
+/*
+ * *
+ *  * Created by Eduard Fomin on 05.02.19 9:42
+ *  * Copyright (c) 2019 . All rights reserved.
+ *  * Last modified 19.12.18 11:53
+ *
+ */
+
+/**
+ * Редактирование даты и времени
+ * Фрагмент может использоваться в статическом варианте {@link DateTime#setDate(java.util.Date)}
+ * или динамическом варианте {@link DateTime#newInstance(java.util.Date)}
+ */
 public class DateTime extends Fragment{
 
-    //Агрумент с датой
-    private static final String ARG_DATETIME = "datetime";
-    //Дата
-    private Date mDate;
+    private Date myDate;
+    //Поля даты и времени
     private TextView dateView;
     private TextView timeView;
 
-    private OnDateTimeInteractionListener mListener;
+    private static String ARG_DATETIME = "datetime";
 
-    public DateTime() {
-        // Required empty public constructor
+    public DateTime() {}
+
+    /**
+     * Установить дату
+     * Используется для статического размещения фрагмента
+     * @param date - дата
+     */
+    void setDate(Date date) {
+        myDate = date;
+        if (!(date.getTime() == 0 || dateView == null || timeView == null)) {
+            dateView.setText(getDateInstance().format(date));
+            timeView.setText(getTimeInstance().format(date));
+        }
     }
 
     /**
-     * Создание фрагмента для редактирвоания даны и времени из активности
+     * Получить выбранную дату
+     * @return - дата
+     */
+    Date getDate() {
+        if (!(dateView == null || timeView == null)) {
+            try {
+                return getDateTimeInstance().parse(dateView.getText().toString()+" "+
+                        timeView.getText().toString());
+            } catch (ParseException e) {
+                return null;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Создание фрагмента для редактирования даты и времени из активности
+     * Используется для динамического размещения фрагмента
      * @param date - исходная дата
      * @return - фрагмент
      */
     public static DateTime newInstance(Date date) {
-        DateTime fragment = new DateTime();
-        Bundle args = new Bundle();
-        if (date!=null)
-            args.putLong(ARG_DATETIME, date.getTime());
+        final DateTime fragment = new DateTime();
+        final Bundle args = new Bundle();
+        if (date!=null) args.putLong(ARG_DATETIME, date.getTime());
         fragment.setArguments(args);
         return fragment;
     }
@@ -57,46 +95,32 @@ public class DateTime extends Fragment{
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if (getArguments() != null && getArguments().containsKey(ARG_DATETIME)) {
-            mDate = new Date();
-            mDate.setTime(getArguments().getLong(ARG_DATETIME, 0));
+        if (savedInstanceState == null) {
+            final Bundle args = getArguments();
+            if (args != null) { //Аргументы возможны только в динамическом варианте
+                myDate = new Date();
+                myDate.setTime(args.getLong(ARG_DATETIME, 0));
+            }
         }
     }
 
-    // создает фрагмент
-    @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_date_time, container, false);
-    }
-
-    @Override
-    public void onViewCreated(View view, Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
-        //Если места мало, то выведем в одну колонку
-        final LinearLayout linearLayout = view.findViewById(R.id.datetime);
-        final float limit = getResources().getDimension(R.dimen.min_width_datetime);
-        view.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-            @Override
-            public void onGlobalLayout() {
-                if (linearLayout.getWidth() < limit)
-                    linearLayout.setOrientation(LinearLayout.VERTICAL);
-            }
-        });
-        //Поле с датой
-        dateView = (TextView) view.findViewById(R.id.date);
-        if (mDate.getTime() != 0)
-            dateView.setText(getDateInstance().format(mDate));
-        dateView.setOnClickListener(new View.OnClickListener() {
+    /**
+     * Настройка поля с датой
+     * @param container - вью фрагмента
+     * @return - вью с датой
+     */
+    private TextView setDateView(@NonNull View container) {
+        final TextView view = container.findViewById(R.id.date);
+        view.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) { //При нажатии всплывает констектсное меню
-                PopupMenu popup = new PopupMenu(getActivity(), v);
-                MenuInflater inflater = popup.getMenuInflater();
+                final PopupMenu popup = new PopupMenu(getActivity(), v);
+                final MenuInflater inflater = popup.getMenuInflater();
                 inflater.inflate(R.menu.menu_date, popup.getMenu());
                 popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
                     @Override
                     public boolean onMenuItemClick(MenuItem item) {
-                        Calendar calendar = Calendar.getInstance();
+                        final Calendar calendar = Calendar.getInstance();
                         switch(item.getItemId()) { //Устанавливаем конкретную дату
                             case R.id.today:
                                 break;
@@ -110,40 +134,45 @@ public class DateTime extends Fragment{
                                 calendar.add(Calendar.MONTH, 1);
                                 break;
                             case R.id.selectday: default: //Или выбираем в диалоге
-                                DatePicker datePicker = new DatePicker();
+                                final DatePicker datePicker = new DatePicker();
                                 datePicker.setOnDateInteractionListener(new DatePicker.OnDateInteractionListener() {
                                     @Override
                                     public void onDateInteractionListener(Date date) {
-                                        dateView.setText(getDateInstance().format(date));
-                                        setDate();
+                                        view.setText(getDateInstance().format(date));
                                     }
                                 });
-                                datePicker.show(getFragmentManager(), "datePicker");
+                                final FragmentManager fragmentManager = getFragmentManager();
+                                if (fragmentManager != null)
+                                    datePicker.show(fragmentManager, "datePicker");
                                 return false;
                         }
-                        dateView.setText(getDateInstance().format(calendar.getTime()));
-                        setDate();
+                        view.setText(getDateInstance().format(calendar.getTime()));
                         return true;
                     }
                 });
                 popup.show();
             }
         });
+        return view;
+    }
 
-        //Поле со временем
-        timeView = (TextView) view.findViewById(R.id.time);
-        if (mDate.getTime() != 0)
-            timeView.setText(getTimeInstance().format(mDate));
-        timeView.setOnClickListener(new View.OnClickListener() {
+    /**
+     * Настройка поля со временем
+     * @param container - контейнер для вью
+     * @return - вью со временем
+     */
+    private TextView setTimeView(@NonNull View container) {
+        final TextView view = container.findViewById(R.id.time);
+        view.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) { //При нажатии всплывает констектное меню
-                PopupMenu popup = new PopupMenu(getActivity(), v);
-                MenuInflater inflater = popup.getMenuInflater();
+                final PopupMenu popup = new PopupMenu(getActivity(), v);
+                final MenuInflater inflater = popup.getMenuInflater();
                 inflater.inflate(R.menu.menu_time, popup.getMenu());
                 popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
                     @Override
                     public boolean onMenuItemClick(MenuItem item) {
-                        Calendar calendar = Calendar.getInstance();
+                        final Calendar calendar = Calendar.getInstance();
                         switch(item.getItemId()) { //Устанавливаем конкретное время
                             case R.id.breakfast:
                                 calendar.set(0,0,0,9,0,0);
@@ -158,79 +187,76 @@ public class DateTime extends Fragment{
                                 calendar.set(0,0,0,20,0,0);
                                 break;
                             case R.id.selecttime: default: //Или выбыраем в диалоге
-                                TimePicker timePicker = new TimePicker();
+                                final TimePicker timePicker = new TimePicker();
                                 timePicker.setOnTimeInteractionListener(new TimePicker.OnTimeInteractionListener() {
                                     @Override
                                     public void onTimeInteractionListener(Date date) {
-                                        timeView.setText(getTimeInstance().format(date));
-                                        setDate();
+                                        view.setText(getTimeInstance().format(date));
                                     }
                                 });
-                                timePicker.show(getFragmentManager(), "timePicker");
+                                final FragmentManager fragmentManager = getFragmentManager();
+                                if (fragmentManager != null)
+                                    timePicker.show(fragmentManager, "timePicker");
                                 return false;
                         }
-                        timeView.setText(getTimeInstance().format(calendar.getTime()));
-                        setDate();
+                        view.setText(getTimeInstance().format(calendar.getTime()));
                         return true;
                     }
                 });
                 popup.show();
             }
         });
+        return view;
+    }
 
-        //Кнопка очистить дату и время - установить текущие
-        ((ImageButton) view.findViewById(R.id.clear)).setOnClickListener(new View.OnClickListener() {
+    /**
+     * Вызывается при создании вью фрагмента
+     * @param inflater - выдуватель
+     * @param container - контейнер фрагмента
+     * @param savedInstanceState - среда хранения
+     * @return - вью
+     */
+    @Override
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
+        final View view = inflater.inflate(R.layout.fragment_date_time, container, false);
+        dateView = setDateView(view); //Поле с датой
+        timeView = setTimeView(view); //Поле со временем
+        //Кнопка установить текущие дату и время
+        view.findViewById(R.id.clear).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Date date = new Date();
+                final Date date = new Date();
                 dateView.setText(getDateInstance().format(date));
                 timeView.setText(getTimeInstance().format(date));
-                setDate();
             }
         });
+        return view;
     }
 
-    // вызывает интеракшин для изменения даты
-    private void setDate() {
-        if (mListener != null) {
-            Date date;
-            try {
-                date = getDateTimeInstance().parse(dateView.getText().toString()+" "+timeView.getText().toString());
-            } catch (ParseException e) {
-                date = new Date();
-                date.setTime(0);
-            }
-            mListener.onDateTimeInteraction(date);
-        }
-    }
-
-    // запоминает интеркашин для изменения даты
+    /**
+     * Заполнить вью фрагмента
+     * @param view - вью
+     * @param savedInstanceState - среда хранения
+     */
     @Override
-    public void onAttach(Context context) {
-        super.onAttach(context);
-        if (getParentFragment()!=null)
-            if (getParentFragment() instanceof OnDateTimeInteractionListener) {
-                mListener = (OnDateTimeInteractionListener) getParentFragment();
-            } else {
-                throw new RuntimeException(getParentFragment().toString()
-                        + " must implement OnDateTimeInteractionListener");
+    public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        //Если места мало, то выведем в одну колонку
+        final LinearLayout linearLayout = view.findViewById(R.id.datetime);
+        final float limit = getResources().getDimension(R.dimen.min_width_datetime);
+        view.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+                if (linearLayout.getWidth() < limit)
+                    linearLayout.setOrientation(LinearLayout.VERTICAL);
             }
-        else if (context instanceof OnDateTimeInteractionListener) {
-            mListener = (OnDateTimeInteractionListener) context;
-        } else {
-            throw new RuntimeException(context.toString()
-                    + " must implement OnDateTimeInteractionListener");
+        });
+        //Сработает при первом открытии в динамическом варианте размещения фрагмента
+        if (savedInstanceState == null && myDate != null) {
+            dateView.setText(getDateInstance().format(myDate));
+            timeView.setText(getTimeInstance().format(myDate));
         }
-    }
-
-    @Override
-    public void onDetach() {
-        super.onDetach();
-        mListener = null;
-    }
-
-    //Интейфейс для обработки изменения даты и/или времени
-    public interface OnDateTimeInteractionListener {
-        void onDateTimeInteraction(Date date);
     }
 }
+//Фома2018

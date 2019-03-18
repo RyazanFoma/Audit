@@ -12,6 +12,14 @@ import android.view.ViewGroup;
 import java.util.ArrayList;
 import java.util.Collection;
 
+/*
+ * *
+ *  * Created by Eduard Fomin on 05.02.19 9:42
+ *  * Copyright (c) 2019 . All rights reserved.
+ *  * Last modified 10.01.19 15:57
+ *
+ */
+
 // Фрагмент для выбора групп объектов
 public class TypeListView extends Fragment {
 
@@ -70,7 +78,7 @@ public class TypeListView extends Fragment {
                 recyclerAdapter = new RecyclerAdapter(db.getItemsByIds(sTable, mIds));
             else {
                 Items items = new Items();
-//                items.add(new Items.Item(NOT_SELECTED,false, NOT_SELECTED, NOT_SELECTED, NOT_SELECTED, getString(R.string.msg_is_empty),""));
+//                items.addItem(new Items.Item(NOT_SELECTED,false, NOT_SELECTED, NOT_SELECTED, NOT_SELECTED, getString(R.string.msg_is_empty),""));
                 recyclerAdapter = new RecyclerAdapter(items);
             }
             recyclerView.setAdapter(recyclerAdapter);

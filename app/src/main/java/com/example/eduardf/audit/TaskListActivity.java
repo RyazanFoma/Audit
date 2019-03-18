@@ -3,10 +3,12 @@ package com.example.eduardf.audit;
 import android.app.SearchManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.BottomNavigationView;
@@ -36,6 +38,14 @@ import static android.support.v7.widget.RecyclerView.SCROLL_STATE_IDLE;
 import static com.example.eduardf.audit.TaskListAdapter.CHECKED_STATUS_ALL;
 import static com.example.eduardf.audit.TaskListAdapter.CHECKED_STATUS_NULL;
 
+/*
+ * *
+ *  * Created by Eduard Fomin on 05.02.19 9:42
+ *  * Copyright (c) 2019 . All rights reserved.
+ *  * Last modified 31.01.19 15:50
+ *
+ */
+
 /**
  * Список заданий
  */
@@ -50,6 +60,7 @@ public class TaskListActivity extends AppCompatActivity
     private String sAuditor; //guid аудитора
     private Tasks.Task.Status mStatus; //Статус заданий текущей закладки
     private String sLike; //Строка отбора по наименованию объекта
+    private boolean full; //Признак группировки заданий по датам
     private TaskListAdapter recyclerAdapter; //Адаптер для списка
     private RecyclerView.LayoutManager mLayoutManager; //Менеджер для RecyclerView
     private ArrayList<String> checkedIds; //Список отмеченных для копирования/переноса
@@ -68,6 +79,7 @@ public class TaskListActivity extends AppCompatActivity
     private static final String ARG_AUDITOR_KEY = "auditor_key"; //Идентификатор аудитора
     private static final String ARG_STATUS = "status"; //Текущая закладка / статус задания
     private static final String ARG_LIKE = "like"; //Строка поиска
+    private static final String ARG_FULL = "full"; //Группировка по датам
     private static final String ARG_MODE_MENU = "menu_mode"; //Режим меню
     private static final String ARG_STATE = "state"; //Состояние списка до поворота
     private static final String ARG_CHECKED = "checked"; //Отмеченные задания
@@ -146,25 +158,31 @@ public class TaskListActivity extends AppCompatActivity
         ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) actionBar.setDisplayHomeAsUpEnabled(true); //Отловит onSupportNavigateUp
 
-        //Текущая закладка / статус задания - Утвержден
-        int iStatus = 0;
-
         if (savedInstanceState==null) { //активность запускается впервые
-            Intent intent = getIntent();
-            mStatus = Tasks.Task.Status.APPROVED; //Поменять на значение из настроек
+            final Intent intent = getIntent();
             sAuditor = intent.getStringExtra(ARG_AUDITOR_KEY);
+            final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
+            full = preferences.getBoolean(getString(R.string.pref_key_tasks_group_by_date), false);
+            final String value = preferences.getString(getString(R.string.pref_key_tasks_tab),
+                    Integer.toString(Tasks.Task.Status.APPROVED.number));
+            try {
+                mStatus = Tasks.Task.Status.toValue(Integer.parseInt(value));
+            } catch (RuntimeException e) {
+                mStatus = Tasks.Task.Status.APPROVED;
+            }
             sLike = "";
         }
         else { //активность восстатавливаем после поворота экрана
-            mStatus = Tasks.Task.Status.toValue(savedInstanceState.getInt(TaskActivity.ARG_STATUS, 0));
+            mStatus = Tasks.Task.Status.toValue(savedInstanceState.getInt(ARG_STATUS, 0));
             sAuditor = savedInstanceState.getString(ARG_AUDITOR_KEY);
             sLike = savedInstanceState.getString(ARG_LIKE, "");
+            full = savedInstanceState.getBoolean(ARG_FULL, false);
         }
 
         //Закладки для отбора по статусу
         final TabLayout tt = findViewById(R.id.tabs);
         tt.addOnTabSelectedListener(mOnTabSelectedListener);
-        final TabLayout.Tab tab = tt.getTabAt(iStatus);
+        final TabLayout.Tab tab = tt.getTabAt(mStatus.number);
         if (tab != null) tab.select();
 
         //Нижнее навигационное меню, используется для окончания операций копирования и перемещения
@@ -273,6 +291,7 @@ public class TaskListActivity extends AppCompatActivity
         super.onSaveInstanceState(outState);
         outState.putString(ARG_AUDITOR_KEY, sAuditor);
         outState.putString(ARG_LIKE, sLike);
+        outState.putBoolean(ARG_FULL, full);
         outState.putInt(ARG_STATUS, mStatus.number);
         recyclerAdapter.onSaveInstanceState(outState);
         outState.putParcelable(ARG_STATE, mLayoutManager.onSaveInstanceState());
@@ -371,6 +390,7 @@ public class TaskListActivity extends AppCompatActivity
                         sAuditor, mStatus), 0);
                 return true;
             case R.id.setting:
+                startActivity(SettingTask.intentActivity(this, sAuditor));
                 return true;
         }
         return super.onOptionsItemSelected(item);
@@ -537,7 +557,7 @@ public class TaskListActivity extends AppCompatActivity
             like = args.getString(ARG_LIKE);
             status = Tasks.Task.Status.toValue(args.getInt(ARG_STATUS));
         }
-        return new LoaderTasks(TaskListActivity.this, oData, auditor, status, like);
+        return new LoaderTasks(TaskListActivity.this, oData, auditor, status, like, full);
     }
 
     @Override
@@ -595,7 +615,7 @@ public class TaskListActivity extends AppCompatActivity
         switch (v.getId()) {
             case R.id.item:
                 startActivityForResult(
-                        TaskActivity.intentActivityEdit(this, task.id), 0);
+                        TaskActivity.intentActivityEdit(this, task), 0);
                 break;
             case R.id.checked:
                 task.checked = ((CheckBox) v).isChecked();
@@ -639,14 +659,16 @@ public class TaskListActivity extends AppCompatActivity
         String auditor;
         Tasks.Task.Status status;
         String like;
+        boolean full;
 
         private LoaderTasks(Context context, AuditOData oData, String auditor, Tasks.Task.Status status,
-                            String like) {
+                            String like, boolean full) {
             super(context);
             this.oData = oData;
             this.auditor = auditor;
             this.status = status;
             this.like = like;
+            this.full = full;
         }
 
         @Override
@@ -657,7 +679,19 @@ public class TaskListActivity extends AppCompatActivity
 
         @Override
         public Tasks loadInBackground() {
-            return oData.getTasks(auditor, status, like);
+            final Tasks tasks = oData.getTasks(auditor, status, like);
+            if (full && !tasks.isEmpty()) {
+                long date = tasks.get(0).date.getTime()/86400000;
+                for (Tasks.Task task: tasks) {
+                    final long next = task.date.getTime()/86400000;
+                    if (date != next) {
+                        //Первое задание в группировке по датам занимает все колонки в списке
+                        task.full = true;
+                        date = next;
+                    }
+                }
+            }
+            return tasks;
         }
     }
 

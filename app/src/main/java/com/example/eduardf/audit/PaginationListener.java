@@ -3,6 +3,14 @@ package com.example.eduardf.audit;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 
+/*
+ * *
+ *  * Created by Eduard Fomin on 05.02.19 9:42
+ *  * Copyright (c) 2019 . All rights reserved.
+ *  * Last modified 05.12.18 10:03
+ *
+ */
+
 public abstract class PaginationListener extends RecyclerView.OnScrollListener {
 
     GridLayoutManager layoutManager;

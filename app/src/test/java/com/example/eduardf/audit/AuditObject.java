@@ -4,6 +4,14 @@ import android.support.v4.util.ArraySet;
 
 import java.util.Set;
 
+/*
+ * *
+ *  * Created by Eduard Fomin on 05.02.19 9:42
+ *  * Copyright (c) 2019 . All rights reserved.
+ *  * Last modified 06.08.18 13:44
+ *
+ */
+
 //Объект аудита:
 public class AuditObject {
 

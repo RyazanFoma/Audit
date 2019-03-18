@@ -1,4 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ /**
+  ~  * Created by Eduard Fomin on 05.02.19 9:42
+  ~  * Copyright (c) 2019 . All rights reserved.
+  ~  * Last modified 16.01.19 9:22
+  ~  */
+  -->
+
 <android.support.constraint.ConstraintLayout
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:android="http://schemas.android.com/apk/res/android"
@@ -37,7 +45,8 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="2"
                 android:orientation="vertical"
-                android:paddingRight="8dp">
+                android:paddingStart="0dp"
+                android:paddingEnd="8dp">
 
                 <TextView
                     android:layout_width="match_parent"
@@ -45,12 +54,13 @@
                     android:text="@string/txt_dt"
                     android:textSize="12sp" />
 
-                <FrameLayout
+                <fragment
                     android:id="@+id/datetime"
+                    android:name="com.example.eduardf.audit.DateTime"
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent">
+                    android:layout_height="match_parent"
+                    tools:layout="@layout/fragment_date_time" />
 
-                </FrameLayout>
             </LinearLayout>
 
             <LinearLayout
@@ -58,7 +68,8 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="4"
                 android:orientation="vertical"
-                android:paddingLeft="8dp">
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp">
 
                 <TextView
                     android:layout_width="match_parent"
@@ -75,8 +86,7 @@
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
-                    android:background="@color/colorPrimaryDark"
-                    android:paddingBottom="8dp"></View>
+                    android:background="?android:attr/listDivider" />
 
             </LinearLayout>
 
@@ -133,6 +143,100 @@
                     android:layout_height="match_parent">
 
                     <LinearLayout
+                        android:id="@+id/tab1"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:orientation="vertical">
+
+                        <fragment
+                            android:id="@+id/type"
+                            class="com.example.eduardf.audit.Reference"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="@dimen/field_horizontal_margin"
+                            android:layout_marginTop="@dimen/field_vertical_margin"
+                            android:layout_marginEnd="@dimen/field_horizontal_margin"
+                            android:layout_marginBottom="@dimen/field_vertical_margin"
+                            app:set="ВидыАудитов"
+                            app:title="Вид аудита"
+                            tools:layout="@layout/fragment_reference_field" />
+
+                        <fragment
+                            android:id="@+id/organization"
+                            class="com.example.eduardf.audit.Reference"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="@dimen/field_horizontal_margin"
+                            android:layout_marginTop="@dimen/field_vertical_margin"
+                            android:layout_marginEnd="@dimen/field_horizontal_margin"
+                            android:layout_marginBottom="@dimen/field_vertical_margin"
+                            app:set="Организации"
+                            app:title="Организация"
+                            tools:layout="@layout/fragment_reference_field" />
+
+                        <fragment
+                            android:id="@+id/object"
+                            class="com.example.eduardf.audit.Reference"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="@dimen/field_horizontal_margin"
+                            android:layout_marginTop="@dimen/field_vertical_margin"
+                            android:layout_marginEnd="@dimen/field_horizontal_margin"
+                            android:layout_marginBottom="@dimen/field_vertical_margin"
+                            app:set="Объекты"
+                            app:title="Объект аудита"
+                            tools:layout="@layout/fragment_reference_field" />
+
+                        <fragment
+                            android:id="@+id/responsible"
+                            class="com.example.eduardf.audit.Reference"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="@dimen/field_horizontal_margin"
+                            android:layout_marginTop="@dimen/field_vertical_margin"
+                            android:layout_marginEnd="@dimen/field_horizontal_margin"
+                            android:layout_marginBottom="@dimen/field_vertical_margin"
+                            app:set="Ответственные"
+                            app:title="Ответственный за объект"
+                            tools:layout="@layout/fragment_reference_field" />
+
+                        <android.support.design.widget.TextInputLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:paddingLeft="16dp"
+                            android:paddingTop="8dp"
+                            android:paddingRight="16dp"
+                            android:paddingBottom="8dp">
+
+                            <android.support.design.widget.TextInputEditText
+                                android:id="@+id/comment"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:drawableEnd="@drawable/ic_black_cancel_24px"
+                                android:hint="@string/txt_cmt"
+                                android:textAppearance="?attr/textAppearanceListItem" />
+                        </android.support.design.widget.TextInputLayout>
+
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/tab2"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:orientation="vertical">
+
+                        <fragment
+                            android:id="@+id/analytics"
+                            class="com.example.eduardf.audit.Objects"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            app:set="АналитикиОбъектов"
+                            app:title="Аналитика объекта"
+                            tools:layout="@layout/fragment_object_list" />
+
+                    </LinearLayout>
+
+                    <LinearLayout
                         android:id="@+id/tab3"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
@@ -141,8 +245,8 @@
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginEnd="@dimen/field_vertical_margin"
                             android:layout_marginStart="@dimen/field_vertical_margin"
+                            android:layout_marginEnd="@dimen/field_vertical_margin"
                             android:orientation="horizontal">
 
                             <ImageButton
@@ -163,93 +267,18 @@
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:layout_gravity="center_vertical"
-                                android:gravity="right|center_vertical"
+                                android:gravity="end|center_vertical"
                                 android:switchPadding="@dimen/field_horizontal_margin"
                                 android:text="@string/txt_by_subject" />
                         </LinearLayout>
 
-                        <FrameLayout
+                        <fragment
                             android:id="@+id/indicators"
+                            class="com.example.eduardf.audit.IndicatorFragment"
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
-                            android:layout_marginBottom="@dimen/indicators_margin">
-
-                        </FrameLayout>
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:id="@+id/tab1"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:orientation="vertical">
-
-                        <FrameLayout
-                            android:id="@+id/type"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginBottom="@dimen/field_vertical_margin"
-                            android:layout_marginEnd="@dimen/field_horizontal_margin"
-                            android:layout_marginStart="@dimen/field_horizontal_margin"
-                            android:layout_marginTop="@dimen/field_vertical_margin" />
-
-                        <FrameLayout
-                            android:id="@+id/organization"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginBottom="@dimen/field_vertical_margin"
-                            android:layout_marginEnd="@dimen/field_horizontal_margin"
-                            android:layout_marginStart="@dimen/field_horizontal_margin"
-                            android:layout_marginTop="@dimen/field_vertical_margin" />
-
-                        <FrameLayout
-                            android:id="@+id/object"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginBottom="@dimen/field_vertical_margin"
-                            android:layout_marginEnd="@dimen/field_horizontal_margin"
-                            android:layout_marginStart="@dimen/field_horizontal_margin"
-                            android:layout_marginTop="@dimen/field_vertical_margin" />
-
-                        <FrameLayout
-                            android:id="@+id/responsible"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginBottom="@dimen/field_vertical_margin"
-                            android:layout_marginEnd="@dimen/field_horizontal_margin"
-                            android:layout_marginStart="@dimen/field_horizontal_margin"
-                            android:layout_marginTop="@dimen/field_vertical_margin" />
-
-                        <android.support.design.widget.TextInputLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:paddingBottom="8dp"
-                            android:paddingLeft="16dp"
-                            android:paddingRight="16dp"
-                            android:paddingTop="8dp">
-
-                            <android.support.design.widget.TextInputEditText
-                                android:id="@+id/comment"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:drawableEnd="@drawable/ic_black_cancel_24px"
-                                android:hint="@string/txt_cmt"
-                                android:textAppearance="?attr/textAppearanceListItem" />
-                        </android.support.design.widget.TextInputLayout>
-
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:id="@+id/tab2"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:orientation="vertical">
-
-                        <FrameLayout
-                            android:id="@+id/analytics"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent">
-
-                        </FrameLayout>
+                            android:layout_marginBottom="@dimen/indicators_margin"
+                            tools:layout="@layout/fragment_indicator_list" />
 
                     </LinearLayout>
 

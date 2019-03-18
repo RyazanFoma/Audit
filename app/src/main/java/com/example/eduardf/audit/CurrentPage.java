@@ -1,5 +1,13 @@
 package com.example.eduardf.audit;
 
+/*
+ * *
+ *  * Created by Eduard Fomin on 05.02.19 9:42
+ *  * Copyright (c) 2019 . All rights reserved.
+ *  * Last modified 22.11.18 13:32
+ *
+ */
+
 /**
  * Вспомогательный класс для отслеживания загрузочных страниц
  */

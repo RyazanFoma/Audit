@@ -1,10 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ /**
+  ~  * Created by Eduard Fomin on 05.02.19 9:42
+  ~  * Copyright (c) 2019 . All rights reserved.
+  ~  * Last modified 25.01.19 14:21
+  ~  */
+  -->
+
 <android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".ReferenceEdit">
+    android:fitsSystemWindows="false"
+    tools:context="com.example.eduardf.audit.SettingTask">
 
     <android.support.design.widget.AppBarLayout
         android:layout_width="match_parent"
@@ -20,6 +29,6 @@
 
     </android.support.design.widget.AppBarLayout>
 
-    <include layout="@layout/content_reference_edit" />
+    <include layout="@layout/content_setting_task" />
 
 </android.support.design.widget.CoordinatorLayout>

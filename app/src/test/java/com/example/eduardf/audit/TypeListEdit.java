@@ -12,6 +12,14 @@ import android.view.ViewGroup;
 import java.util.ArrayList;
 import java.util.Collection;
 
+/*
+ * *
+ *  * Created by Eduard Fomin on 05.02.19 9:42
+ *  * Copyright (c) 2019 . All rights reserved.
+ *  * Last modified 06.09.18 10:55
+ *
+ */
+
 // Фрагмент для выбора групп объектов
 public class TypeListEdit extends Fragment {
 

@@ -7,6 +7,14 @@ import java.text.ParseException;
 
 import static java.text.DateFormat.getDateTimeInstance;
 
+/*
+ * *
+ *  * Created by Eduard Fomin on 05.02.19 9:42
+ *  * Copyright (c) 2019 . All rights reserved.
+ *  * Last modified 26.11.18 11:26
+ *
+ */
+
 class ParcelableTask implements Parcelable {
 
     Tasks.Task task = new Tasks.Task();

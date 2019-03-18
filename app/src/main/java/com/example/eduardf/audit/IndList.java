@@ -3,26 +3,34 @@ package com.example.eduardf.audit;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.support.annotation.NonNull;
-
-import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
+
+/*
+ * *
+ *  * Created by Eduard Fomin on 05.02.19 9:42
+ *  * Copyright (c) 2019 . All rights reserved.
+ *  * Last modified 30.01.19 16:25
+ *
+ */
 
 /**
  * Список показателей
  * Используется для рециклервью
  */
-public class IndList extends ArrayList<IndList.Ind> {
+class IndList extends HashMap<String, IndList.Ind> {
 
     /**
      * Показатель аудита
      */
-    public class Ind {
+    static class Ind {
         String id; //Giud показателя
         String name; //Наименование
         String pater; //Giud родителя
         boolean folder; //Папка
         String desc; //Описание
         Indicators.Types type; //Тип показателя
+        boolean not_involved; //Не участвует
         Indicators.Criterions criterion; //Критерий достижения цели
         String subject; //Предмет аудита
         String unit; //Единица измерения
@@ -38,8 +46,9 @@ public class IndList extends ArrayList<IndList.Ind> {
         /**
          * Проверяет достижение цели по показателю и изменяет реквизит achieved
          */
-        public void notifyAchived() {
+        void notifyAchived() {
             try {
+                if (not_involved) { achieved = false; return; }
                 switch (type) {
                     case IS_BOOLEAN: {
                         final boolean a = (Boolean) value;
@@ -136,31 +145,114 @@ public class IndList extends ArrayList<IndList.Ind> {
                 achieved = false;
             }
         }
+
+        /**
+         * Формирование текстового описания условия достижения цели
+         * @return - описание условия
+         */
+        String russianCriterion() {
+            String russian = "Ошибка: Неизвестный критерий или тип!!!";
+            switch (type) {
+                case IS_BOOLEAN:
+                    switch (criterion) {
+                        case EQUALLY:
+                            russian = String.format("Утверждение должно иметь %s ответ.", (Boolean) goal? "положительный": "отрицательный");
+                            break;
+                        case NOT_EQUAL:
+                            russian = String.format("Утверждение должно иметь %s ответ.", (Boolean) goal? "отрицательный": "положительный");
+                            break;
+                        case NOT_INVOLVED:
+                            russian = "Показатель не участвует в определении результатов";
+                            break;
+                    }
+                    break;
+                case IS_NUMERIC:
+                    final String myUnit;
+                    if (unit.isEmpty()) myUnit = "";
+                    else myUnit = ", "+unit;
+                    switch (criterion) {
+                        case EQUALLY:
+                        case MORE:
+                        case MORE_OR_EQUAL:
+                        case LESS:
+                        case LESS_OR_EQUEL:
+                            russian = String.format("Значение должно быть %s %s%s", criterion.toString(), goal, myUnit);
+                            break;
+                        case NOT_EQUAL:
+                            russian = String.format("Значение не должно быть равно %s%s", goal, myUnit);
+                            break;
+                        case IN_RANGE:
+                            russian = String.format("Значение должно быть равно от %s до %s%s", minimum, maximum, myUnit);
+                            break;
+                        case IN_ERROR:
+                            russian = String.format("Значение должно быть равно %s%s, с погрешностью %s%%", goal, myUnit, error);
+                            break;
+                        case NOT_INVOLVED:
+                            russian = "Показатель не участвует в определении результатов";
+                            break;
+                    }
+                    break;
+                case IS_DATE:
+                    switch (criterion) {
+                        case EQUALLY:
+                            russian = String.format("Дата должна быть равна %s", goal);
+                            break;
+                        case NOT_EQUAL:
+                            russian = String.format("Дата не должна быть равна %s", goal);
+                            break;
+                        case MORE: case LESS:
+                            russian = String.format("Дата должна быть %s %s", criterion.toString(), goal);
+                            break;
+                        case MORE_OR_EQUAL:
+                            russian = String.format("Дата должна быть больше или равна %s", goal);
+                            break;
+                        case LESS_OR_EQUEL:
+                            russian = String.format("Дата должна быть меньше или равна %s", goal);
+                            break;
+                        case IN_RANGE:
+                            russian = String.format("Дата должна быть от %s до %s", minimum, maximum);
+                            break;
+                        case NOT_INVOLVED:
+                            russian = "Показатель не участвует в определении результатов";
+                            break;
+                    }
+                    break;
+            }
+            return russian;
+        }
     }
 
     /**
-     * Сохраняет содержимое списка
+     * Добавление показателя в дерево показателей
+     * @param ind - показетель
+     */
+    void add(Ind ind) {
+        this.put(ind.id, ind);
+    }
+
+    /**
+     * Сохранить содержимое списка
      * @param outState - среда для хранения ParcelableArray с содержимым списка
      * @param argName - имя ParcelableArray
      */
-    public void onSaveInstanceState(@NonNull Bundle outState, String argName) {
+    void onSaveInstanceState(@NonNull Bundle outState, String argName) {
         final Parcelable[] parcelables = new Parcelable[this.size()];
         int i = 0;
-        for (Ind ind: this) parcelables[i++] = new ParcelableInd(ind);
+        for (Entry<String, Ind> entry: this.entrySet()) parcelables[i++] = new ParcelableInd(entry.getValue());
         outState.putParcelableArray(argName, parcelables);
     }
 
     /**
-     * Восстанавливает содержимое списка. Список предварительно очищается
+     * Восстановить содержимое списка. Список предварительно очищается
      * @param savedInstanceState - содержит ParcelableArray с содержимым списка
      * @param argName - имя ParcelableArray
      */
-    public void onRestoreInstanceState(Bundle savedInstanceState, String argName) {
-        if (this != null && savedInstanceState.containsKey(argName)) {
+    void onRestoreInstanceState(Bundle savedInstanceState, String argName) {
+        if (savedInstanceState.containsKey(argName)) {
             if (!isEmpty()) clear();
             Parcelable[] parcelables = savedInstanceState.getParcelableArray(argName);
             if (parcelables != null)
-                for (Parcelable row : parcelables) this.add(((ParcelableInd) row).ind);
+                for (Parcelable row : parcelables) add(((ParcelableInd) row).ind);
         }
     }
 }

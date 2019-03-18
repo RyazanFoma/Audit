@@ -9,25 +9,34 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+/*
+ * *
+ *  * Created by Eduard Fomin on 05.02.19 9:42
+ *  * Copyright (c) 2019 . All rights reserved.
+ *  * Last modified 31.01.19 11:07
+ *
+ */
+
 //Хранилище для RecyclerView
 public class ViewHolderTasks extends RecyclerView.ViewHolder {
-    public final View mView; // общий контейнер
-    public final CardView itemView; // карточка
-    public final TextView dateView; // дата
-    public final TextView timeView; // время
-    public final TextView numberView; // номер
-    public final TextView objectView; // объект аудита
-    public final TextView typeView; // вид аудита
-    public final TextView analyticsView; // аналитика строкой
-    public final TextView commentView; // комментарий к заданию
-    public final ImageView expandView; // иконка раскрыть/свернуть
-    public final ImageView deletedView; // иконка пометки на удаление
-    public final ImageView postedView; // иконка документ проведен
-    public final ImageView thumbView; // иконка цель аудита достигнута
-    public final CheckBox checkedView; // чек-бокс
+    final View mView; // общий контейнер
+    final CardView itemView; // карточка
+    final TextView dateView; // дата
+    final TextView timeView; // время
+    final TextView numberView; // номер
+    final TextView objectView; // объект аудита
+    final TextView typeView; // вид аудита
+    final TextView analyticsView; // аналитика строкой
+    final TextView commentView; // комментарий к заданию
+    final ImageView expandImage; // иконка раскрыть/свернуть
+    final View expandView; //Область для расширения/свертки пункта
+    final ImageView deletedView; // иконка пометки на удаление
+    final ImageView postedView; // иконка документ проведен
+    final ImageView thumbView; // иконка цель аудита достигнута
+    final CheckBox checkedView; // чек-бокс
     public Tasks.Task task; // пункт
 
-    public ViewHolderTasks(View view) {
+    ViewHolderTasks(View view) {
         super(view);
         this.mView = view;
         itemView = view.findViewById(R.id.item);
@@ -42,6 +51,7 @@ public class ViewHolderTasks extends RecyclerView.ViewHolder {
         postedView = view.findViewById(R.id.posted);
         thumbView = view.findViewById(R.id.thumb);
         checkedView = view.findViewById(R.id.checked);
+        expandImage = view.findViewById(R.id.expand_image);
         expandView = view.findViewById(R.id.expand);
     }
 

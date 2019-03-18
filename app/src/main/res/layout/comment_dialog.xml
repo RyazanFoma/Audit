@@ -1,4 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ /**
+  ~  * Created by Eduard Fomin on 05.02.19 9:42
+  ~  * Copyright (c) 2019 . All rights reserved.
+  ~  * Last modified 21.02.18 12:29
+  ~  */
+  -->
+
 <LinearLayout
 xmlns:android="http://schemas.android.com/apk/res/android"
 android:id="@+id/layout_root"

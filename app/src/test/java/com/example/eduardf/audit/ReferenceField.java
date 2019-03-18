@@ -1,7 +1,6 @@
 package com.example.eduardf.audit;
 
 import android.content.Context;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.TextInputLayout;
 import android.support.v4.app.Fragment;
@@ -11,11 +10,22 @@ import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.ImageView;
 
+import org.jetbrains.annotations.NotNull;
+
+/*
+ * *
+ *  * Created by Eduard Fomin on 05.02.19 9:42
+ *  * Copyright (c) 2019 . All rights reserved.
+ *  * Last modified 13.12.18 11:17
+ *
+ */
+
 /**
- * Фрагмент для организации поля с выбором элемента справочника
+ * Фрагмент с полем для выбора элемента справочника
  */
 public class ReferenceField extends Fragment implements
-        ReferenceChoice.OnReferenceManagerInteractionSingleChoice {
+        ReferenceChoice.OnReferenceManagerInteractionSingleChoice,
+        SetName.OnSetName{
 
     //Аргументы для передачи параметров поля
     private static final String ARG_REQUESTCODE = "requestcode";
@@ -86,19 +96,19 @@ public class ReferenceField extends Fragment implements
 
     //возвращает View фрагмента
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+    public View onCreateView(@NotNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         return inflater.inflate(R.layout.fragment_reference_field, container, false);
     }
 
     //заполняет View фрагмента
     @Override
-    public void onViewCreated(View view, Bundle savedInstanceState) {
+    public void onViewCreated(@NotNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         afterRotation = savedInstanceState!=null;
         ((TextInputLayout) view.findViewById(R.id.input_layout_name)).setHint(title);
         viewName = view.findViewById(R.id.input_name);
-        if (id != null) new setName(viewName).execute(id);
+        if (id != null) new SetName(this, oData, table).execute(id);
         viewName.setKeyListener(null);
         viewName.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -131,7 +141,7 @@ public class ReferenceField extends Fragment implements
 
     //Сохраняет выбранный id перед поворотом экрана. Остальное сохраниться в агрументах
     @Override
-    public void onSaveInstanceState(Bundle outState) {
+    public void onSaveInstanceState(@NotNull Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putString(ARG_ID, id);
     }
@@ -145,15 +155,9 @@ public class ReferenceField extends Fragment implements
         if (mListener != null) mListener.onFragmentChoiceListener(requestCode, id);
     }
 
-    //Класс для заполнения поля с наименованием в парралельном потоке
-    private class setName extends AsyncTask<String, Void, String> {
-        final EditText editText;
-        private setName(EditText editText) { this.editText = editText; }
-        protected void onPreExecute() { editText.setText(R.string.progress_msq); }
-        protected String doInBackground(String... id) { return oData.getName(table, id[0]); }
-        protected void onPostExecute(String name) {
-            editText.setText(name);
-        }
+    @Override
+    public void onSetName(String name) {
+        viewName.setText(name);
     }
 
     //вызывается при присоединении фрагмента
@@ -164,7 +168,7 @@ public class ReferenceField extends Fragment implements
             mListener = (OnFragmentChoiceListener) context;
         } else {
             throw new RuntimeException(context.toString()
-                    + " must implement OnFragmentChoiceListener");
+                    + " must implement OnReferenceSelectedListener");
         }
         oData = new AuditOData(context);
     }

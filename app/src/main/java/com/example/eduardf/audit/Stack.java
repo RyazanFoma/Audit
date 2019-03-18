@@ -8,6 +8,14 @@ import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+/*
+ * *
+ *  * Created by Eduard Fomin on 05.02.19 9:42
+ *  * Copyright (c) 2019 . All rights reserved.
+ *  * Last modified 18.01.19 11:49
+ *
+ */
+
 /**
  * Класс для организации навигации по предкам
  */
@@ -24,10 +32,9 @@ abstract class Stack extends Items {
      * @param id - quid наследника
      */
     void loadStack(String id) {
-        if (!AuditOData.EMPTY_KEY.equals(id)) {
+        if (!(id == null || AuditOData.EMPTY_KEY.equals(id))) {
             Items.Item item = getItem(id);
-            if(!AuditOData.EMPTY_KEY.equals(item.pater))
-                loadStack(item.pater); //Рекурсия!!!
+            loadStack(item.pater); //Рекурсия!!!
             push(item);
         }
     }

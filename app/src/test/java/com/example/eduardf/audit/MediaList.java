@@ -4,6 +4,14 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import java.util.HashSet;
 
+/*
+ * *
+ *  * Created by Eduard Fomin on 05.02.19 9:42
+ *  * Copyright (c) 2019 . All rights reserved.
+ *  * Last modified 27.03.18 11:43
+ *
+ */
+
 /**
  * Created by eduardf on 02.03.2018.
  */

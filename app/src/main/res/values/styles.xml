@@ -1,3 +1,11 @@
+<!--
+  ~ /**
+  ~  * Created by Eduard Fomin on 05.02.19 9:42
+  ~  * Copyright (c) 2019 . All rights reserved.
+  ~  * Last modified 24.01.19 16:57
+  ~  */
+  -->
+
 <resources>
 
     <!-- Base application theme. -->
@@ -13,9 +21,16 @@
         <item name="android:actionModeCloseDrawable">@drawable/ic_white_close_24px</item>
     </style>
 
+    <!-- Без ActionBar. -->
     <style name="AppTheme.NoActionBar">
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
+    </style>
+
+    <!-- С ActionBar. -->
+    <style name="AppTheme.WithActionBar">
+        <item name="windowActionBar">true</item>
+        <item name="windowNoTitle">false</item>
     </style>
 
     <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />

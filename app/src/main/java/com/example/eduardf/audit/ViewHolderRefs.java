@@ -9,6 +9,14 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+/*
+ * *
+ *  * Created by Eduard Fomin on 05.02.19 9:42
+ *  * Copyright (c) 2019 . All rights reserved.
+ *  * Last modified 27.09.18 15:44
+ *
+ */
+
 //Хранилище для RecyclerView
 public class ViewHolderRefs extends RecyclerView.ViewHolder {
     public final View view; // общий контейнер

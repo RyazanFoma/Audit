@@ -1,3 +1,11 @@
+<!--
+  ~ /**
+  ~  * Created by Eduard Fomin on 05.02.19 9:42
+  ~  * Copyright (c) 2019 . All rights reserved.
+  ~  * Last modified 07.12.18 11:50
+  ~  */
+  -->
+
 <resources>
     <integer name="max_length_number">10</integer>
     <integer name="max_length_comment">500</integer>

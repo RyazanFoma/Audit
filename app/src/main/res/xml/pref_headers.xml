@@ -1,3 +1,11 @@
+<!--
+  ~ /**
+  ~  * Created by Eduard Fomin on 05.02.19 9:42
+  ~  * Copyright (c) 2019 . All rights reserved.
+  ~  * Last modified 07.12.18 10:25
+  ~  */
+  -->
+
 <preference-headers xmlns:android="http://schemas.android.com/apk/res/android">
 
     <!-- These settings headers are only used on tablets. -->
@@ -11,11 +19,6 @@
         android:fragment="com.example.eduardf.audit.SettingsAudit$TasksPreferenceFragment"
         android:icon="@drawable/ic_black_table_chart_24px"
         android:title="@string/pref_header_tasks" />
-
-    <header
-        android:fragment="com.example.eduardf.audit.SettingsAudit$DefaultPreferenceFragment"
-        android:icon="@drawable/ic_black_tune_24px"
-        android:title="@string/pref_header_default" />
 
     <header
         android:fragment="com.example.eduardf.audit.SettingsAudit$oDataPreferenceFragment"

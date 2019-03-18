@@ -3,9 +3,17 @@ package com.example.eduardf.audit;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+/*
+ * *
+ *  * Created by Eduard Fomin on 05.02.19 9:42
+ *  * Copyright (c) 2019 . All rights reserved.
+ *  * Last modified 30.01.19 14:55
+ *
+ */
+
 public class ParcelableInd implements Parcelable {
 
-    IndList.Ind ind = new IndList().new Ind();
+    IndList.Ind ind = new IndList.Ind();
 
     //Конструктор
     ParcelableInd(IndList.Ind ind) {
@@ -39,6 +47,7 @@ public class ParcelableInd implements Parcelable {
         dest.writeInt(ind.folder? 1: 0);
         dest.writeString(ind.desc);
         dest.writeString(ind.type.id);
+        dest.writeInt(ind.not_involved ? 1: 0);
         dest.writeString(ind.criterion.id);
         dest.writeString(ind.subject);
         dest.writeString(ind.unit);
@@ -60,6 +69,7 @@ public class ParcelableInd implements Parcelable {
         ind.folder = (in.readInt() == 1);
         ind.desc = in.readString();
         ind.type = Indicators.Types.toValue(in.readString());
+        ind.not_involved = (in.readInt() == 1);
         ind.criterion = Indicators.Criterions.toValue(in.readString());
         ind.subject = in.readString();
         ind.unit = in.readString();
