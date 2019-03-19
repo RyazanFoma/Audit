@@ -1,7 +1,5 @@
 package com.example.eduardf.audit;
 
-import android.app.Activity;
-import android.os.AsyncTask;
 import android.support.annotation.Nullable;
 import android.app.SearchManager;
 import android.content.Context;
@@ -99,6 +97,7 @@ public class ReferenceChoice extends AppCompatActivity implements
     private static final String ARG_LAST = "last";
     private static final String ARG_COPY_MOVE_ID = "copy_move_id"; //пункты для копирования и переноса
     private static final String ARG_FROM = "from"; //Статус, откуда копируем/перемещаем
+    private static final String ARG_PARENTTYPE = "parenttype"; //Типы родительских справочников
 
 
     //ВОЗВРАЩАЕТ ИНТЕНТ ДЛЯ АКТИВНОСТИ
@@ -110,11 +109,11 @@ public class ReferenceChoice extends AppCompatActivity implements
         id - идентификатор (для одиночного выбора) или список идентификаторов (для множественного
         выбора) элементов справочника для подстветки / null
         owner - идентификатор владельца справочника для отбора / null
-        [in] - список идентификаторов папок первого уровня для отбора
+        parentType - типы родительских справочников
      */
     //в режиме одиночного выбора из фрагмента
     public static Intent intentActivity(Fragment fragment, AuditOData.Set table, String title,
-                                        String owner, String id) {
+                                        String owner, ArrayList<String> parentType, String id) {
         instanceOf(fragment, MODE_SINGLE_CHOICE);
         Intent intent = new Intent(fragment.getActivity(), ReferenceChoice.class);
         intent.putExtra(ARG_MODE, MODE_SINGLE_CHOICE);
@@ -124,11 +123,12 @@ public class ReferenceChoice extends AppCompatActivity implements
         ArrayList<String> ids = new ArrayList<>();
         if (!(id == null || id.isEmpty())) ids.add(id);
         intent.putExtra(ARG_ID, ids);
+        intent.putStringArrayListExtra(ARG_PARENTTYPE, parentType);
         return intent;
     }
     //в режиме одиночного выбора из активности
     public static Intent intentActivity(Context context, int requestCode, AuditOData.Set table,
-                                        String title, String owner, String id) {
+                                        String title, String owner, ArrayList<String> parentType, String id) {
         instanceOf(context, MODE_SINGLE_CHOICE);
         Intent intent = new Intent(context, ReferenceChoice.class);
         intent.putExtra(ARG_MODE, MODE_SINGLE_CHOICE);
@@ -136,15 +136,16 @@ public class ReferenceChoice extends AppCompatActivity implements
         intent.putExtra(ARG_TABLE, table.toString());
         intent.putExtra(ARG_OWNER, owner);
         intent.putExtra(ARG_TITLE, title);
-        ArrayList<String> ids = new ArrayList<String>();
+        ArrayList<String> ids = new ArrayList<>();
         if (!(id == null || id.isEmpty())) ids.add(id);
         intent.putExtra(ARG_ID, ids);
+        intent.putStringArrayListExtra(ARG_PARENTTYPE, parentType);
         return intent;
     }
     //в режиме множественного выбора из фрагмента
     public static Intent intentActivity(Context context, Fragment fragment, int requestCode,
                                         AuditOData.Set table, String title, String owner,
-                                        ArrayList<String> id) {
+                                        ArrayList<String> parentType, ArrayList<String> id) {
         instanceOf(fragment, MODE_MULTIPLE_CHOICE);
         Intent intent = new Intent(context, ReferenceChoice.class);
         intent.putExtra(ARG_MODE, MODE_MULTIPLE_CHOICE);
@@ -154,11 +155,13 @@ public class ReferenceChoice extends AppCompatActivity implements
         intent.putExtra(ARG_TITLE, title);
         if (id != null) intent.putExtra(ARG_ID, id);
         else intent.putExtra(ARG_ID, new ArrayList<String>());
+        intent.putStringArrayListExtra(ARG_PARENTTYPE, parentType);
         return intent;
     }
     //в режиме множественного выбора из активности
     public static Intent intentActivity(Context context, int requestCode, AuditOData.Set table,
-                                        String title, String owner, ArrayList<String> id) {
+                                        String title, String owner, ArrayList<String> parentType,
+                                        ArrayList<String> id) {
         instanceOf(context, MODE_MULTIPLE_CHOICE);
         Intent intent = new Intent(context, ReferenceChoice.class);
         intent.putExtra(ARG_MODE, MODE_MULTIPLE_CHOICE);
@@ -168,6 +171,7 @@ public class ReferenceChoice extends AppCompatActivity implements
         intent.putExtra(ARG_TITLE, title);
         if (id != null) intent.putExtra(ARG_ID, id);
         else intent.putExtra(ARG_ID, new ArrayList<String>());
+        intent.putStringArrayListExtra(ARG_PARENTTYPE, parentType);
         return intent;
     }
 
@@ -242,9 +246,10 @@ public class ReferenceChoice extends AppCompatActivity implements
         String sPater = AuditOData.EMPTY_KEY; //Текущий родитель
         String sTitle; //Заголовок активности
         String sLike = ""; //Строка для отбора
+        ArrayList<String> parentType; //Типы родительских справочников
 
         //Меню действий
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) actionBar.setDisplayHomeAsUpEnabled(true); //Отловит onSupportNavigateUp
@@ -273,6 +278,7 @@ public class ReferenceChoice extends AppCompatActivity implements
             item.id = AuditOData.EMPTY_KEY;
             item.name = getResources().getString(R.string.btn_top);
             myStack.push(item);
+            parentType = intent.getStringArrayListExtra(ARG_PARENTTYPE);
         }
         else { //активность восстатавливаем после поворота экрана
             iRC = savedInstanceState.getInt(ARG_RC);
@@ -284,11 +290,13 @@ public class ReferenceChoice extends AppCompatActivity implements
             ids = savedInstanceState.getStringArrayList(ARG_ID);
             sLike = savedInstanceState.getString(ARG_LIKE, "");
             sPater = savedInstanceState.getString(ARG_PATER);
+            parentType = savedInstanceState.getStringArrayList(ARG_PARENTTYPE);
         }
         bArgs.putString(ARG_TABLE, sTable.toString());
         bArgs.putString(ARG_OWNER, sOwner);
         bArgs.putString(ARG_PATER, sPater);
         bArgs.putString(ARG_LIKE, sLike);
+        bArgs.putStringArrayList(ARG_PARENTTYPE, parentType);
 
         setTitle(sTitle); //Заголовок активности
 
@@ -300,7 +308,7 @@ public class ReferenceChoice extends AppCompatActivity implements
                         getResources().getDimension(R.dimen.min_column_reference))));
 
         // настраиваем список
-        RecyclerView recyclerView = (RecyclerView) findViewById(R.id.list);
+        RecyclerView recyclerView = findViewById(R.id.list);
         recyclerAdapter = new ReferenceAdapter(this, oData, sTable, ids, myStack,
                 iModeChoice, iModeMenu);
         recyclerView.setAdapter(recyclerAdapter);
@@ -359,25 +367,25 @@ public class ReferenceChoice extends AppCompatActivity implements
     }
 
     //Класс для определения текущего родителя
-    private class LoadPater extends AsyncTask<String, Void, String> {
-        private AuditOData.Set table;
-        private LoadPater(AuditOData.Set table) {
-            this.table = table;
-        }
-        @Override
-        protected void onPreExecute() {
-            findViewById(R.id.progressBar).setVisibility(View.VISIBLE);
-        }
-        @Override
-        protected String doInBackground(String... key) {
-            return oData.getItem(table, key[0]).pater;
-        }
-        @Override
-        protected void onPostExecute(String pater) {
-            bArgs.putString(ARG_PATER, pater);
-            findViewById(R.id.progressBar).setVisibility(View.INVISIBLE);
-        }
-    }
+//    private class LoadPater extends AsyncTask<String, Void, String> {
+//        private AuditOData.Set table;
+//        private LoadPater(AuditOData.Set table) {
+//            this.table = table;
+//        }
+//        @Override
+//        protected void onPreExecute() {
+//            findViewById(R.id.progressBar).setVisibility(View.VISIBLE);
+//        }
+//        @Override
+//        protected String doInBackground(String... key) {
+//            return oData.getItem(table, key[0]).pater;
+//        }
+//        @Override
+//        protected void onPostExecute(String pater) {
+//            bArgs.putString(ARG_PATER, pater);
+//            findViewById(R.id.progressBar).setVisibility(View.INVISIBLE);
+//        }
+//    }
 
     //ВСЕ ДЛЯ ПОВОРОТА ЭКРАНА:
     // перед поворотом экрана
@@ -652,7 +660,7 @@ public class ReferenceChoice extends AppCompatActivity implements
                                 show(getSupportFragmentManager(), DialogsReferenceManager.TAG_EDIT);
                     return true;
                 case R.id.copy:
-                    Snackbar.make((View) findViewById(R.id.list), R.string.msg_place_copy, Snackbar.LENGTH_LONG)
+                    Snackbar.make(findViewById(R.id.list), R.string.msg_place_copy, Snackbar.LENGTH_LONG)
                             .setAction("Action", null).show();
                     iModeMenu = ACTION_COPY;
                     mActionMode.invalidate();
@@ -661,7 +669,7 @@ public class ReferenceChoice extends AppCompatActivity implements
                     checkedFrom = myStack.peek().id;
                     return true;
                 case R.id.move:
-                    Snackbar.make((View) findViewById(R.id.list), R.string.msg_place_move, Snackbar.LENGTH_LONG)
+                    Snackbar.make(findViewById(R.id.list), R.string.msg_place_move, Snackbar.LENGTH_LONG)
                             .setAction("Action", null).show();
                     iModeMenu = ACTION_MOVE;
                     mActionMode.invalidate();
@@ -689,11 +697,11 @@ public class ReferenceChoice extends AppCompatActivity implements
 
     // устанавливает видимость нижнего навигационного меню
     private void setVisibilityBNV(boolean visibility) {
-        CardView cardView = (CardView) findViewById(R.id.nav_card);
+        CardView cardView = findViewById(R.id.nav_card);
         if (visibility) {
             if (cardView.getVisibility() != View.VISIBLE) {
                 cardView.setVisibility(View.VISIBLE);
-                BottomNavigationView bottomNavigationView = (BottomNavigationView) findViewById(R.id.navigation);
+                BottomNavigationView bottomNavigationView = findViewById(R.id.navigation);
                 bottomNavigationView.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
                 BottomNavigationViewHelper.disableShiftMode(bottomNavigationView);
             }
@@ -703,7 +711,7 @@ public class ReferenceChoice extends AppCompatActivity implements
 
     // устанавливает видимость значков в нижнем навигационном меню
     private void setVisibilityIconBNV() {
-        BottomNavigationView bottomNavigationView = ((BottomNavigationView) findViewById(R.id.navigation));
+        BottomNavigationView bottomNavigationView = findViewById(R.id.navigation);
         switch (iModeMenu) {
             case ACTION_MODE | ACTION_BAR:
                 default:
@@ -799,9 +807,11 @@ public class ReferenceChoice extends AppCompatActivity implements
     public Loader<Items> onCreateLoader(int id, @Nullable Bundle args) {
         findViewById(R.id.progressBar).setVisibility(View.VISIBLE);
         loadingPage = true;
+        if (args == null) throw new RuntimeException("The loader has't a arguments for loading items.");
         return new LoaderItems(this, oData,
                 AuditOData.Set.toValue(args.getString(ARG_TABLE)), args.getString(ARG_OWNER),
                 args.getString(ARG_PATER), args.getString(ARG_LIKE),
+                args.getStringArrayList(ARG_PARENTTYPE),
                 myStack, currentPage);
     }
 
@@ -849,16 +859,18 @@ public class ReferenceChoice extends AppCompatActivity implements
         String pater;
         String like;
         CurrentPage currentPage;
+        ArrayList<String> parentTypes;
 
         // Конструктор
         private LoaderItems(Context context, AuditOData oData, AuditOData.Set table, String owner,
-                            String pater, String like, Stack stack, CurrentPage currentPage) {
+                            String pater, String like, ArrayList<String> parentTypes, Stack stack, CurrentPage currentPage) {
             super(context);
             this.oData = oData;
             this.table = table;
             this.owner = owner;
             this.pater = pater;
             this.like = like;
+            this.parentTypes = parentTypes;
             this.stack = stack;
             this.currentPage = currentPage;
         }
@@ -884,7 +896,7 @@ public class ReferenceChoice extends AppCompatActivity implements
             stack_add.loadStack(pater);
             stack.clip(0);
             stack.addAll(stack_add);
-            return oData.getItems(table, owner, pater, like, currentPage.skip(), currentPage.top());
+            return oData.getItems(table, owner, pater, like, parentTypes, currentPage.skip(), currentPage.top());
         }
     }
 }
