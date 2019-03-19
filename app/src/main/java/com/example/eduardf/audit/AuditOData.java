@@ -1121,27 +1121,30 @@ public class AuditOData{
 //    }
 
     //возвращает все пункты указанного родителя с отбором по наименованию
-    private List<ClientEntity> getAllItems(Set table, String owner, String pater, String like, int... skip) {
+    private List<ClientEntity> getAllItems(Set table, String owner, String pater, String like, ArrayList<String> parentTypes, int... skip) {
         final StringBuilder filter = new StringBuilder();
         final URIBuilder uriBuilder = client.newURIBuilder(serviceRoot);
+        final ArrayList<String> select = new ArrayList<>();
+        select.add(COMMON_KEY);
+        select.add(COMMON_DELETED);
+        select.add(COMMON_NAME);
+        select.add(COMMON_PARENT);
+        select.add(COMMON_PREDEFINED);
+        select.add(COMMON_PRENAMED);
         switch (table.hierarchy) {
             case FOLDER_HIERARCHY:
-                uriBuilder.select(COMMON_FOLDER, COMMON_KEY, COMMON_DELETED, COMMON_NAME,
-                                COMMON_PARENT, COMMON_PREDEFINED, COMMON_PRENAMED);
+                select.add(COMMON_FOLDER);
                 filter.append(COMMON_PARENT).append(" eq guid'").append(pater).append("'");
                 if (!(like==null||like.isEmpty()))
                     filter.append("and(substringof('").append(like).append("',").append(COMMON_NAME).append(")or ").append(COMMON_FOLDER).append(")");
                 break;
             case ELEMENT_HIERARCHY:
-                uriBuilder.select(COMMON_GROUP, COMMON_KEY, COMMON_DELETED, COMMON_NAME,
-                                COMMON_PARENT, COMMON_PREDEFINED, COMMON_PRENAMED);
+                select.add(COMMON_GROUP);
                 filter.append(COMMON_PARENT).append(" eq guid'").append(pater).append("'");
                 if (!(like==null||like.isEmpty()))
                     filter.append("and(substringof('").append(like).append("',").append(COMMON_NAME).append(")or ").append(COMMON_GROUP).append(")");
                 break;
             case NOT_HIERARCHY: default:
-                uriBuilder.select(COMMON_KEY, COMMON_DELETED, COMMON_NAME,
-                                COMMON_PARENT, COMMON_PREDEFINED, COMMON_PRENAMED);
                 if (!(like==null||like.isEmpty()))
                     filter.append("substringof('").append(like).append("',").append(COMMON_NAME).append(")");
         }
@@ -1150,8 +1153,18 @@ public class AuditOData{
             if (filter.length()>0) filter.append(" and ");
             filter.append(COMMON_OWNER).append(" eq guid'").append(owner).append("'");
         }
+        //Добавляем отбор по типу родительского справочника
+        if (parentTypes!=null) {
+            select.add(OBJECT_TYPE);
+            if (filter.length()>0) filter.append(" and ");
+            filter.append(OBJECT_TYPE).append(" eq '").append("'"); //Произвольные значения
+            for(String objectType: parentTypes)
+                filter.append(OBJECT_TYPE).append(" eq '").append(objectType).append("'");
+        }
+        //Для порционной загрузки
         if (skip.length == 2) uriBuilder.skip(skip[0]).top(skip[1]);
         final URI entitySetURI = uriBuilder
+                .select(select.toArray(new String[0])) //добавить массив из select
                 .appendEntitySetSegment(table.name)
                 .filter(filter.toString())
                 .orderBy(COMMON_NAME+ORDER_ASC)
@@ -1221,13 +1234,14 @@ public class AuditOData{
      * @param owner - guid владелеца / null
      * @param pater - guid нового родителя
      * @param like - строка для отбора по наименованию / null
+     * @param parentTypes - родительские справочники для отбора / null
      * @param skip - массив из 2х элементов: 0 - сколько пропустить, 1 - сколько загрузить пунктов
      * @return - список пунтов
      */
-    Items getItems(Set table, String owner, String pater, String like, int... skip) {
+    Items getItems(Set table, String owner, String pater, String like, ArrayList<String> parentTypes, int... skip) {
         Items items = new Items();
         try {
-            for (ClientEntity entity: getAllItems(table, owner, pater, like, skip))
+            for (ClientEntity entity: getAllItems(table, owner, pater, like, parentTypes, skip))
                 items.add(parseItem(entity, table.hierarchy,false, false));
         }
         catch (ODataRuntimeException e) {
