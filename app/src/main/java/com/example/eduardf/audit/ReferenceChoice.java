@@ -109,11 +109,11 @@ public class ReferenceChoice extends AppCompatActivity implements
         id - идентификатор (для одиночного выбора) или список идентификаторов (для множественного
         выбора) элементов справочника для подстветки / null
         owner - идентификатор владельца справочника для отбора / null
-        parentType - типы родительских справочников
+        parentTypes - типы родительских справочников
      */
     //в режиме одиночного выбора из фрагмента
     public static Intent intentActivity(Fragment fragment, AuditOData.Set table, String title,
-                                        String owner, ArrayList<String> parentType, String id) {
+                                        String owner, ArrayList<String> parentTypes, String id) {
         instanceOf(fragment, MODE_SINGLE_CHOICE);
         Intent intent = new Intent(fragment.getActivity(), ReferenceChoice.class);
         intent.putExtra(ARG_MODE, MODE_SINGLE_CHOICE);
@@ -123,12 +123,12 @@ public class ReferenceChoice extends AppCompatActivity implements
         ArrayList<String> ids = new ArrayList<>();
         if (!(id == null || id.isEmpty())) ids.add(id);
         intent.putExtra(ARG_ID, ids);
-        intent.putStringArrayListExtra(ARG_PARENTTYPE, parentType);
+        intent.putStringArrayListExtra(ARG_PARENTTYPE, parentTypes);
         return intent;
     }
     //в режиме одиночного выбора из активности
     public static Intent intentActivity(Context context, int requestCode, AuditOData.Set table,
-                                        String title, String owner, ArrayList<String> parentType, String id) {
+                                        String title, String owner, ArrayList<String> parentTypes, String id) {
         instanceOf(context, MODE_SINGLE_CHOICE);
         Intent intent = new Intent(context, ReferenceChoice.class);
         intent.putExtra(ARG_MODE, MODE_SINGLE_CHOICE);
@@ -139,13 +139,13 @@ public class ReferenceChoice extends AppCompatActivity implements
         ArrayList<String> ids = new ArrayList<>();
         if (!(id == null || id.isEmpty())) ids.add(id);
         intent.putExtra(ARG_ID, ids);
-        intent.putStringArrayListExtra(ARG_PARENTTYPE, parentType);
+        intent.putStringArrayListExtra(ARG_PARENTTYPE, parentTypes);
         return intent;
     }
     //в режиме множественного выбора из фрагмента
     public static Intent intentActivity(Context context, Fragment fragment, int requestCode,
                                         AuditOData.Set table, String title, String owner,
-                                        ArrayList<String> parentType, ArrayList<String> id) {
+                                        ArrayList<String> parentTypes, ArrayList<String> id) {
         instanceOf(fragment, MODE_MULTIPLE_CHOICE);
         Intent intent = new Intent(context, ReferenceChoice.class);
         intent.putExtra(ARG_MODE, MODE_MULTIPLE_CHOICE);
@@ -155,12 +155,12 @@ public class ReferenceChoice extends AppCompatActivity implements
         intent.putExtra(ARG_TITLE, title);
         if (id != null) intent.putExtra(ARG_ID, id);
         else intent.putExtra(ARG_ID, new ArrayList<String>());
-        intent.putStringArrayListExtra(ARG_PARENTTYPE, parentType);
+        intent.putStringArrayListExtra(ARG_PARENTTYPE, parentTypes);
         return intent;
     }
     //в режиме множественного выбора из активности
     public static Intent intentActivity(Context context, int requestCode, AuditOData.Set table,
-                                        String title, String owner, ArrayList<String> parentType,
+                                        String title, String owner, ArrayList<String> parentTypes,
                                         ArrayList<String> id) {
         instanceOf(context, MODE_MULTIPLE_CHOICE);
         Intent intent = new Intent(context, ReferenceChoice.class);
@@ -171,7 +171,7 @@ public class ReferenceChoice extends AppCompatActivity implements
         intent.putExtra(ARG_TITLE, title);
         if (id != null) intent.putExtra(ARG_ID, id);
         else intent.putExtra(ARG_ID, new ArrayList<String>());
-        intent.putStringArrayListExtra(ARG_PARENTTYPE, parentType);
+        intent.putStringArrayListExtra(ARG_PARENTTYPE, parentTypes);
         return intent;
     }
 
@@ -246,7 +246,7 @@ public class ReferenceChoice extends AppCompatActivity implements
         String sPater = AuditOData.EMPTY_KEY; //Текущий родитель
         String sTitle; //Заголовок активности
         String sLike = ""; //Строка для отбора
-        ArrayList<String> parentType; //Типы родительских справочников
+        ArrayList<String> parentTypes; //Типы родительских справочников
 
         //Меню действий
         Toolbar toolbar = findViewById(R.id.toolbar);
@@ -278,7 +278,7 @@ public class ReferenceChoice extends AppCompatActivity implements
             item.id = AuditOData.EMPTY_KEY;
             item.name = getResources().getString(R.string.btn_top);
             myStack.push(item);
-            parentType = intent.getStringArrayListExtra(ARG_PARENTTYPE);
+            parentTypes = intent.getStringArrayListExtra(ARG_PARENTTYPE);
         }
         else { //активность восстатавливаем после поворота экрана
             iRC = savedInstanceState.getInt(ARG_RC);
@@ -290,13 +290,13 @@ public class ReferenceChoice extends AppCompatActivity implements
             ids = savedInstanceState.getStringArrayList(ARG_ID);
             sLike = savedInstanceState.getString(ARG_LIKE, "");
             sPater = savedInstanceState.getString(ARG_PATER);
-            parentType = savedInstanceState.getStringArrayList(ARG_PARENTTYPE);
+            parentTypes = savedInstanceState.getStringArrayList(ARG_PARENTTYPE);
         }
         bArgs.putString(ARG_TABLE, sTable.toString());
         bArgs.putString(ARG_OWNER, sOwner);
         bArgs.putString(ARG_PATER, sPater);
         bArgs.putString(ARG_LIKE, sLike);
-        bArgs.putStringArrayList(ARG_PARENTTYPE, parentType);
+        bArgs.putStringArrayList(ARG_PARENTTYPE, parentTypes);
 
         setTitle(sTitle); //Заголовок активности
 

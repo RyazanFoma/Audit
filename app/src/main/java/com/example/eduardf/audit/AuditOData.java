@@ -1154,12 +1154,17 @@ public class AuditOData{
             filter.append(COMMON_OWNER).append(" eq guid'").append(owner).append("'");
         }
         //Добавляем отбор по типу родительского справочника
-        if (parentTypes!=null) {
+        if (!(parentTypes==null || parentTypes.isEmpty())) {
             select.add(OBJECT_TYPE);
             if (filter.length()>0) filter.append(" and ");
-            filter.append(OBJECT_TYPE).append(" eq '").append("'"); //Произвольные значения
-            for(String objectType: parentTypes)
+            filter.append("(");
+            boolean next = false;
+            for(String objectType: parentTypes) {
+                if (next) filter.append(" or ");
                 filter.append(OBJECT_TYPE).append(" eq '").append(objectType).append("'");
+                next = true;
+            }
+            filter.append(")");
         }
         //Для порционной загрузки
         if (skip.length == 2) uriBuilder.skip(skip[0]).top(skip[1]);

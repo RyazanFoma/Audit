@@ -35,6 +35,7 @@ public class Objects extends Fragment implements
 
     private AuditOData oData; //1С:Предприятие
     private AuditOData.Set set; //Таблица справочника
+    private ArrayList<String> parentTypes = null; //Типы родительских справочников
     private String title; //Заголовой поля
     private ObjectsAdapter recyclerAdapter; //Адаптер для списка
     private boolean enabled = true; //Признак доступности списка для редактирования
@@ -80,6 +81,13 @@ public class Objects extends Fragment implements
             (new LoadItems(this, oData, set)).execute(guids.toArray(new String[0]));
         }
 
+    }
+    /**
+     * Установка типов родительских справочников для поля
+     * @param parentTypes - типы родительских справочников
+     */
+    void setParentTypes(ArrayList<String> parentTypes) {
+        this.parentTypes = parentTypes;
     }
 
     /**
@@ -143,7 +151,7 @@ public class Objects extends Fragment implements
                 startActivity(ReferenceChoice.intentActivity(getActivity(), Objects.this,
                         -1,
                         set,
-                        title, null,
+                        title, null, parentTypes,
                         recyclerAdapter.getItems()));
             }
         });

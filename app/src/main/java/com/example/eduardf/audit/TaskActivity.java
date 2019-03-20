@@ -175,6 +175,7 @@ public class TaskActivity extends AppCompatActivity implements
                     //Нужно предупредить юзера об ощищении полей
                     task.type_key = key;
                     objectReference.setKey(null);
+                    if(object!=null) objectReference.setParentTypes(((AType)object).objectTypes);
                     task.analytics.clear();
                     analyticsObjects.setObjects(null);
                     task.indicators.clear();

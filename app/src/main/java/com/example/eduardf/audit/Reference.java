@@ -12,6 +12,8 @@ import android.widget.EditText;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
+
 /*
  * *
  *  * Created by Eduard Fomin on 05.02.19 9:42
@@ -38,6 +40,7 @@ public class Reference extends Fragment implements
     private String owner = null; //Giud собственника
     private String key = null; //Guid выбранного элемента
     private Object object = null; //Выбранный элемент
+    private ArrayList<String> parentTypes = null; //Типы родительских справочников
     private boolean enabled = true; //Признак доступности редактирования
     private EditText viewName; //Поле с наименованием выбранного элемента
     private boolean afterRotation; //true - признак прошедшего поворота, false - после фокуса на поле с наименованием
@@ -80,10 +83,19 @@ public class Reference extends Fragment implements
         if (guid == null) {
             key = null;
             object = null;
+            parentTypes = null;
             setText("");
             if (onChangedReferenceKey != null) onChangedReferenceKey.onChangedKey(getId(), key, object);
         } else if (!guid.equals(key))
             new LoadObject(this, oData, set).execute(key = guid);
+    }
+
+    /**
+     * Установка типов родительских справочников для поля
+     * @param parentTypes - типы родительских справочников
+     */
+    void setParentTypes(ArrayList<String> parentTypes) {
+        this.parentTypes = parentTypes;
     }
 
     /**
@@ -235,7 +247,7 @@ public class Reference extends Fragment implements
             @Override
             public void onClick(View view) {
                 startActivity(ReferenceChoice.intentActivity(Reference.this,
-                        set, title, owner, key));
+                        set, title, owner, parentTypes, key));
             }
         });
         viewName.setOnFocusChangeListener(new View.OnFocusChangeListener() {
@@ -244,7 +256,7 @@ public class Reference extends Fragment implements
                 if (hasFocus)
                     if (!afterRotation) //Чтобы после поворота не открывалась активность выбора
                         startActivity(ReferenceChoice.intentActivity(Reference.this,
-                                set, title, owner, key));
+                                set, title, owner, parentTypes, key));
                     else
                         afterRotation = false;
             }
