@@ -529,7 +529,7 @@ public class ReferenceEdit extends AppCompatActivity implements View.OnClickList
     //вызывается при создании группы
     @Override
     public void onCreateGroupPositiveClick(String name) {
-//        Items.Item item = new Items.Item(NOT_SELECTED, true, NOT_SELECTED, NOT_SELECTED, myStack.peek().id, name, "");
+//        Items.Item item = new Items.Item(NOT_SELECTED, true, NOT_SELECTED, NOT_SELECTED, myStack.peek().id, id, "");
 //        item.id = db.insertRecord(sTable, item, bArgs.getString(ARG_KEY_NAME), bArgs.getInt(ARG_KEY, NOT_SELECTED));
 //        myStack.push(item);
 //        myStack.addTextView((LinearLayout) findViewById(R.id.ancestors), NAME_LENGTH);
@@ -664,7 +664,7 @@ public class ReferenceEdit extends AppCompatActivity implements View.OnClickList
 //                        }
 //                    else if ((item.folders+item.files)==0) db.deleteRecord(sTable, item.id);
 //                    else {
-//                        Snackbar.make((View) findViewById(R.id.items), "Невозможно удалить '"+item.name+"'. Содержит: "+item.folders+" папок, "+item.files+" файлов", Snackbar.LENGTH_LONG)
+//                        Snackbar.make((View) findViewById(R.id.items), "Невозможно удалить '"+item.id+"'. Содержит: "+item.folders+" папок, "+item.files+" файлов", Snackbar.LENGTH_LONG)
 //                                .setAction("Action", null).show();
 //                        break;
 //                    }
@@ -726,7 +726,7 @@ public class ReferenceEdit extends AppCompatActivity implements View.OnClickList
 //                    R.drawable.ic_baseline_remove_circle_outline_24px);
 //
 //            // наименование и описание
-//            holder.mNameView.setText(holder.mItem.name);
+//            holder.mNameView.setText(holder.mItem.id);
 ////            holder.mDescView.setText(holder.mItem.desc);
 //            holder.mItemView.setTag(holder.mItem); // в теге храним пункт
 //

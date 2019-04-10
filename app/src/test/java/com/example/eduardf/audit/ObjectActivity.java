@@ -24,7 +24,7 @@ import java.util.ArrayList;
 
 //Форма для редактирования объекта аудита
 public class ObjectActivity extends AppCompatActivity implements
-        /*Objects.OnObjectListEditInteractionListener,*/
+        /*Analytics.OnObjectListEditInteractionListener,*/
         ReferenceChoice.OnReferenceManagerInteractionMultipleChoice {
 
     private AuditObject object; //Объект аудита
@@ -200,7 +200,7 @@ public class ObjectActivity extends AppCompatActivity implements
         getSupportFragmentManager().
                 beginTransaction().
 //                replace(R.id.objectanalytics,
-//                        Objects.newInstance(0, AuditDB.TBL_ANALYTIC, object.analytics)).
+//                        Analytics.newInstance(0, AuditDB.TBL_ANALYTIC, object.analytics)).
                 commit();
     }
 

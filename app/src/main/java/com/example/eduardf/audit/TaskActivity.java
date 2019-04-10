@@ -55,7 +55,7 @@ public class TaskActivity extends AppCompatActivity implements
     private Reference organizationReference;
     private Reference objectReference;
     private Reference responsibleReference;
-    private Objects analyticsObjects;
+    private Analytics analyticsObjects;
     private IndicatorFragment indicatorFragment;
     private DateTime dateTime;
 
@@ -74,14 +74,164 @@ public class TaskActivity extends AppCompatActivity implements
     private final static String ARG_OBJECT = "object"; //Наименование объекта аудита
     private final static String ARG_TASK = "task"; //Задание
     private final static String ARG_TAG = "tag"; //Текущая закладка
-    private static final String ARG_FILLED = "filled"; //Признаки заполнения закладок
+    private final static String ARG_FILLED = "filled"; //Признаки заполнения закладок
 
     // Тэги закладок
-    private final static String TAG0 = "tag0";
-    private final static String TAG1 = "tag1";
-    private final static String TAG2 = "tag2";
-    private final static String TAG3 = "tag3";
+    private enum Tags {
+        HEAD(-1, "head"),
+        COMMON(0, "common"),
+        ANALYTICS(1, "analytics"),
+        INDICATORS(2, "indicators");
+
+        int index;
+        String id;
+
+        Tags(int index, String id) {
+            this.index = index;
+            this.id = id;
+        }
+
+        static Tags toValue(String id) {
+            switch (id) {
+                case "head": return HEAD;
+                case "analytics": return ANALYTICS;
+                case "indicators":  return INDICATORS;
+                case "common": default: return COMMON;
+            }
+        }
+    }
+
     private boolean[] filledTag = {false, false, false}; // Признаки заполнения закладок
+    private DisplaceSet displaceSet; //Настройки - предпочтения
+    private boolean firstOpen = false; //Признак первого открытия активности
+
+    //Обработчик выбора вида аудита
+    private Reference.OnChangedReferenceKey typeListener = new Reference.OnChangedReferenceKey() {
+        @Override
+        public void onChangedKey(int id, String key, Object obj) {
+            //Возможно, потребуется очистить объект, аналитику и показатели
+            if (key == null || !key.equals(task.type_key)) {
+                //Нужно предупредить юзера об ощищении полей
+                task.type_key = key;
+                objectReference.setKey(null);
+                task.analytics.clear();
+                analyticsObjects.setKeys(null);
+                task.indicators.clear();
+                clearFilledTag();
+            }
+            if(obj!=null) {
+                final AType type = (AType)obj;
+                objectReference.setParentTypes(type.objectTypes);
+                //Установка настройки задания как в 1С, если они еще не установлены в предподчтениях
+                displaceSet.asIn1C(type);
+                ((Switch) findViewById(R.id.by_subject)).setChecked(displaceSet.showSubject);
+                if (firstOpen) {
+                    TabHost tabHost = findViewById(android.R.id.tabhost);
+                    if (tabHost != null) tabHost.setCurrentTabByTag(displaceSet.openWithTab);
+                }
+                //Установка видимости аналитики
+                switch (type.selection) {
+                    case NOT_ANALYTICS:
+                        visibilityAnalytics(View.GONE);
+                        break;
+                    case NOT_SELECTION:
+                        visibilityAnalytics(View.VISIBLE);
+                        analyticsObjects.setEnabled(true);
+                        analyticsObjects.setTypeObject();
+                        analyticsObjects.setParentTypes();
+                        break;
+                    default:
+                        visibilityAnalytics(View.VISIBLE);
+                        analyticsObjects.setEnabled(task.object_key != null);
+                }
+            }
+            updateIndicators();
+            visibilityView();
+        }
+    };
+
+    //Обработчик выбора объекта аудита
+    private Reference.OnChangedReferenceKey objectListener = new Reference.OnChangedReferenceKey() {
+        @Override
+        public void onChangedKey(int id, String key, Object obj) {
+            final AType type = (AType) typeReference.getObject();
+            if (type != null) {
+                //Возможно, потребуется очистить аналитику и показатели
+                if (key == null || !key.equals(task.object_key)) {
+                    //Нужно предупредить юзера об ощищении полей
+                    task.object_key = key;
+                    if (type.selection != AType.Selections.NOT_SELECTION) {
+                        task.analytics.clear();
+                        analyticsObjects.setKeys(null);
+                        task.indicators.clear();
+                        clearFilledTag();
+                    }
+                }
+                if (obj != null) {
+                    final AObject object = (AObject)obj;
+                    switch (type.selection) {
+                        case HAND_LINK:
+                            analyticsObjects.setTypeObject(type.id, object.id);
+                            analyticsObjects.setParentTypes();
+                            break;
+                        case BY_TYPES:
+                            analyticsObjects.setParentTypes(task.type_key, object.objectType);
+                            analyticsObjects.setTypeObject();
+                            break;
+                        default:
+                            analyticsObjects.setTypeObject();
+                            analyticsObjects.setParentTypes();
+                            break;
+                    }
+                }
+            }
+            updateIndicators();
+            visibilityView();
+        }
+    };
+
+    //Обработчик закладок
+    private TabHost.OnTabChangeListener tabListener = new TabHost.OnTabChangeListener() {
+        @Override
+        public void onTabChanged(String id) {
+            if (!getSupportLoaderManager().hasRunningLoaders())
+                fillViews(Tags.toValue(id));
+        }
+    };
+
+    //Обработчик кнопки очистки комментария
+    private View.OnTouchListener commentListener = new View.OnTouchListener() {
+        @SuppressLint("ClickableViewAccessibility") //Чтобы для onTouch не возникало предупреждение о performClick
+        @Override
+        public boolean onTouch(View v, MotionEvent event) {
+            if(event.getAction() == MotionEvent.ACTION_UP) {
+                final TextView textView = (TextView)v;
+                if(event.getX() >= textView.getWidth() - textView.getCompoundPaddingEnd()) {
+                    textView.setText("");
+                    return true;
+                }
+            }
+            return false;
+        }
+    };
+
+    //Обработчик переключателя По предметам
+    private CompoundButton.OnCheckedChangeListener bySubjectListener = new CompoundButton.OnCheckedChangeListener() {
+        @Override
+        public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+            if (buttonView.isPressed())
+                updateIndicators();
+        }
+    };
+
+    //Обработчик кнопки Заполнить
+    private View.OnClickListener fillListener = new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            new LoadIndicatorRows(TaskActivity.this, oData)
+                    .execute(task.type_key, task.object_key);
+        }
+    };
 
     // возвращает Интент для создания нового задания на аудит
     public static Intent intentActivityCreate(Context context, String auditor, Tasks.Task.Status status) {
@@ -106,118 +256,47 @@ public class TaskActivity extends AppCompatActivity implements
     }
 
     // создает активность для редактирвания задания на аудит
-    @SuppressLint("ClickableViewAccessibility") //Чтобы для onTouch не возникало предупреждение о performClick
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
+        final String tab; //Текущая вкладка для открытия
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_task);
 
-        //Лента инструментов
-        Toolbar toolbar = findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
-        ActionBar ab = getSupportActionBar();
-        if (ab != null) {
-            ab.setDisplayHomeAsUpEnabled(true); //Отловит onSupportNavigateUp
-        }
+        setupToolBar(); //Лента инструментов
+        setupStatus(); //Поле статус
+        setupSaveFAB(); //Кнопка Сохранить
+        final TabHost tabHost = setupTabHost(); //Вкладки
+        findViewById(R.id.comment).setOnTouchListener(commentListener);
+        findViewById(R.id.fill).setOnClickListener(fillListener);
+        ((Switch) findViewById(R.id.by_subject)).setOnCheckedChangeListener(bySubjectListener);
 
-        //ВСЕ ДЛЯ ВЫБОРА СТАТУСА
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
-                android.R.layout.simple_spinner_item, getResources().getStringArray(R.array.status_list));
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        Spinner status = findViewById(R.id.status);
-        status.setAdapter(adapter);
-        status.setOnItemSelectedListener(new  AdapterView.OnItemSelectedListener() {
-
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                if (task!=null) task.status = Tasks.Task.Status.toValue(position);
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-            }
-        });
-
-        //Кнопка Сохранить
-        final FloatingActionButton fab = findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) { saveTask(); }
-        });
-
-        //ВСЕ ДЛЯ ВКЛАДОК
-        final String tab; //Вкладка для открытия
-        final TabHost tabHost = findViewById(android.R.id.tabhost);
-        tabHost.setup();
-        TabHost.TabSpec tabSpec;
-        tabSpec = tabHost.newTabSpec(TAG1);
-        tabSpec.setIndicator(getString(R.string.tab_com));
-        tabSpec.setContent(R.id.tab1);
-        tabHost.addTab(tabSpec);
-        tabSpec = tabHost.newTabSpec(TAG2);
-        tabSpec.setIndicator(getString(R.string.tab_anl));
-        tabSpec.setContent(R.id.tab2);
-        tabHost.addTab(tabSpec);
-        tabSpec = tabHost.newTabSpec(TAG3);
-        tabSpec.setIndicator(getString(R.string.tab_ind));
-        tabSpec.setContent(R.id.tab3);
-        tabHost.addTab(tabSpec);
 
         //Находим ссылки на поля настроек
+        dateTime = (DateTime) getSupportFragmentManager().findFragmentById(R.id.datetime);
         typeReference = (Reference) getSupportFragmentManager().findFragmentById(R.id.type);
-        typeReference.setOnChangedReferenceKey(new Reference.OnChangedReferenceKey() {
-            @Override
-            public void onChangedKey(int id, String key, Object object) {
-                if (key == null || !key.equals(task.type_key)) {
-                    //Возможно, потребуется очистить объект, аналитику и показатели
-                    //((AType) objectReference.object).objectTypes.contains()
-                    //Нужно предупредить юзера об ощищении полей
-                    task.type_key = key;
-                    objectReference.setKey(null);
-                    if(object!=null) objectReference.setParentTypes(((AType)object).objectTypes);
-                    task.analytics.clear();
-                    analyticsObjects.setObjects(null);
-                    task.indicators.clear();
-                    indicatorFragment.setIndicators(task.indicators, task.type_key,
-                            ((Switch) findViewById(R.id.by_subject)).isChecked());
-                    for(int i=0; i<3; i++) filledTag[i] = false;
-                    visibilityView();
-                }
-            }
-        });
+        typeReference.setOnChangedReferenceKey(typeListener);
         organizationReference = (Reference) getSupportFragmentManager().findFragmentById(R.id.organization);
         objectReference = (Reference) getSupportFragmentManager().findFragmentById(R.id.object);
-        objectReference.setOnChangedReferenceKey(new Reference.OnChangedReferenceKey() {
-            @Override
-            public void onChangedKey(int id, String key, Object object) {
-                if (key == null || !key.equals(task.object_key)) {
-                    //Возможно, потребуется очистить аналитику и показатели
-                    task.object_key = key;
-                    task.analytics.clear();
-                    analyticsObjects.setObjects(null);
-                    task.indicators.clear();
-                    indicatorFragment.setIndicators(task.indicators, task.type_key,
-                            ((Switch) findViewById(R.id.by_subject)).isChecked());
-                    for(int i=0; i<3; i++) filledTag[i] = false;
-                    visibilityView();
-                }
-            }
-        });
+        objectReference.setOnChangedReferenceKey(objectListener);
         responsibleReference = (Reference) getSupportFragmentManager().findFragmentById(R.id.responsible);
-        analyticsObjects = (Objects) getSupportFragmentManager().findFragmentById(R.id.analytics);
+        analyticsObjects = (Analytics) getSupportFragmentManager().findFragmentById(R.id.analytics);
         indicatorFragment = (IndicatorFragment) getSupportFragmentManager().findFragmentById(R.id.indicators);
-        dateTime = (DateTime) getSupportFragmentManager().findFragmentById(R.id.datetime);
 
         //Создает объект OData
         oData = new AuditOData(this);
+
+        //Считываем настройки, могут измениться после загрузки вида аудита
+        displaceSet = new DisplaceSet(this);
 
         if (savedInstanceState==null) { // открываем форму впервые
             //Создаем объект Задание в зависимости от режима
             final Intent intent = getIntent();
             final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
-            //Нужно проверять еще и вид аудита!!!
-            tab = preferences.getString(getString(R.string.pref_key_task_tab), TAG1);
+            firstOpen = true;
+            tab = displaceSet.openWithTab;
+            ((Switch) findViewById(R.id.by_subject)).setChecked(displaceSet.showSubject);
             switch (intent.getIntExtra(ARG_MODE, 0)){
                 case CREATE_MODE:
                     task.date = new Date();
@@ -230,8 +309,10 @@ public class TaskActivity extends AppCompatActivity implements
                     task.organization_key = preferences.getString(SettingTask.DEFAULT_ORGANIZATION, AuditOData.EMPTY_KEY);
                     task.object_key = preferences.getString(SettingTask.DEFAULT_OBJECT, AuditOData.EMPTY_KEY);
                     task.responsible_key = preferences.getString(SettingTask.DEFAULT_RESPONSIBLE, AuditOData.EMPTY_KEY);
-                    fillViews(TAG0); //Заполняем общие поля
-                    fillViews(tab); //и текущую вкладку
+                    fillViews(Tags.HEAD); //Заполняем общие поля
+                    fillViews(Tags.COMMON); //Заполняем общие поля
+                    if (!tab.equals(Tags.COMMON.id))
+                        fillViews(Tags.toValue(tab)); //и текущую вкладку, если не Общее
                     break;
                 case EDIT_MODE:
                     //Перед загрузкой заполним общие поля данными из списка заданий
@@ -242,13 +323,14 @@ public class TaskActivity extends AppCompatActivity implements
                     task.type_name = intent.getStringExtra(ARG_TYPE);
                     task.object_name = intent.getStringExtra(ARG_OBJECT);
                     task.comment = "";
-                    fillViews(TAG0); //Заполняем общие поля
+                    fillViews(Tags.HEAD); //Заполняем общие поля
                     //Запускаем загрузчик для чтения данных.
                     startLoader(intent.getExtras());
                     break;
             }
         }
         else { // открываем после поворота.
+            firstOpen = false;
             tab = savedInstanceState.getString(ARG_TAG); //Текущая влкадка до поворота
             //Успели загрузить-сохранить задание?
             if (savedInstanceState.containsKey(ARG_TASK)) { //Восстанавливаем:
@@ -256,6 +338,7 @@ public class TaskActivity extends AppCompatActivity implements
                 //В заголовок активности добавим номер
                 setTitle(getString(R.string.title_activity_audit_task)+" ("+task.number+")");
                 filledTag = savedInstanceState.getBooleanArray(ARG_FILLED);
+                typeReference.performChangedReferenceKey();
             }
             else { //Не успели - грузим по новой
                 startLoader(getIntent().getExtras());
@@ -264,48 +347,72 @@ public class TaskActivity extends AppCompatActivity implements
 
         //Устанавливаем текущую вкладку
         tabHost.setCurrentTabByTag(tab);
-        //Назначаем обработчик на выбор вкладки
-        tabHost.setOnTabChangedListener(new TabHost.OnTabChangeListener() {
+
+        //Назначаем обработчики в самом конце, чтобы лишний раз не запускать
+        // com.example.eduardf.audit.TaskActivity.fillViews
+        tabHost.setOnTabChangedListener(tabListener);
+    }
+
+    /**
+     * Настраивает вкладки
+     * @return - ссылка на вкладки
+     */
+    private TabHost setupTabHost() {
+        final TabHost tabHost = findViewById(android.R.id.tabhost);
+        tabHost.setup();
+        TabHost.TabSpec tabSpec;
+        tabSpec = tabHost.newTabSpec(Tags.COMMON.id);
+        tabSpec.setIndicator(getString(R.string.tab_com));
+        tabSpec.setContent(R.id.tab1);
+        tabHost.addTab(tabSpec);
+        tabSpec = tabHost.newTabSpec(Tags.ANALYTICS.id);
+        tabSpec.setIndicator(getString(R.string.tab_anl));
+        tabSpec.setContent(R.id.tab2);
+        tabHost.addTab(tabSpec);
+        tabSpec = tabHost.newTabSpec(Tags.INDICATORS.id);
+        tabSpec.setIndicator(getString(R.string.tab_ind));
+        tabSpec.setContent(R.id.tab3);
+        tabHost.addTab(tabSpec);
+        return tabHost;
+    }
+
+    //Настраивает кнопку Сохранить
+    private void setupSaveFAB() {
+        final FloatingActionButton fab = findViewById(R.id.fab);
+        fab.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onTabChanged(String tabId) {
-                if (!getSupportLoaderManager().hasRunningLoaders())
-                    fillViews(tabId);
+            public void onClick(View view) { saveTask(); }
+        });
+    }
+
+    //Настраивает поле Статус
+    private void setupStatus() {
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
+                android.R.layout.simple_spinner_item, getResources().getStringArray(R.array.status_list));
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        final Spinner status = findViewById(R.id.status);
+        status.setAdapter(adapter);
+        status.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (task!=null) task.status = Tasks.Task.Status.toValue(position);
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
             }
         });
+    }
 
-        //Обработчик очистки комментария
-        findViewById(R.id.comment).setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                if(event.getAction() == MotionEvent.ACTION_UP) {
-                    final TextView textView = (TextView)v;
-                    if(event.getX() >= textView.getWidth() - textView.getCompoundPaddingEnd()) {
-                        textView.setText("");
-                        return true;
-                    }
-                }
-                return false;
-            }
-        });
-
-        //Обработчик кнопки Заполнить
-        findViewById(R.id.fill).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                new LoadIndicatorRows(TaskActivity.this, oData)
-                        .execute(task.type_key, task.object_key);
-            }
-        });
-
-        //Обработчик переключателя По предметам
-        ((Switch) findViewById(R.id.by_subject)).setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (buttonView.isPressed())
-                    updateIndicators();
-            }
-        });
-
+    //Настраивает ленту
+    private void setupToolBar() {
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        ActionBar ab = getSupportActionBar();
+        if (ab != null) {
+            ab.setDisplayHomeAsUpEnabled(true); //Отловит onSupportNavigateUp
+        }
     }
 
     //Запускает одноразовый загрузчик задания
@@ -318,9 +425,9 @@ public class TaskActivity extends AppCompatActivity implements
     }
 
     //Заполняет поля активности
-    private void fillViews(String tabId) {
-        switch (tabId) {
-            case TAG0: //Поля вне закладок + часть полей с Общее
+    private void fillViews(Tags tag) {
+        switch (tag) {
+            case HEAD: //Поля вне закладок + часть полей с Общее
                 setTitle(getString(R.string.title_activity_audit_task)+" ("+task.number+")"); //В заголовок добавим номер
                 dateTime.setDate(task.date);
                 ((Spinner) findViewById(R.id.status)).setSelection(task.status.number);
@@ -338,10 +445,10 @@ public class TaskActivity extends AppCompatActivity implements
                 //Подставим в поля наименования вида и объекта аудита до загрузки
                 typeReference.setText(task.type_name);
                 objectReference.setText(task.object_name);
-                return; //Чтобы не выполнять com.example.eduardf.audit.TaskActivity.visibilityView
-            case TAG1: //поля закладки Общее
-                if (!filledTag[0] ) {
-                    filledTag[0] = true;
+                break;
+            case COMMON: //поля вкладки Общее
+                if (!filledTag[Tags.COMMON.index] ) {
+                    filledTag[Tags.COMMON.index] = true;
                     typeReference.setKey(task.type_key);
                     organizationReference.setKey(task.organization_key);
                     objectReference.setKey(task.object_key);
@@ -349,30 +456,47 @@ public class TaskActivity extends AppCompatActivity implements
                     visibilityView();
                 }
                 break;
-            case TAG2: //поля закладки Аналитика
-                if (!filledTag[1]) {
-                    filledTag[1] = true;
-                    analyticsObjects.setObjects(task.analytics);
+            case ANALYTICS: //поля вкладки Аналитика
+                if (!filledTag[Tags.ANALYTICS.index]) {
+                    filledTag[Tags.ANALYTICS.index] = true;
+                    analyticsObjects.setKeys(task.analytics);
                     visibilityView();
                 }
                 break;
-            case TAG3: //поля закладки Показатели
-                if (!filledTag[2]) {
-                    filledTag[2] = true;
-                    indicatorFragment.setIndicators(task.indicators, task.type_key,
-                            ((Switch) findViewById(R.id.by_subject)).isChecked());
+            case INDICATORS: //поля вкладки Показатели
+                if (!filledTag[Tags.INDICATORS.index]) {
+                    filledTag[Tags.INDICATORS.index] = true;
+                    updateIndicators();
                     visibilityView();
                 }
                 break;
         }
     }
 
-    // управляет доступностью выбора объекта и аналитики
+    /**
+     * Инициализация массива признаков открытых закладок
+     */
+    void clearFilledTag() {
+        for(int i=0; i<3; i++) filledTag[i] = false;
+    }
+
+    /**
+     * Управление видимостью вкладки с аналитикой
+     * @param visibility - значение видимости: View.VISIBLE, View.INVISIBLE, View.GONE,
+     */
+    private void visibilityAnalytics(int visibility) {
+        final TabHost tabHost = findViewById(android.R.id.tabhost);
+        if (visibility != View.VISIBLE && Tags.ANALYTICS.id.equals(tabHost.getCurrentTabTag()))
+            tabHost.setCurrentTabByTag(Tags.COMMON.id);
+        tabHost.getTabWidget().getChildTabViewAt(Tags.ANALYTICS.index).setVisibility(visibility);
+    }
+
+    // управляет доступностью выбора объекта, аналитики и показателей
     private void visibilityView() {
         final boolean enabled = !(typeReference == null || typeReference.getReferenceKey() == null);
         objectReference.setEnabled(enabled);
-        analyticsObjects.setEnabled(enabled);
         findViewById(R.id.fill).setEnabled(enabled);
+        analyticsObjects.setEnabled(enabled);
         findViewById(R.id.by_subject).setEnabled(enabled);
         indicatorFragment.setEnabled(enabled);
     }
@@ -438,15 +562,15 @@ public class TaskActivity extends AppCompatActivity implements
     private void saveTask() {
         //НУЖНО ДОБАВИТЬ ПРОВЕРКУ ЗАПОЛНЕНИЯ ОБЯЗАТЕЛЬНЫХ ПОЛЕЙ!!!
         task.date = dateTime.getDate();
-        if (filledTag[0]) {
+        if (filledTag[Tags.COMMON.index]) {
             task.type_key = typeReference.getReferenceKey();
             task.organization_key = organizationReference.getReferenceKey();
             task.object_key = objectReference.getReferenceKey();
             task.responsible_key = responsibleReference.getReferenceKey();
             task.comment = ((EditText) findViewById(R.id.comment)).getText().toString();
         }
-        if (filledTag[1]) task.analytics = analyticsObjects.getObjectKeys();
-        if (filledTag[2]) task.indicators = indicatorFragment.getIndicators();
+        if (filledTag[Tags.ANALYTICS.index]) task.analytics = analyticsObjects.getKeys();
+        if (filledTag[Tags.INDICATORS.index]) task.indicators = indicatorFragment.getIndicators();
         new SaveTask(this, oData).execute(task);
     }
 
@@ -483,11 +607,12 @@ public class TaskActivity extends AppCompatActivity implements
     @Override
     public void onLoadFinished(@NonNull Loader<Tasks.Task> loader, Tasks.Task data) {
         task = data;
-        fillViews(TAG0); //Заполним общие поля
-        //и текущую закладку
+        fillViews(Tags.HEAD); //Заполним общие поля
+        fillViews(Tags.COMMON);
+        //и текущую вкладку
         String tab = ((TabHost) findViewById(android.R.id.tabhost)).getCurrentTabTag();
-        if (tab == null) tab = TAG1; //Или первую, если все плохо
-        fillViews(tab);
+        if (tab == null) tab = Tags.COMMON.id; //Или первую, если все плохо
+        if (!tab.equals(Tags.COMMON.id)) fillViews(Tags.toValue(tab));
         //Убиваем загрузчик, т.к. он нужен только на один раз при первом отрытии задания
         getSupportLoaderManager().destroyLoader(-1);
         findViewById(R.id.progressBar).setVisibility(View.INVISIBLE);
@@ -539,6 +664,46 @@ public class TaskActivity extends AppCompatActivity implements
         @Override
         public Tasks.Task loadInBackground() {
             return oData.getTask(key);
+        }
+    }
+
+    /**
+     * Настройки-предпочтения задания
+     */
+    private class DisplaceSet {
+
+        private boolean displace1C; //Настройки приложения вытесняют настройки 1С
+        boolean fillActualValue; //Заполнять фактические значения по умолчанию
+        String openWithTab = Tags.COMMON.id; //Открывать задание с вкладки
+        boolean clearCopy; //Очищать задание при копировании
+        boolean showSubject; //Показывать предметы показателей
+
+        /**
+         * Конструктор - заполняет значения из предпочтений
+         * @param context - текущий контекст активности
+         */
+        DisplaceSet(Context context) {
+            final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
+            displace1C = preferences.getBoolean(getString(R.string.pref_key_displace_1C_settings), false);
+            if (displace1C) {
+                fillActualValue = preferences.getBoolean(getString(R.string.pref_key_fill_in_fact), false);
+                clearCopy = preferences.getBoolean(getString(R.string.pref_key_clear_when_copying), false);
+                showSubject = preferences.getBoolean(getString(R.string.pref_key_display_subject), false);
+                openWithTab = preferences.getString(getString(R.string.pref_key_task_tab), Tags.COMMON.id);
+            }
+        }
+
+        /**
+         * Установить настройки как в виде аудита из 1С, если они еще не установлены в предподчтениях
+         * @param type - вид аудита
+         */
+        void asIn1C(AType type) {
+            if (!displace1C) {
+                fillActualValue = type.fillActualValue;
+                clearCopy = type.clearCopy;
+                showSubject = type.showSubject;
+                openWithTab = type.openWithIndicators? Tags.INDICATORS.id: Tags.COMMON.id;
+            }
         }
     }
 }

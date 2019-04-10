@@ -1,7 +1,13 @@
 package com.example.eduardf.audit;
 
 import android.content.Context;
+import android.graphics.Color;
+import android.graphics.ColorFilter;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffColorFilter;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.support.design.widget.TextInputEditText;
 import android.support.design.widget.TextInputLayout;
 import android.support.v4.app.Fragment;
 import android.util.AttributeSet;
@@ -9,6 +15,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
+import android.widget.ImageView;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -34,6 +41,7 @@ public class Reference extends Fragment implements
     private static final String ARG_KEY = "key";
     private static final String ARG_OBJECT = "object";
     private static final String ARG_ENABLED = "enabled";
+    private static final String ARG_PARENTTYPES = "parenttypes";
 
     private AuditOData.Set set; //Таблица справочника
     private String title; //Заголовой поля
@@ -80,7 +88,7 @@ public class Reference extends Fragment implements
      * @param guid - guid элемента справочника
      */
     void setKey(String guid) {
-        if (guid == null) {
+        if (guid == null || guid.equals(AuditOData.EMPTY_KEY)) {
             key = null;
             object = null;
             parentTypes = null;
@@ -114,6 +122,14 @@ public class Reference extends Fragment implements
         return key;
     }
 
+    /**
+     * Выбранный объект
+     * @return - выбранный объект / null;
+     */
+    Object getObject() {
+        return object;
+    }
+
 //    /**
 //     * Установка владельца справочника
 //     * @param guid - guid владельца
@@ -123,16 +139,32 @@ public class Reference extends Fragment implements
 //    }
 
     /**
-     * Включает/выключает доступность фрагмента фрагмент
+     * Включает/выключает доступность фрагмента для изменения значения
      * @param enabled - признак включить/выключить
      */
     void setEnabled(final boolean enabled) {
         this.enabled = enabled;
-        final View view = getView();
+        setEnabled(getView());
+    }
+
+    /**
+     * Включает/выключает доступность фрагмента для изменения значения
+     * @param view - вью фрагмента
+     */
+    private void setEnabled(View view) {
         if (view != null) {
+            ColorFilter colorFilter = null;
+            if (!enabled) colorFilter = new PorterDuffColorFilter(Color.GRAY, PorterDuff.Mode.SRC_IN);
+            //Лайаут и поле ввода
             view.findViewById(R.id.input_layout_name).setEnabled(enabled);
-            view.findViewById(R.id.input_name).setEnabled(enabled);
-            view.findViewById(R.id.clear_name).setEnabled(enabled);
+            final TextInputEditText inputName = view.findViewById(R.id.input_name);
+            inputName.setEnabled(enabled);
+            for (Drawable drawable : inputName.getCompoundDrawablesRelative())
+                if (drawable != null) drawable.mutate().setColorFilter(colorFilter);
+            //Кнопка Очистить
+            final ImageView clearView = view.findViewById(R.id.clear_name);
+            clearView.setEnabled(enabled);
+            (clearView.getDrawable()).mutate().setColorFilter(colorFilter);
         }
     }
 
@@ -142,6 +174,13 @@ public class Reference extends Fragment implements
      */
     void setOnChangedReferenceKey(OnChangedReferenceKey onChangedReferenceKey) {
         this.onChangedReferenceKey = onChangedReferenceKey;
+    }
+
+    /**
+     * Вызавается обработчик изменения значения поля, если установлен
+     */
+    void performChangedReferenceKey() {
+        if (onChangedReferenceKey != null) onChangedReferenceKey.onChangedKey(getId(), key, object);
     }
 
     @Override
@@ -195,6 +234,7 @@ public class Reference extends Fragment implements
             key = savedInstanceState.getString(ARG_KEY);
             owner = savedInstanceState.getString(ARG_OWNER);
             enabled = savedInstanceState.getBoolean(ARG_ENABLED, true);
+            parentTypes = savedInstanceState.getStringArrayList(ARG_PARENTTYPES);
             if (savedInstanceState.containsKey(ARG_OBJECT))
                 switch (set) {
                     case TYPE: {
@@ -227,7 +267,9 @@ public class Reference extends Fragment implements
     @Override
     public View onCreateView(@NotNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_reference_field, container, false);
+        View view = inflater.inflate(R.layout.fragment_reference_field, container, false);
+        setEnabled(view);
+        return view;
     }
 
     /**
@@ -268,7 +310,6 @@ public class Reference extends Fragment implements
                 setKey(null);
             }
         });
-        setEnabled(enabled);
     }
 
     /**
@@ -281,20 +322,19 @@ public class Reference extends Fragment implements
         outState.putString(ARG_KEY, key);
         outState.putString(ARG_OWNER, owner);
         outState.putBoolean(ARG_ENABLED, enabled);
+        outState.putStringArrayList(ARG_PARENTTYPES, parentTypes);
         if (object != null)
             switch (set) {
                 case TYPE:
-                    ((AType) object).onRestoreInstanceState(outState, ARG_OBJECT);
+                    ((AType) object).onSaveInstanceState(outState, ARG_OBJECT);
                     break;
                 case OBJECT:
-                    ((AObject) object).onRestoreInstanceState(outState, ARG_OBJECT);
+                    ((AObject) object).onSaveInstanceState(outState, ARG_OBJECT);
                     break;
                 default:
                     outState.putParcelable(ARG_OBJECT, new ParcelableItem((Items.Item) object));
             }
     }
-
-    //Обработчик выбора элемента в активности ReferenceChoice
 
     /**
      * Обрабатывает выбор элемента справочника

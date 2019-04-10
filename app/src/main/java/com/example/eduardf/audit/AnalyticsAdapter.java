@@ -22,7 +22,7 @@ import java.util.ArrayList;
 /**
  * Адаптер для списка объектов
  */
-class ObjectsAdapter extends RecyclerView.Adapter<ViewHolderRefs> {
+class AnalyticsAdapter extends RecyclerView.Adapter<ViewHolderRefs> {
 
     private final Items items = new Items();
     private boolean enabled = true;

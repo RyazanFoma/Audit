@@ -14,9 +14,9 @@
                         <option name="values">
                           <map>
                             <entry key="assetSourceType" value="FILE" />
-                            <entry key="outputName" value="ic_black_tune_24px" />
+                            <entry key="outputName" value="ic_baseline_add_a_photo_24px" />
                             <entry key="overrideSize" value="true" />
-                            <entry key="sourceFile" value="C:\Users\eduardf\Desktop\Icons\baseline-tune-24px.svg" />
+                            <entry key="sourceFile" value="C:\Users\eduardf\Desktop\Icons\baseline-add_a_photo-24px.svg" />
                           </map>
                         </option>
                       </PersistentState>

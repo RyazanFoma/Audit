@@ -32,7 +32,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:drawableEnd="@drawable/ic_baseline_arrow_drop_down_24px"
+                android:drawableEnd="@drawable/ic_black_arrow_drop_down_24px"
                 android:freezesText="true"
                 android:textAppearance="?attr/textAppearanceListItem" />
 
@@ -42,7 +42,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:drawableEnd="@drawable/ic_baseline_arrow_drop_down_24px"
+                android:drawableEnd="@drawable/ic_black_arrow_drop_down_24px"
                 android:freezesText="true"
                 android:textAppearance="?attr/textAppearanceListItem" />
         </LinearLayout>

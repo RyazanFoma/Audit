@@ -25,7 +25,7 @@
 
     <SwitchPreference
         android:defaultValue="false"
-        android:key="displace_1C_settings"
+        android:key="@string/pref_key_displace_1C_settings"
         android:title="@string/pref_title_displace_1C_settings"
         android:summary="@string/pref_description_displace_1C_settings" />
 
@@ -33,11 +33,11 @@
         android:dependency="displace_1C_settings" >
         <SwitchPreference
             android:defaultValue="false"
-            android:key="fill_in_fact"
+            android:key="@string/pref_key_fill_in_fact"
             android:title="@string/pref_title_fill_in_fact"
             android:summary="@string/pref_description_fill_in_fact" />
         <ListPreference
-            android:defaultValue="tag1"
+            android:defaultValue="common"
             android:entries="@array/pref_list_task_tab"
             android:entryValues="@array/pref_value_task_tab"
             android:key="@string/pref_key_task_tab"
@@ -46,12 +46,12 @@
             android:title="@string/pref_title_task_tab"/>
         <SwitchPreference
             android:defaultValue="false"
-            android:key="clear_when_copying"
+            android:key="@string/pref_key_clear_when_copying"
             android:title="@string/pref_title_clear_when_copying"
             android:summary="@string/pref_description_clear_when_copying" />
         <SwitchPreference
             android:defaultValue="false"
-            android:key="display_subject"
+            android:key="@string/pref_key_display_subject"
             android:title="@string/pref_title_display_subject"
             android:summary="@string/pref_description_display_subject" />
     </PreferenceCategory>

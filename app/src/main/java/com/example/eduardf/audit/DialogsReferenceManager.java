@@ -27,7 +27,7 @@ public class DialogsReferenceManager extends DialogFragment {
     public static final String TAG_CREATE = "create_element"; //Режим создания элемента
     public static final String TAG_DELETE = "delete"; //Режим удаления
 
-    private static final String ARG_NAME = "name"; //Аргумент Наименование
+    private static final String ARG_NAME = "id"; //Аргумент Наименование
     private static final String ARG_COUNT = "count"; //Аргумент Количество
     private static final String ARG_START = "start"; //Аргумент Начало выделения
     private static final String ARG_END = "end"; //Аргумент Конец выделения

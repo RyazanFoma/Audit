@@ -24,7 +24,7 @@ import java.util.ArrayList;
 
 //Форма для редактирования аналитики объекта аудита
 public class AnalyticActivity extends AppCompatActivity implements
-        /*Objects.OnObjectListEditInteractionListener,*/
+        /*Analytics.OnObjectListEditInteractionListener,*/
         ReferenceChoice.OnReferenceManagerInteractionMultipleChoice {
 
     private AuditAnalytic analytic; //Аналитика объекта аудита
@@ -197,7 +197,7 @@ public class AnalyticActivity extends AppCompatActivity implements
     @Override
     public void onResume() {
         super.onResume();
-//        getSupportFragmentManager().beginTransaction().replace(R.id.analyticobjects, Objects.newInstance(0, AuditDB.TBL_OBJECT, analytic.objects)).commit();
+//        getSupportFragmentManager().beginTransaction().replace(R.id.analyticobjects, Analytics.newInstance(0, AuditDB.TBL_OBJECT, analytic.objects)).commit();
     }
 
     // обработчик добавления аналитик

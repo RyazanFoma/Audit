@@ -1,5 +1,7 @@
 package com.example.eduardf.audit;
 
+import android.graphics.ColorFilter;
+import android.graphics.PorterDuffColorFilter;
 import android.support.annotation.Nullable;
 import android.app.SearchManager;
 import android.content.Context;
@@ -46,7 +48,7 @@ public class ReferenceChoice extends AppCompatActivity implements
         View.OnClickListener,
         View.OnLongClickListener,
         DialogsReferenceManager.DialogInteractionListener,
-        LoaderManager.LoaderCallbacks<Items>{
+        LoaderManager.LoaderCallbacks<Items> {
 
     private AuditOData oData; //Объект OData для доступа к 1С:Аудитор
     private int iRC = -1; //Сквозной код для идентификации результата выбора
@@ -97,81 +99,134 @@ public class ReferenceChoice extends AppCompatActivity implements
     private static final String ARG_LAST = "last";
     private static final String ARG_COPY_MOVE_ID = "copy_move_id"; //пункты для копирования и переноса
     private static final String ARG_FROM = "from"; //Статус, откуда копируем/перемещаем
-    private static final String ARG_PARENTTYPE = "parenttype"; //Типы родительских справочников
-
+    private static final String ARG_PARENTTYPES = "parenttype"; //Типы родительских справочников
+    private static final String ARG_TYPEKEY = "typekey"; //Вид аудита для отбора по ручным связям
+    private static final String ARG_OBJECTKEY = "objectkey"; //Объект для отбора по ручным связям
 
     //ВОЗВРАЩАЕТ ИНТЕНТ ДЛЯ АКТИВНОСТИ
     /*  context - контекст родительской активности, откуда вызывается наша активность
-        requestCode - уникальный код, для возврата в коллбэк, чтобы отличить - что редактировали
         fragment - фрагмент, из которого вызывается активность для выбора
+        requestCode - уникальный код, для возврата в коллбэк, чтобы отличить - что редактировали
         table - идентификатор справочника
         title - заголовок нашей активности
         id - идентификатор (для одиночного выбора) или список идентификаторов (для множественного
         выбора) элементов справочника для подстветки / null
         owner - идентификатор владельца справочника для отбора / null
-        parentTypes - типы родительских справочников
+        parentTypes - типы родительских справочников / null
+        typeKey - guid вида аудита
+        objectKey - guid объекта аудита
      */
     //в режиме одиночного выбора из фрагмента
     public static Intent intentActivity(Fragment fragment, AuditOData.Set table, String title,
-                                        String owner, ArrayList<String> parentTypes, String id) {
+                                        String owner, String id) {
         instanceOf(fragment, MODE_SINGLE_CHOICE);
-        Intent intent = new Intent(fragment.getActivity(), ReferenceChoice.class);
-        intent.putExtra(ARG_MODE, MODE_SINGLE_CHOICE);
-        intent.putExtra(ARG_TABLE, table.toString());
-        intent.putExtra(ARG_OWNER, owner);
-        intent.putExtra(ARG_TITLE, title);
         ArrayList<String> ids = new ArrayList<>();
         if (!(id == null || id.isEmpty())) ids.add(id);
-        intent.putExtra(ARG_ID, ids);
-        intent.putStringArrayListExtra(ARG_PARENTTYPE, parentTypes);
+        return newIntent(fragment.getActivity(), MODE_SINGLE_CHOICE, -1, table, title, owner, ids);
+    }
+    //с отбором по типам родительских справочников
+    public static Intent intentActivity(Fragment fragment, AuditOData.Set table, String title,
+                                        String owner, ArrayList<String> parentTypes,
+                                        String id) {
+        Intent intent = intentActivity(fragment, table, title, owner, id);
+        intent.putStringArrayListExtra(ARG_PARENTTYPES, parentTypes);
+        return intent;
+    }
+    //с отбором по ручной связи
+    public static Intent intentActivity(Fragment fragment, AuditOData.Set table, String title,
+                                        String owner, String typeKey, String objectKey,
+                                        String id) {
+        Intent intent = intentActivity(fragment, table, title, owner, id);
+        intent.putExtra(ARG_TYPEKEY, typeKey);
+        intent.putExtra(ARG_OBJECTKEY, objectKey);
         return intent;
     }
     //в режиме одиночного выбора из активности
     public static Intent intentActivity(Context context, int requestCode, AuditOData.Set table,
-                                        String title, String owner, ArrayList<String> parentTypes, String id) {
+                                        String title, String owner, String id) {
         instanceOf(context, MODE_SINGLE_CHOICE);
-        Intent intent = new Intent(context, ReferenceChoice.class);
-        intent.putExtra(ARG_MODE, MODE_SINGLE_CHOICE);
-        intent.putExtra(ARG_RC, requestCode);
-        intent.putExtra(ARG_TABLE, table.toString());
-        intent.putExtra(ARG_OWNER, owner);
-        intent.putExtra(ARG_TITLE, title);
         ArrayList<String> ids = new ArrayList<>();
         if (!(id == null || id.isEmpty())) ids.add(id);
-        intent.putExtra(ARG_ID, ids);
-        intent.putStringArrayListExtra(ARG_PARENTTYPE, parentTypes);
+        return newIntent(context, MODE_SINGLE_CHOICE, requestCode, table, title, owner, ids);
+    }
+    //с отбором по типам родительских справочников
+    public static Intent intentActivity(Context context, int requestCode, AuditOData.Set table,
+                                        String title, String owner, ArrayList<String> parentTypes,
+                                        String id) {
+        Intent intent = intentActivity(context, requestCode, table, title, owner, id);
+        intent.putStringArrayListExtra(ARG_PARENTTYPES, parentTypes);
+        return intent;
+    }
+    //с отбором по ручной связи
+    public static Intent intentActivity(Context context, int requestCode, AuditOData.Set table,
+                                        String title, String owner, String typeKey, String objectKey,
+                                        String id) {
+        Intent intent = intentActivity(context, requestCode, table, title, owner, id);
+        intent.putExtra(ARG_TYPEKEY, typeKey);
+        intent.putExtra(ARG_OBJECTKEY, objectKey);
         return intent;
     }
     //в режиме множественного выбора из фрагмента
     public static Intent intentActivity(Context context, Fragment fragment, int requestCode,
                                         AuditOData.Set table, String title, String owner,
-                                        ArrayList<String> parentTypes, ArrayList<String> id) {
+                                        ArrayList<String> ids) {
         instanceOf(fragment, MODE_MULTIPLE_CHOICE);
-        Intent intent = new Intent(context, ReferenceChoice.class);
-        intent.putExtra(ARG_MODE, MODE_MULTIPLE_CHOICE);
-        intent.putExtra(ARG_RC, requestCode);
-        intent.putExtra(ARG_TABLE, table.toString());
-        intent.putExtra(ARG_OWNER, owner);
-        intent.putExtra(ARG_TITLE, title);
-        if (id != null) intent.putExtra(ARG_ID, id);
-        else intent.putExtra(ARG_ID, new ArrayList<String>());
-        intent.putStringArrayListExtra(ARG_PARENTTYPE, parentTypes);
+        return newIntent(context, MODE_MULTIPLE_CHOICE, requestCode, table, title, owner,
+                ids != null? ids: new ArrayList<String>());
+    }
+    //с отбором по типам родительских справочников
+    public static Intent intentActivity(Context context, Fragment fragment, int requestCode,
+                                        AuditOData.Set table, String title, String owner,
+                                        ArrayList<String> parentTypes,
+                                        ArrayList<String> id) {
+        Intent intent = intentActivity(context, fragment, requestCode, table, title, owner, id);
+        intent.putStringArrayListExtra(ARG_PARENTTYPES, parentTypes);
+        return intent;
+    }
+    //с отбором по ручной связи
+    public static Intent intentActivity(Context context, Fragment fragment, int requestCode,
+                                        AuditOData.Set table, String title, String owner,
+                                        String typeKey, String objectKey,
+                                        ArrayList<String> id) {
+        Intent intent = intentActivity(context, fragment, requestCode, table, title, owner, id);
+        intent.putExtra(ARG_TYPEKEY, typeKey);
+        intent.putExtra(ARG_OBJECTKEY, objectKey);
         return intent;
     }
     //в режиме множественного выбора из активности
     public static Intent intentActivity(Context context, int requestCode, AuditOData.Set table,
+                                        String title, String owner, ArrayList<String> ids) {
+        instanceOf(context, MODE_MULTIPLE_CHOICE);
+        return newIntent(context, MODE_MULTIPLE_CHOICE, requestCode, table, title, owner,
+                ids != null? ids: new ArrayList<String>());
+    }
+    //с отбором по типам родительских справочников
+    public static Intent intentActivity(Context context, int requestCode, AuditOData.Set table,
                                         String title, String owner, ArrayList<String> parentTypes,
                                         ArrayList<String> id) {
-        instanceOf(context, MODE_MULTIPLE_CHOICE);
+        Intent intent = intentActivity(context, requestCode, table, title, owner, id);
+        intent.putStringArrayListExtra(ARG_PARENTTYPES, parentTypes);
+        return intent;
+    }
+    //с отбором по ручной связи
+    public static Intent intentActivity(Context context, int requestCode, AuditOData.Set table,
+                                        String title, String owner,
+                                        String typeKey, String objectKey, ArrayList<String> id) {
+        Intent intent = intentActivity(context, requestCode, table, title, owner, id);
+        intent.putExtra(ARG_TYPEKEY, typeKey);
+        intent.putExtra(ARG_OBJECTKEY, objectKey);
+        return intent;
+    }
+
+    private static Intent newIntent(Context context, int mode, int requestCode, AuditOData.Set table,
+                                    String title, String owner, ArrayList<String> ids) {
         Intent intent = new Intent(context, ReferenceChoice.class);
-        intent.putExtra(ARG_MODE, MODE_MULTIPLE_CHOICE);
+        intent.putExtra(ARG_MODE, mode);
         intent.putExtra(ARG_RC, requestCode);
         intent.putExtra(ARG_TABLE, table.toString());
         intent.putExtra(ARG_OWNER, owner);
         intent.putExtra(ARG_TITLE, title);
-        if (id != null) intent.putExtra(ARG_ID, id);
-        else intent.putExtra(ARG_ID, new ArrayList<String>());
-        intent.putStringArrayListExtra(ARG_PARENTTYPE, parentTypes);
+        intent.putExtra(ARG_ID, ids);
         return intent;
     }
 
@@ -246,7 +301,9 @@ public class ReferenceChoice extends AppCompatActivity implements
         String sPater = AuditOData.EMPTY_KEY; //Текущий родитель
         String sTitle; //Заголовок активности
         String sLike = ""; //Строка для отбора
-        ArrayList<String> parentTypes; //Типы родительских справочников
+        ArrayList<String> parentTypes = null; //Типы родительских справочников
+        String typeKey = null; //Guid вида аудита для отбора по ручным связям
+        String objectKey = null; //Guid объекта для отбора по ручным связям
 
         //Меню действий
         Toolbar toolbar = findViewById(R.id.toolbar);
@@ -278,7 +335,12 @@ public class ReferenceChoice extends AppCompatActivity implements
             item.id = AuditOData.EMPTY_KEY;
             item.name = getResources().getString(R.string.btn_top);
             myStack.push(item);
-            parentTypes = intent.getStringArrayListExtra(ARG_PARENTTYPE);
+            if (intent.hasExtra(ARG_PARENTTYPES))
+                parentTypes = intent.getStringArrayListExtra(ARG_PARENTTYPES);
+            if (intent.hasExtra(ARG_TYPEKEY)) {
+                typeKey = intent.getStringExtra(ARG_TYPEKEY);
+                objectKey = intent.getStringExtra(ARG_OBJECTKEY);
+            }
         }
         else { //активность восстатавливаем после поворота экрана
             iRC = savedInstanceState.getInt(ARG_RC);
@@ -290,13 +352,20 @@ public class ReferenceChoice extends AppCompatActivity implements
             ids = savedInstanceState.getStringArrayList(ARG_ID);
             sLike = savedInstanceState.getString(ARG_LIKE, "");
             sPater = savedInstanceState.getString(ARG_PATER);
-            parentTypes = savedInstanceState.getStringArrayList(ARG_PARENTTYPE);
+            if (savedInstanceState.containsKey(ARG_PARENTTYPES))
+                parentTypes = savedInstanceState.getStringArrayList(ARG_PARENTTYPES);
+            if (savedInstanceState.containsKey(ARG_TYPEKEY)) {
+                typeKey = savedInstanceState.getString(ARG_TYPEKEY);
+                objectKey = savedInstanceState.getString(ARG_OBJECTKEY);
+            }
         }
         bArgs.putString(ARG_TABLE, sTable.toString());
         bArgs.putString(ARG_OWNER, sOwner);
         bArgs.putString(ARG_PATER, sPater);
         bArgs.putString(ARG_LIKE, sLike);
-        bArgs.putStringArrayList(ARG_PARENTTYPE, parentTypes);
+        bArgs.putStringArrayList(ARG_PARENTTYPES, parentTypes);
+        bArgs.putString(ARG_TYPEKEY, typeKey);
+        bArgs.putString(ARG_OBJECTKEY, objectKey);
 
         setTitle(sTitle); //Заголовок активности
 
@@ -399,6 +468,9 @@ public class ReferenceChoice extends AppCompatActivity implements
         outState.putString(ARG_OWNER, bArgs.getString(ARG_OWNER));
         outState.putString(ARG_PATER, myStack.peek().id);
         outState.putString(ARG_LIKE, bArgs.getString(ARG_LIKE));
+        outState.putStringArrayList(ARG_PARENTTYPES, bArgs.getStringArrayList(ARG_PARENTTYPES));
+        outState.putString(ARG_TYPEKEY, bArgs.getString(ARG_TYPEKEY));
+        outState.putString(ARG_OBJECTKEY, bArgs.getString(ARG_OBJECTKEY));
         outState.putParcelable(ARG_STATE, mLayoutManager.onSaveInstanceState());
         outState.putInt(ARG_MODE_MENU, iModeMenu); //Режим меню
         outState.putStringArrayList(ARG_ID, ids);
@@ -418,11 +490,11 @@ public class ReferenceChoice extends AppCompatActivity implements
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
         mLayoutManager.onRestoreInstanceState(savedInstanceState.getParcelable(ARG_STATE)); //Состояние списка
+        recyclerAdapter.onRestoreInstanceState(savedInstanceState);
         //Если до поворота экрана было запущено контекстное меню, то открываем его опять
         if (iModeMenu !=ACTION_BAR && mActionMode == null)
             mActionMode = startSupportActionMode(mActionModeCallback);
         ids = savedInstanceState.getStringArrayList(ARG_ID);
-        recyclerAdapter.onRestoreInstanceState(savedInstanceState);
         myStack.onRestoreInstanceState(savedInstanceState, ARG_STACK);
         myStack.addTextView((LinearLayout) findViewById(R.id.ancestors), this);
         if (iModeMenu == ACTION_COPY | iModeMenu == ACTION_MOVE) {
@@ -569,33 +641,34 @@ public class ReferenceChoice extends AppCompatActivity implements
         public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
             switch (iModeMenu) {
                 case ACTION_MODE:
-//                    mActionMode.setTitle("Title");
-//                    mActionMode.setSubtitle("Subtitle");
-
                     menu.setGroupVisible(R.id.is_checked, true);
                     menu.setGroupVisible(R.id.mark, true);
-
-                    menu.setGroupEnabled(R.id.is_checked,
-                            recyclerAdapter.checkedStatus()!=ReferenceAdapter.CHECKED_STATUS_NULL); //Доступность группы: Изменить, Копировать, Переместить, Удалить
-                    (menu.findItem(R.id.edit)).setEnabled(
-                            recyclerAdapter.checkedStatus()==ReferenceAdapter.CHECKED_STATUS_ONE); //Доступность пункта: Изменить
-
-                    //Придется мутировать иконки - не смог запустить titn (((
-                    Drawable ic_edit = getResources().getDrawable(R.drawable.ic_white_edit_24px);
-                    Drawable ic_copy = getResources().getDrawable(R.drawable.ic_white_file_copy_24px);
-                    Drawable ic_move = getResources().getDrawable(R.drawable.ic_white_library_books_24px);
-                    Drawable ic_delete = getResources().getDrawable(R.drawable.ic_white_delete_sweep_24px);
-                    if (recyclerAdapter.checkedStatus()!=ReferenceAdapter.CHECKED_STATUS_ONE)
-                        ic_edit.mutate().setColorFilter(Color.GRAY, PorterDuff.Mode.SRC_IN);
-                    if (recyclerAdapter.checkedStatus()==ReferenceAdapter.CHECKED_STATUS_NULL) {
-                        ic_copy.mutate().setColorFilter(Color.GRAY, PorterDuff.Mode.SRC_IN);
-                        ic_move.mutate().setColorFilter(Color.GRAY, PorterDuff.Mode.SRC_IN);
-                        ic_delete.mutate().setColorFilter(Color.GRAY, PorterDuff.Mode.SRC_IN);
+                    //Меняем цвета и доступность иконок
+                    final Drawable ic_edit = (menu.findItem(R.id.edit)).getIcon();
+                    final Drawable ic_copy = (menu.findItem(R.id.copy)).getIcon();
+                    final Drawable ic_move = (menu.findItem(R.id.move)).getIcon();
+                    final Drawable ic_delete = (menu.findItem(R.id.delete)).getIcon();
+                    final ColorFilter colorFilterGrey = new PorterDuffColorFilter(Color.GRAY, PorterDuff.Mode.SRC_IN);
+                    if (recyclerAdapter.checkedStatus()==ReferenceAdapter.CHECKED_STATUS_ONE) {
+                        (menu.findItem(R.id.edit)).setEnabled(true);
+                        ic_edit.mutate().setColorFilter(null);
                     }
-                    (menu.findItem(R.id.edit)).setIcon(ic_edit);
-                    (menu.findItem(R.id.copy)).setIcon(ic_copy);
-                    (menu.findItem(R.id.move)).setIcon(ic_move);
-                    (menu.findItem(R.id.delete)).setIcon(ic_delete);
+                    else {
+                        (menu.findItem(R.id.edit)).setEnabled(false);
+                        ic_edit.mutate().setColorFilter(colorFilterGrey);
+                    }
+                    ColorFilter colorFilterCheked;
+                    if (recyclerAdapter.checkedStatus()!=ReferenceAdapter.CHECKED_STATUS_NULL) {
+                        menu.setGroupEnabled(R.id.is_checked, true);
+                        colorFilterCheked = null;
+                    }
+                    else {
+                        menu.setGroupEnabled(R.id.is_checked, false);
+                        colorFilterCheked = colorFilterGrey;
+                    }
+                    ic_copy.mutate().setColorFilter(colorFilterCheked);
+                    ic_move.mutate().setColorFilter(colorFilterCheked);
+                    ic_delete.mutate().setColorFilter(colorFilterCheked);
                     //Триггер: Отметить/Снять
                     (menu.findItem(R.id.allmark)).setVisible(
                             recyclerAdapter.checkedStatus()!=ReferenceAdapter.CHECKED_STATUS_ALL);
@@ -742,6 +815,7 @@ public class ReferenceChoice extends AppCompatActivity implements
         switch (v.getId()) {
             case R.id.item: //Весь пункт
                 if (item.folder) { //Проваливаемся в группу
+                    myStack.push(item);
                     myStack.addTextView((LinearLayout) findViewById(R.id.ancestors), this);
                     bArgs.putString(ARG_PATER, item.id);
                     loadFirstPage();
@@ -757,6 +831,7 @@ public class ReferenceChoice extends AppCompatActivity implements
                 recyclerAdapter.updateStatus(iModeMenu == ACTION_BAR);
                 break;
             default: //Переход на предков
+                myStack.clip(item);
                 myStack.addTextView((LinearLayout) findViewById(R.id.ancestors), this);
                 bArgs.putString(ARG_PATER, item.id);
                 loadFirstPage();
@@ -808,11 +883,16 @@ public class ReferenceChoice extends AppCompatActivity implements
         findViewById(R.id.progressBar).setVisibility(View.VISIBLE);
         loadingPage = true;
         if (args == null) throw new RuntimeException("The loader has't a arguments for loading items.");
-        return new LoaderItems(this, oData,
-                AuditOData.Set.toValue(args.getString(ARG_TABLE)), args.getString(ARG_OWNER),
-                args.getString(ARG_PATER), args.getString(ARG_LIKE),
-                args.getStringArrayList(ARG_PARENTTYPE),
-                myStack, currentPage);
+        if (args.getString(ARG_TYPEKEY)==null)
+            return new LoaderItems(this, oData,
+                    AuditOData.Set.toValue(args.getString(ARG_TABLE)), args.getString(ARG_OWNER),
+                    args.getString(ARG_PATER), args.getString(ARG_LIKE),
+                    args.getStringArrayList(ARG_PARENTTYPES),
+                    currentPage);
+        else
+            return new LoaderItems(this, oData, args.getString(ARG_LIKE),
+                    args.getString(ARG_TYPEKEY), args.getString(ARG_OBJECTKEY),
+                    currentPage);
     }
 
     //вызывается, когда загрузка закончилась
@@ -853,17 +933,29 @@ public class ReferenceChoice extends AppCompatActivity implements
     private static class LoaderItems extends AsyncTaskLoader<Items> {
 
         AuditOData oData;
-        Stack stack;
         AuditOData.Set table;
         String owner;
         String pater;
         String like;
         CurrentPage currentPage;
         ArrayList<String> parentTypes;
+        String typeKey;
+        String objectKey;
 
-        // Конструктор
+        /**
+         * Конструктор загрузчика элементов справочников (кроме аналитики с ручной связью)
+         * @param context - контект
+         * @param oData - связь с 1С
+         * @param table - справочник
+         * @param owner - guid владельца
+         * @param pater - guid родителя
+         * @param like - строка поиска по наименованию
+         * @param parentTypes - типы родительских справочников для отбора / null
+         * @param currentPage - параметры порционной загрузки
+         */
         private LoaderItems(Context context, AuditOData oData, AuditOData.Set table, String owner,
-                            String pater, String like, ArrayList<String> parentTypes, Stack stack, CurrentPage currentPage) {
+                            String pater, String like, ArrayList<String> parentTypes,
+                            CurrentPage currentPage) {
             super(context);
             this.oData = oData;
             this.table = table;
@@ -871,7 +963,25 @@ public class ReferenceChoice extends AppCompatActivity implements
             this.pater = pater;
             this.like = like;
             this.parentTypes = parentTypes;
-            this.stack = stack;
+            this.currentPage = currentPage;
+        }
+
+        /**
+         * Конструктор загрузчика аналитики по установленному вручную соответствию типу и объекту аудита
+         * @param context - контект
+         * @param oData - связь с 1С
+         * @param like - строка поиска по наименованию
+         * @param typeKey - guid вида аудита
+         * @param objectKey - guid объекта аудита
+         * @param currentPage - параметры порционной загрузки
+         */
+        private LoaderItems(Context context, AuditOData oData, String like,
+                            String typeKey, String objectKey, CurrentPage currentPage) {
+            super(context);
+            this.oData = oData;
+            this.like = like;
+            this.typeKey = typeKey;
+            this.objectKey = objectKey;
             this.currentPage = currentPage;
         }
 
@@ -887,16 +997,12 @@ public class ReferenceChoice extends AppCompatActivity implements
 
         @Override
         public Items loadInBackground() {
-            final Stack stack_add = new Stack() {
-                @Override
-                Item getItem(String id) {
-                    return oData.getItem(table, id);
-                }
-            };
-            stack_add.loadStack(pater);
-            stack.clip(0);
-            stack.addAll(stack_add);
-            return oData.getItems(table, owner, pater, like, parentTypes, currentPage.skip(), currentPage.top());
+            if (typeKey == null) //все, кроме аналитики с ручной связью
+                return oData.getItems(table, owner, pater, like, parentTypes,
+                        currentPage.skip(), currentPage.top());
+            else // Аналитика с ручной связью
+                return oData.getAnalytics(typeKey, objectKey, like,
+                        currentPage.skip(), currentPage.top());
         }
     }
 }

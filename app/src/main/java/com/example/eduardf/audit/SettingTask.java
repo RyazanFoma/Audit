@@ -94,6 +94,14 @@ public class SettingTask extends AppCompatActivity{
                 final SharedPreferences.Editor editor = preferences.edit();
                 switch (id) {
                     case R.id.type:
+                        if (key==null || !preferences.getString(SettingTask.DEFAULT_TYPE, AuditOData.EMPTY_KEY).equals(key)) {
+                            objectReference.setKey(null);
+                            objectReference.setEnabled(key!=null);
+                            editor.putString(SettingTask.DEFAULT_OBJECT, AuditOData.EMPTY_KEY);
+                        }
+                        if(object!=null) {
+                            objectReference.setParentTypes(((AType)object).objectTypes);
+                        }
                         editor.putString(SettingTask.DEFAULT_TYPE, key);
                         break;
                     case R.id.organization:

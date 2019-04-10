@@ -69,11 +69,19 @@ public class AuditOData{
         INDICATOR("ПоказателиАудитов", "Catalog_Аудит_ПоказателиАудитов", FOLDER_HIERARCHY, false),
         SUBJECT("ПредметыАудитов", "Catalog_Аудит_ПредметыАудитов", FOLDER_HIERARCHY, false),
         UNIT("ЕдиницыИзмерения", "Catalog_Аудит_ЕдиницыИзмерения", ELEMENT_HIERARCHY, true),
-        INDICATOR_STANDARD("НормативыПоказателей", "InformationRegister_Аудит_НормативыЗначенийПоказателей", NOT_HIERARCHY, false),
+        INDICATOR_STANDARD("НормативыПоказателей",
+                "InformationRegister_Аудит_НормативыЗначенийПоказателей", NOT_HIERARCHY, false),
         TASK("Задания", "Document_Аудит_ЗаданиеНаАудит", NOT_HIERARCHY, true),
-        TASK_ANALYTIC("АналитикаЗаданий", "Document_Аудит_ЗаданиеНаАудит_АналитикаОбъекта", NOT_HIERARCHY, true),
-        TASK_INDICATOR("ПоказателиЗаданий", "Document_Аудит_ЗаданиеНаАудит_Показатели", NOT_HIERARCHY, true),
-        OBJECT_TYPES("ТипыОбъектаАудита", "InformationRegister_Аудит_ТипыОбъектовПоВидамАудита", NOT_HIERARCHY, false);
+        TASK_ANALYTIC("АналитикаЗаданий", "Document_Аудит_ЗаданиеНаАудит_АналитикаОбъекта",
+                NOT_HIERARCHY, true),
+        TASK_INDICATOR("ПоказателиЗаданий", "Document_Аудит_ЗаданиеНаАудит_Показатели",
+                NOT_HIERARCHY, true),
+        OBJECT_TYPES("ТипыОбъектаАудита", "InformationRegister_Аудит_ТипыОбъектовПоВидамАудита",
+                NOT_HIERARCHY, false),
+        ANALYTIC_CORR("СоответствияАналитик",
+                "InformationRegister_Аудит_СоответствияАналитикОбъекту", NOT_HIERARCHY, false),
+        ANALYTIC_RELAT("СвязьПоТипамАналитик",
+                "InformationRegister_Аудит_СвязьПоТипамОбъектаАналитики", NOT_HIERARCHY, false);
 
         String id;
         String name;
@@ -207,6 +215,17 @@ public class AuditOData{
     private static final String OBJECT_TYPES_KEY = "ВидАудита_Key";
     private static final String OBJECT_TYPES_TYPE = "ТипОбъектаАудита";
 
+    //Поля регистра соответствия аналитик виду и объекту аудита
+    private static final String CORR_TYPE_KEY = "ВидАудита_Key";
+    private static final String CORR_OBJECT_KEY = "Объект_Key";
+    private static final String CORR_ANALYTIC_KEY = "Аналитика_Key";
+    private static final String CORR_ANALYTIC = "Аналитика";
+
+    //Поля регистра соответсвия типов аналитик, объектов по виду аудита
+    private static final String RELAT_TYPE_KEY = "ВидАудита_Key";
+    private static final String RELAT_OBJECT_TYPE = "ТипОбъектаАудита";
+    private static final String RELAT_ANALYTIC_TYPE = "ТипАналитикиОбъекта";
+
     //Реквизиты класса
     private final ODataClient client; //Клиент OData
     private final String serviceRoot; //Путь к oData
@@ -310,7 +329,7 @@ public class AuditOData{
     }
 
     //Возвращает true, если ключ - пустая ссылка
-    private boolean noEmptyKey(String key) { return !(key==null || EMPTY_KEY.equals(key)); }
+//    private boolean noEmptyKey(String key) { return !(key==null || EMPTY_KEY.equals(key)); }
 
     /**
      * Для вывода служебного сообщения в спиннере на время загрузки и т.п.
@@ -321,7 +340,7 @@ public class AuditOData{
         List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
         Map<String, Object> map = new HashMap<String, Object>();
         map.put("id", EMPTY_KEY);
-        map.put("name", message);
+        map.put("id", message);
         list.add(map);
         return list;
     }
@@ -355,7 +374,7 @@ public class AuditOData{
                 if (!sayErrorMessage(e)) {
                     e.printStackTrace();
                     throw new RuntimeException("AuditOData.getName('" + table.name + "', guid'" + key +
-                            "') Error on requesting of name ." + e.getMessage());
+                            "') Error on requesting of id ." + e.getMessage());
                 }
             }
         }
@@ -1113,7 +1132,7 @@ public class AuditOData{
 //        final URIBuilder uriBuilder = client.newURIBuilder(serviceRoot);
 //        final ArrayList<String> paters = new ArrayList<>();
 //        uriBuilder.select(COMMON_KEY, COMMON_DELETED, COMMON_PARENT)
-//                .appendEntitySetSegment(set.name);
+//                .appendEntitySetSegment(set.id);
 //        for(String children: childrens) {
 //            addPaters(uriBuilder, children, paters);
 //        }
@@ -1121,7 +1140,8 @@ public class AuditOData{
 //    }
 
     //возвращает все пункты указанного родителя с отбором по наименованию
-    private List<ClientEntity> getAllItems(Set table, String owner, String pater, String like, ArrayList<String> parentTypes, int... skip) {
+    private List<ClientEntity> getAllItems(Set table, String owner, String pater, String like,
+                                           ArrayList<String> parentTypes, int... skip) {
         final StringBuilder filter = new StringBuilder();
         final URIBuilder uriBuilder = client.newURIBuilder(serviceRoot);
         final ArrayList<String> select = new ArrayList<>();
@@ -1243,16 +1263,157 @@ public class AuditOData{
      * @param skip - массив из 2х элементов: 0 - сколько пропустить, 1 - сколько загрузить пунктов
      * @return - список пунтов
      */
-    Items getItems(Set table, String owner, String pater, String like, ArrayList<String> parentTypes, int... skip) {
+    Items getItems(Set table, String owner, String pater, String like, ArrayList<String> parentTypes,
+                   int... skip) {
         Items items = new Items();
         try {
             for (ClientEntity entity: getAllItems(table, owner, pater, like, parentTypes, skip))
-                items.add(parseItem(entity, table.hierarchy,false, false));
+                items.add(parseItem(entity, table.hierarchy,false,false));
         }
         catch (ODataRuntimeException e) {
             if (!sayErrorMessage(e)) {
                 e.printStackTrace();
                 throw new RuntimeException("AuditOData.getItems() Error on requesting of items." + e.getMessage());
+            }
+        }
+        return items;
+    }
+
+    /**
+     * Извлечение записей из регистра СвязьПоТипамОбъектаАналитики по виду аудита и типу объекта
+     * @param typeKey - giud вида аудита
+     * @param objectType - тип объекта аудита
+     * @return - список ентити
+     */
+    private List<ClientEntity> getAllAnalyticTypes (@NonNull String typeKey, @NonNull String objectType) {
+        final URIBuilder uriBuilder = client.newURIBuilder(serviceRoot);
+        //Отбор по наименованию аналитики
+        final URI entitySetURI = uriBuilder
+                .appendEntitySetSegment(Set.ANALYTIC_RELAT.name)
+                .filter(RELAT_TYPE_KEY+" eq guid'"+typeKey+"' and "+
+                        RELAT_OBJECT_TYPE+" eq '"+objectType+"'")
+                .build();
+        final ODataRetrieveResponse<ClientEntitySet> entitySet =
+                client.getRetrieveRequestFactory().getEntitySetRequest(entitySetURI).execute();
+        return entitySet.getBody().getEntities();
+    }
+
+    /**
+     * Извлечение типа аудита из ентити
+     * @param entity - ентити
+     * @return - тип аудита / null
+     */
+    private String parseAnalyticTypes(ClientEntity entity) {
+        String analyticType = null;
+        if (entity!=null)
+            analyticType = entity.getProperty(RELAT_ANALYTIC_TYPE).getPrimitiveValue().toString();
+        return analyticType;
+    }
+
+    /**
+     * Получение списка типов аналитик для отбора по виду аудита и типу объекта
+     * @param typeKey - guid вида аудита
+     * @param objectType - тип объекта аудита
+     * @return - список типов аналитик
+     */
+    ArrayList<String> getAnalyticTypes(@NonNull String typeKey, @NonNull String objectType) {
+        ArrayList<String> parentTypes = new ArrayList<>();
+        try {
+            for (ClientEntity entity: getAllAnalyticTypes(typeKey, objectType))
+                parentTypes.add(parseAnalyticTypes(entity));
+        }
+        catch (ODataRuntimeException e) {
+            if (!sayErrorMessage(e)) {
+                e.printStackTrace();
+                throw new RuntimeException("AuditOData.getAnalyticTypes() Error on requesting of analytic types." +
+                        e.getMessage());
+            }
+        }
+        return parentTypes;
+    }
+
+    /**
+     * Получение списка ентити соответствующих виду и объекту аудита
+     * @param type - guid вида аудита
+     * @param object - guid объекта аудита
+     * @param like - строка отбора по наименованию аналитики
+     * @param skip - массив из 2х элементов: 0 - сколько пропустить, 1 - сколько загрузить пунктов
+     * @return список ентити
+     */
+    private List<ClientEntity> getAllAnalytics (@NonNull String type, @NonNull String object, String like, int... skip) {
+        final URIBuilder uriBuilder = client.newURIBuilder(serviceRoot);
+        final StringBuilder filter = new StringBuilder();
+        //Отбор по виду и объекту аудита
+        filter.append(CORR_TYPE_KEY).append(" eq guid'").append(type).append("' and ")
+                .append(CORR_OBJECT_KEY).append(" eq guid'").append(object).append("'");
+        //Отбор по наименованию аналитики
+        if (!(like==null||like.isEmpty()))
+            filter.append(" and substringof('").append(like).append("',")
+                    .append(CORR_ANALYTIC+"/"+COMMON_NAME).append(")");
+        //Для порционной загрузки
+        if (skip.length == 2) uriBuilder.skip(skip[0]).top(skip[1]);
+        final URI entitySetURI = uriBuilder
+                .appendEntitySetSegment(Set.ANALYTIC_CORR.name)
+                .expand(CORR_ANALYTIC)
+                .select(CORR_TYPE_KEY, CORR_OBJECT_KEY, CORR_ANALYTIC_KEY,
+                        CORR_ANALYTIC+"/"+COMMON_NAME,
+                        CORR_ANALYTIC+"/"+COMMON_DELETED,
+                        CORR_ANALYTIC+"/"+COMMON_PREDEFINED,
+                        CORR_ANALYTIC+"/"+COMMON_PRENAMED)
+                .filter(filter.toString())
+                .orderBy(CORR_ANALYTIC+"/"+COMMON_NAME+ORDER_ASC)
+                .build();
+        final ODataRetrieveResponse<ClientEntitySet> entitySet =
+                client.getRetrieveRequestFactory().getEntitySetRequest(entitySetURI).execute();
+        return entitySet.getBody().getEntities();
+    }
+
+    /**
+     * Извлекает пункт из ентити с аналитикой
+     * @param entity - ентити
+     * @param checked - признак отметки пункта
+     * @param expand - признак раскрытия пункта
+     * @return - пункт с аналитикой
+     */
+    private Items.Item parseAnalytic(ClientEntity entity, boolean checked, boolean expand) {
+        Items.Item item = null;
+        if (entity!=null) {
+            item = new Items.Item();
+            item.id = entity.getProperty(CORR_ANALYTIC_KEY).getPrimitiveValue().toString();
+            if (item.id!=null) {
+                final ClientProperty property = entity.getProperty(CORR_ANALYTIC);
+                if (entity.getProperties().contains(property)) {
+                    final ClientComplexValue value = property.getComplexValue();
+                    item.name = value.get(COMMON_NAME).getPrimitiveValue().toString();
+                    item.deleted = (boolean) value.get(COMMON_DELETED).getPrimitiveValue().toValue();
+                    item.predefined = (boolean) value.get(COMMON_PREDEFINED).getPrimitiveValue().toValue();
+                    item.prenamed = value.get(COMMON_PRENAMED).getPrimitiveValue().toString();
+                    item.checked = checked;
+                    item.expand = expand;
+                }
+            }
+        }
+        return item;
+    }
+
+    /**
+     * Извлечение списка аналитик соответствующих виду и объекту аудита
+     * @param type - guid вида аудита
+     * @param object - guid объекта аудита
+     * @param like - строка отбора по наименованию аналитики
+     * @param skip - массив из 2х элементов: 0 - сколько пропустить, 1 - сколько загрузить пунктов
+     * @return - список пунктов
+     */
+    Items getAnalytics(String type, String object, String like, int... skip) {
+        Items items = new Items();
+        try {
+            for (ClientEntity entity: getAllAnalytics(type, object, like, skip))
+                items.add(parseAnalytic(entity, false, false));
+        }
+        catch (ODataRuntimeException e) {
+            if (!sayErrorMessage(e)) {
+                e.printStackTrace();
+                throw new RuntimeException("AuditOData.getAnalytics() Error on requesting of items." + e.getMessage());
             }
         }
         return items;
@@ -1512,7 +1673,7 @@ public class AuditOData{
 //    //Возвращает список entity показателей задания
 //    private List<ClientEntity> getAllTaskIndicators(String task) {
 //        final URI entitySetURI = client.newURIBuilder(serviceRoot)
-//                .appendEntitySetSegment(Set.TASK_INDICATOR.name)
+//                .appendEntitySetSegment(Set.TASK_INDICATOR.id)
 //                .filter(COMMON_KEY+" eq guid'"+task+"'")
 //                .orderBy(COMMON_LINE+ORDER_ASC)
 //                .build();
@@ -1592,7 +1753,7 @@ public class AuditOData{
 //            try {
 //                indicator.id = getKey(entity.getProperty(COMMON_KEY).getPrimitiveValue().toString());
 //                indicator.code = entity.getProperty(COMMON_CODE).getPrimitiveValue().toString();
-//                indicator.name = entity.getProperty(COMMON_NAME).getPrimitiveValue().toString();
+//                indicator.id = entity.getProperty(COMMON_NAME).getPrimitiveValue().toString();
 //                indicator.pater = getKey(entity.getProperty(COMMON_PARENT).getPrimitiveValue().toString());
 //                indicator.owner = getKey(entity.getProperty(COMMON_OWNER).getPrimitiveValue().toString());
 //                indicator.folder = (boolean) entity.getProperty(COMMON_FOLDER).getPrimitiveValue().toValue();
@@ -1646,7 +1807,7 @@ public class AuditOData{
 //        final Indicators.Indicator indicator = new Indicators(). new Indicator();
 //        if (entity != null) {
 //            indicator.id = getKey(entity.getProperty(COMMON_KEY).getPrimitiveValue().toString());
-//            indicator.name = entity.getProperty(COMMON_NAME).getPrimitiveValue().toString();
+//            indicator.id = entity.getProperty(COMMON_NAME).getPrimitiveValue().toString();
 //            indicator.pater = getKey(entity.getProperty(COMMON_PARENT).getPrimitiveValue().toString());
 //            indicator.folder = (boolean) entity.getProperty(COMMON_FOLDER).getPrimitiveValue().toValue();
 //            if (!indicator.folder) {
@@ -1768,7 +1929,7 @@ public class AuditOData{
 //            filter.append(" and ").append(COMMON_FOLDER).append(" eq false");
 //        }
 //        final URI entitySetURI = client.newURIBuilder(serviceRoot)
-//                .appendEntitySetSegment(Set.INDICATOR.name)
+//                .appendEntitySetSegment(Set.INDICATOR.id)
 //                .filter(filter.toString())
 //                .orderBy(COMMON_ORDER+ORDER_ASC)
 //                .build();
@@ -1827,7 +1988,7 @@ public class AuditOData{
 //     */
 //    private List<ClientEntity> getAllSubjects(@NonNull String type, @NonNull String pater) {
 //        final URI entitySetURI = client.newURIBuilder(serviceRoot)
-//                .appendEntitySetSegment(Set.SUBJECT.name)
+//                .appendEntitySetSegment(Set.SUBJECT.id)
 //                .filter(COMMON_OWNER+" eq guid'"+type+"' and "+
 //                        COMMON_PARENT+" eq guid'"+pater+"'")
 //                .orderBy(COMMON_ORDER+ORDER_ASC)

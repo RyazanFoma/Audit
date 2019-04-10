@@ -266,9 +266,12 @@ public class TaskListActivity extends AppCompatActivity
         if (resultCode == RESULT_OK) {
             if (data != null) { //Проверяем статус задания
                 final int status = data.getIntExtra(ARG_STATUS, 0);
-                if (status != mStatus.number) { //Задание не из текущей закладки
-                    final TabLayout.Tab tab = ((TabLayout) findViewById(R.id.tabs)).getTabAt(status);
-                    if (tab != null) tab.select();
+                if (status == mStatus.number) { //Задание не из текущей закладки
+                    recyclerAdapter.notifyDataSetChanged();
+                }
+                else { //Задание другой закладки
+                        final TabLayout.Tab tab = ((TabLayout) findViewById(R.id.tabs)).getTabAt(status);
+                        if (tab != null) tab.select();
                 }
             }
         }

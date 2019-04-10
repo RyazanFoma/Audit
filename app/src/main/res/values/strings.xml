@@ -169,16 +169,18 @@
     <string name="pref_description_displace_1C_settings">Нижеследующие настройки будут вытеснять настройки 1С</string>
 
     <string name="pref_title_task_settings">Настройки приложения</string>
+    <string name="pref_key_displace_1C_settings">displace_1C_settings</string>
 
     <string name="pref_title_fill_in_fact">Заполнять факт</string>
     <string name="pref_description_fill_in_fact">Устанавливать фактическое значение показателя равным нормативному при заполнении задания</string>
+    <string name="pref_key_fill_in_fact">fill_in_fact</string>
 
     <string name="pref_title_task_tab">Начальная вкладка задания</string>
     <string name="pref_key_task_tab">task_tab</string>
     <string-array name="pref_value_task_tab">
-        <item>tag1</item>
-        <item>tag2</item>
-        <item>tag3</item>
+        <item>common</item>
+        <item>analytics</item>
+        <item>indicators</item>
     </string-array>
     <string-array name="pref_list_task_tab">
         <item>@string/tab_com</item>
@@ -188,11 +190,11 @@
 
     <string name="pref_title_clear_when_copying">Очищать при копировании</string>
     <string name="pref_description_clear_when_copying">Очищать вкладку Аналитика и Показатели при копировании задания</string>
+    <string name="pref_key_clear_when_copying">clear_when_copying</string>
 
     <string name="pref_title_display_subject">Отображать по предметам</string>
     <string name="pref_description_display_subject">Отображать показатели в задании по предметам аудита</string>
-
-    <string name="pref_title_sync_frequency">Частота</string>
+    <string name="pref_key_display_subject">display_subject</string>
 
     <!-- Settings for oData -->
     <string name="pref_header_odata">Связь с 1С</string>

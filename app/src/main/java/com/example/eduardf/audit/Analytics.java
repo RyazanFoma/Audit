@@ -27,25 +27,31 @@ import java.util.List;
  */
 
 /**
- * Фрагмент для просмотра и редактирования (добавления/удаления) списка элементов справочника
+ * Фрагмент для просмотра и редактирования (добавления/удаления) списка аналитики объекта
  */
-public class Objects extends Fragment implements
+public class Analytics extends Fragment implements
         ReferenceChoice.OnReferenceManagerInteractionMultipleChoice,
-        LoadItems.OnLoadItems {
+        LoadItems.OnLoadItems,
+        LoadAnalyticTypes.OnLoadAnalyticTypes {
 
     private AuditOData oData; //1С:Предприятие
     private AuditOData.Set set; //Таблица справочника
-    private ArrayList<String> parentTypes = null; //Типы родительских справочников
+    private ArrayList<String> parentTypes; //Типы родительских справочников
+    private String typeKey; //Guid вида аудита для отбора по ручной связи
+    private String objectKey; //Guid объекта для отбора по ручной связи
     private String title; //Заголовой поля
-    private ObjectsAdapter recyclerAdapter; //Адаптер для списка
+    private AnalyticsAdapter recyclerAdapter; //Адаптер для списка
     private boolean enabled = true; //Признак доступности списка для редактирования
 
     private static String ARG_ENABLED = "enabled";
+    private static String ARG_PARENTTYPES = "parenttypes";
+    private static String ARG_TYPEKEY = "typekey";
+    private static String ARG_OBJECTKEY = "objectkey";
 
     /**
      * Пустой конструктор. Данные получаем из XML и методов
      */
-    public Objects() {}
+    public Analytics() {}
 
     /**
      * Вызывается при раздувании фрагмента из XML
@@ -62,12 +68,12 @@ public class Objects extends Fragment implements
         if (setAttr != null) {
             set = AuditOData.Set.toValue(setAttr);
         } else {
-            throw new RuntimeException("Not found 'set' attribute for Objects fragment");
+            throw new RuntimeException("Not found 'set' attribute for Analytics fragment");
         }
         if (titleAttr != null) {
             title = titleAttr;
         } else {
-            throw new RuntimeException("Not found 'title' attribute for Objects fragment");
+            throw new RuntimeException("Not found 'title' attribute for Analytics fragment");
         }
     }
 
@@ -75,19 +81,11 @@ public class Objects extends Fragment implements
      * Загрузка текущего содержания списка
      * @param guids - список guid элементов справочника
      */
-    void setObjects(List<String> guids) {
+    void setKeys(List<String> guids) {
         recyclerAdapter.clear();
         if (!(guids == null || guids.isEmpty())) {
             (new LoadItems(this, oData, set)).execute(guids.toArray(new String[0]));
         }
-
-    }
-    /**
-     * Установка типов родительских справочников для поля
-     * @param parentTypes - типы родительских справочников
-     */
-    void setParentTypes(ArrayList<String> parentTypes) {
-        this.parentTypes = parentTypes;
     }
 
     /**
@@ -95,8 +93,39 @@ public class Objects extends Fragment implements
      * @return - список guid элементов справочника
      */
     @NotNull
-    ArrayList<String> getObjectKeys() {
+    ArrayList<String> getKeys() {
         return recyclerAdapter.getItems();
+    }
+
+    /**
+     * Очищение списка типов родительских справочников для отбора аналитик по типам
+     */
+    void setParentTypes() {
+        parentTypes = null;
+    }
+
+    /**
+     * Загрузка типов родительских справочников для отбора аналитики по типам
+     * @param type - guid вида аудита
+     * @param objectType - тип объекта аудита
+     */
+    void setParentTypes(@NonNull String type, @NonNull String objectType) {
+        (new LoadAnalyticTypes(this, oData)).execute(new String[] {type, objectType});
+    }
+
+    /**
+     * Очищение типа и объекта аудита для отбора аналитики по ручной связи
+     */
+    void setTypeObject() {
+        setTypeObject(null, null);
+    }
+
+    /**
+     * Установка типа и объекта аудита для отбора аналитики по ручной связи
+     */
+    void setTypeObject(String typeKey, String objectKey) {
+        this.typeKey = typeKey;
+        this.objectKey = objectKey;
     }
 
     /**
@@ -119,9 +148,13 @@ public class Objects extends Fragment implements
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        recyclerAdapter = new ObjectsAdapter();
-        if (savedInstanceState != null)
+        recyclerAdapter = new AnalyticsAdapter();
+        if (savedInstanceState != null) {
             recyclerAdapter.onRestoreInstanceState(savedInstanceState);
+            parentTypes = savedInstanceState.getStringArrayList(ARG_PARENTTYPES);
+            typeKey = savedInstanceState.getString(ARG_TYPEKEY);
+            objectKey = savedInstanceState.getString(ARG_OBJECTKEY);
+        }
     }
 
     /**
@@ -148,11 +181,14 @@ public class Objects extends Fragment implements
         view.findViewById(R.id.add).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                startActivity(ReferenceChoice.intentActivity(getActivity(), Objects.this,
-                        -1,
-                        set,
-                        title, null, parentTypes,
-                        recyclerAdapter.getItems()));
+                if (typeKey==null)
+                    startActivity(ReferenceChoice.intentActivity(getActivity(), Analytics.this,
+                            -1, set, title, null,
+                            parentTypes, getKeys()));
+                else
+                    startActivity(ReferenceChoice.intentActivity(getActivity(), Analytics.this,
+                            -1, set, title,null,
+                            typeKey, objectKey, getKeys()));
             }
         });
         //Расчитываем кол-во колонок для Grid и создаем GridLayoutManager для рециклервью
@@ -184,6 +220,9 @@ public class Objects extends Fragment implements
         super.onSaveInstanceState(outState);
         recyclerAdapter.onSaveInstanceState(outState);
         outState.putBoolean(ARG_ENABLED, enabled);
+        outState.putStringArrayList(ARG_PARENTTYPES, parentTypes);
+        outState.putString(ARG_TYPEKEY, typeKey);
+        outState.putString(ARG_OBJECTKEY, objectKey);
     }
 
     /**
@@ -216,7 +255,7 @@ public class Objects extends Fragment implements
     }
 
     /**
-     * Вызывается перед началом загрузки пунктов
+     * Вызывается перед загрузкой пунктов
      */
     @Override
     public void onPreLoadItems() {
@@ -226,7 +265,7 @@ public class Objects extends Fragment implements
     }
 
     /**
-     * Вызывается при загрузке пункта
+     * Вызывается при загрузке каждого пункта
      * @param item - пункт
      */
     @Override
@@ -244,5 +283,27 @@ public class Objects extends Fragment implements
         if (view != null)
             view.findViewById(R.id.progressBar).setVisibility(View.INVISIBLE);
     }
+
+    /**
+     * Вызывается перед загрузкой типов аналитик для отбора по виду аудита и типу объекта
+     */
+    @Override
+    public void onLoadAnalyticTypesPreExecute() {
+        final View view = getView();
+        if (view != null)
+            view.findViewById(R.id.progressBar).setVisibility(View.VISIBLE);
+    }
+
+    /**
+     * Вызывается после загрузки типов аналитик для отбора по виду аудита и типу объекта
+     */
+    @Override
+    public void onLoadAnalyticTypesPostExecute(ArrayList<String> parentTypes) {
+        this.parentTypes = parentTypes;
+        final View view = getView();
+        if (view != null)
+            view.findViewById(R.id.progressBar).setVisibility(View.INVISIBLE);
+    }
+
 }
 //Фома2018

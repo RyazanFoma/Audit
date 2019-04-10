@@ -227,7 +227,7 @@
 
                         <fragment
                             android:id="@+id/analytics"
-                            class="com.example.eduardf.audit.Objects"
+                            class="com.example.eduardf.audit.Analytics"
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
                             app:set="АналитикиОбъектов"

@@ -393,7 +393,7 @@ public class AuditDB {
                     Map<String, Object> m;
                     m = new HashMap<String, Object>();
                     m.put("id", c.getInt(c.getColumnIndex(ID)));
-                    m.put("name", c.getString(c.getColumnIndex(NAME)));
+                    m.put("id", c.getString(c.getColumnIndex(NAME)));
                     analytics.add(m);
                 } while (c.moveToNext());
             c.close();
@@ -413,7 +413,7 @@ public class AuditDB {
                 do {
                     m = new HashMap<String, Object>();
                     m.put("_id", c.getInt(c.getColumnIndex(ID)));
-                    m.put("name", c.getString(c.getColumnIndex(NAME)));
+                    m.put("id", c.getString(c.getColumnIndex(NAME)));
                     list.add(m);
                 } while (c.moveToNext());
             c.close();
