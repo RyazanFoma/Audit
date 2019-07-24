@@ -14,7 +14,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
-    tools:context="com.example.eduardf.audit.TaskActivity"
+    tools:context="com.bit.eduardf.audit.TaskActivity"
     tools:showIn="@layout/activity_task">
 
     <LinearLayout
@@ -55,7 +55,7 @@
 
                 <fragment
                     android:id="@+id/datetime"
-                    class="com.example.eduardf.audit.DateTime"
+                    class="com.bit.eduardf.audit.DateTime"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     tools:layout="@layout/fragment_date_time" />
@@ -161,7 +161,7 @@
 
                                 <fragment
                                     android:id="@+id/type"
-                                    class="com.example.eduardf.audit.Reference"
+                                    class="com.bit.eduardf.audit.Reference"
                                     android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
                                     android:layout_marginStart="@dimen/field_horizontal_margin"
@@ -174,7 +174,7 @@
 
                                 <fragment
                                     android:id="@+id/organization"
-                                    class="com.example.eduardf.audit.Reference"
+                                    class="com.bit.eduardf.audit.Reference"
                                     android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
                                     android:layout_marginStart="@dimen/field_horizontal_margin"
@@ -187,7 +187,7 @@
 
                                 <fragment
                                     android:id="@+id/object"
-                                    class="com.example.eduardf.audit.Reference"
+                                    class="com.bit.eduardf.audit.Reference"
                                     android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
                                     android:layout_marginStart="@dimen/field_horizontal_margin"
@@ -208,7 +208,7 @@
 
                                 <fragment
                                     android:id="@+id/responsible"
-                                    class="com.example.eduardf.audit.Reference"
+                                    class="com.bit.eduardf.audit.Reference"
                                     android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
                                     android:layout_marginStart="@dimen/field_horizontal_margin"
@@ -269,7 +269,7 @@
 
                         <fragment
                             android:id="@+id/analytics"
-                            class="com.example.eduardf.audit.Analytics"
+                            class="com.bit.eduardf.audit.Analytics"
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
                             app:set="АналитикиОбъектов"
@@ -319,7 +319,7 @@
 
                         <fragment
                             android:id="@+id/indicators"
-                            class="com.example.eduardf.audit.IndicatorFragment"
+                            class="com.bit.eduardf.audit.IndicatorFragment"
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
                             android:layout_marginBottom="@dimen/indicators_margin"

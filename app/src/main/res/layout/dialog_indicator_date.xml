@@ -30,7 +30,7 @@
 
         <fragment
             android:id="@+id/fragment_date"
-            android:name="com.example.eduardf.audit.DateTime"
+            android:name="com.bit.eduardf.audit.DateTime"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginStart="@dimen/field_horizontal_margin"

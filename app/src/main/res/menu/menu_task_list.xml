@@ -10,7 +10,7 @@
 <menu
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    tools:context="com.example.eduardf.audit.TaskListActivity"
+    tools:context="com.bit.eduardf.audit.TaskListActivity"
     xmlns:app="http://schemas.android.com/apk/res-auto" >
 
     <item

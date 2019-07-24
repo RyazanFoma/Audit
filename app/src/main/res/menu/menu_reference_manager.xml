@@ -9,7 +9,7 @@
 
 <menu
     xmlns:tools="http://schemas.android.com/tools"
-    tools:context="com.example.eduardf.audit.ReferenceChoice"
+    tools:context="com.bit.eduardf.audit.ReferenceChoice"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:android="http://schemas.android.com/apk/res/android" >
 
