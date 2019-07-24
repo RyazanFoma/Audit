@@ -6,6 +6,7 @@ import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
 import android.view.View;
 import android.widget.CheckBox;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -32,7 +33,8 @@ public class ViewHolderInds extends RecyclerView.ViewHolder {
     public final ImageView achived; //Цель достигнута
     public final TextView criterion; // условие
     public final TextView desc; // описание
-    final TextInputLayout commentLayout; // контейнер пункта
+    public final ImageButton camera; //Фотография
+//    final TextInputLayout commentLayout; // контейнер пункта
     public final TextInputEditText comment; // комментарий
     public final View expand; //Область раскрыть/закрыть
     final ImageView expandImage; //Иконка раскрыть/закрыть
@@ -52,7 +54,8 @@ public class ViewHolderInds extends RecyclerView.ViewHolder {
         achived = view.findViewById(R.id.achived);
         criterion = view.findViewById(R.id.criterion);
         desc = view.findViewById(R.id.desc);
-        commentLayout = view.findViewById(R.id.comment_layout);
+        camera = view.findViewById(R.id.camera);
+//        commentLayout = view.findViewById(R.id.comment_layout);
         comment = view.findViewById(R.id.comment);
         expand = view.findViewById(R.id.expand);
         expandImage = view.findViewById(R.id.expand_image);

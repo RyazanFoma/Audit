@@ -24,7 +24,7 @@ public class ParcelableRow implements Parcelable {
     }
 
     //Создатель экземпляров
-    static final Parcelable.Creator<ParcelableRow> CREATOR = new Parcelable.Creator<ParcelableRow>() {
+    static public final Parcelable.Creator<ParcelableRow> CREATOR = new Parcelable.Creator<ParcelableRow>() {
 
         // распаковываем объект из Parcel
         public ParcelableRow createFromParcel(Parcel in) {

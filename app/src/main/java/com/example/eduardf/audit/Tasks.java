@@ -44,11 +44,13 @@ class Tasks extends ArrayList<Tasks.Task> {
         boolean full; //Карточка в списке занимает все колонки
         ArrayList<String> analytics; //Аналитика списком
         ArrayList<IndicatorRow> indicators; //Покаказели задания
+        MediaFiles mediaFiles; //Медиафайлы
 
         //Конструктор
         Task() {
             analytics = new ArrayList<>();
             indicators = new ArrayList<>();
+            mediaFiles = new MediaFiles();
         }
 
         //Идентификаторы статуса задания из 1С
@@ -131,6 +133,7 @@ class Tasks extends ArrayList<Tasks.Task> {
         private final static String ARG_DELETED = "deleted"; //Пометка на удаление
         private final static String ARG_POSTED = "posted"; //Документ проведен
         private final static String ARG_ACHIVED = "achieved"; //Цель достигнута
+        private final static String ARG_MEDIAFILES = "mediafiles"; //Медиафайлы
 
         /**
          * Сохраняет задание
@@ -157,6 +160,10 @@ class Tasks extends ArrayList<Tasks.Task> {
             bundle.putBoolean(ARG_DELETED, this.deleted);
             bundle.putBoolean(ARG_POSTED, this.posted);
             bundle.putBoolean(ARG_ACHIVED, this.achieved);
+            final ArrayList<ParcelableMedia> parcelableMedia = new ArrayList<>();
+            for (MediaFiles.MediaFile mediaFile: this.mediaFiles)
+                parcelableMedia.add(new ParcelableMedia(mediaFile));
+            bundle.putParcelableArrayList(ARG_MEDIAFILES, parcelableMedia);
 
             outState.putBundle(argName, bundle);
         }
@@ -199,6 +206,10 @@ class Tasks extends ArrayList<Tasks.Task> {
                 this.deleted = bundle.getBoolean(ARG_DELETED, false);
                 this.posted = bundle.getBoolean(ARG_POSTED, false);
                 this.achieved = bundle.getBoolean(ARG_ACHIVED, false);
+                final ArrayList<ParcelableMedia> parcelableMedia = bundle.getParcelableArrayList(ARG_MEDIAFILES);
+                if (parcelableMedia != null)
+                    for (ParcelableMedia media: parcelableMedia)
+                        this.mediaFiles.add(media.mediaFile);
             }
         }
     }

@@ -70,7 +70,7 @@ public class ParcelableInd implements Parcelable {
         ind.desc = in.readString();
         ind.type = Indicators.Types.toValue(in.readString());
         ind.not_involved = (in.readInt() == 1);
-        ind.criterion = Indicators.Criterions.toValue(in.readString());
+        ind.criterion = Indicators.Criteria.toValue(in.readString());
         ind.subject = in.readString();
         ind.unit = in.readString();
         ind.goal = in.readValue(this.getClass().getClassLoader());

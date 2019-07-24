@@ -200,22 +200,41 @@
                             app:title="Ответственный за объект"
                             tools:layout="@layout/fragment_reference_field" />
 
-                        <android.support.design.widget.TextInputLayout
+                        <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
-                            android:paddingLeft="16dp"
-                            android:paddingTop="8dp"
-                            android:paddingRight="16dp"
-                            android:paddingBottom="8dp">
+                            android:orientation="horizontal">
 
-                            <android.support.design.widget.TextInputEditText
-                                android:id="@+id/comment"
+                            <ImageButton
+                                android:id="@+id/gallery"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="top|center_horizontal"
+                                android:layout_marginStart="@dimen/field_horizontal_margin"
+                                android:layout_marginTop="@dimen/field_vertical_margin"
+                                android:layout_marginEnd="@dimen/field_vertical_margin"
+                                android:layout_marginBottom="@dimen/field_vertical_margin"
+                                android:background="@drawable/round_image"
+                                android:padding="10dp"
+                                android:src="@drawable/ic_gray_attach_file_24px" />
+
+                            <android.support.design.widget.TextInputLayout
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:drawableEnd="@drawable/ic_black_cancel_24px"
-                                android:hint="@string/txt_cmt"
-                                android:textAppearance="?attr/textAppearanceListItem" />
-                        </android.support.design.widget.TextInputLayout>
+                                android:paddingLeft="@dimen/field_vertical_margin"
+                                android:paddingTop="8dp"
+                                android:paddingRight="16dp"
+                                android:paddingBottom="8dp">
+
+                                <android.support.design.widget.TextInputEditText
+                                    android:id="@+id/comment"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:drawableEnd="@drawable/ic_black_cancel_24px"
+                                    android:hint="@string/txt_cmt"
+                                    android:textAppearance="?attr/textAppearanceListItem" />
+                            </android.support.design.widget.TextInputLayout>
+                        </LinearLayout>
 
                     </LinearLayout>
 

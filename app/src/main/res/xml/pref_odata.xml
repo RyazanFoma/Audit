@@ -18,6 +18,15 @@
         android:title="@string/pref_title_odata_path" />
 
     <EditTextPreference
+        android:defaultValue="@string/pref_default_file_path"
+        android:inputType="textWebEditText"
+        android:key="file_path"
+        android:maxLines="1"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="@string/pref_title_file_path" />
+
+    <EditTextPreference
         android:defaultValue="@string/pref_default_odata_user"
         android:inputType="text"
         android:key="odata_user"

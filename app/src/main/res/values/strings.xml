@@ -153,6 +153,8 @@
     <!-- Settings for Tasks -->
     <string name="pref_header_tasks">Задания</string>
 
+    <string name="pref_title_list_settings">Настройки списка</string>
+
     <string name="pref_title_tasks_tab">Начальная вкладка списка заданий</string>
     <string name="pref_key_tasks_tab">tasks_tab</string>
     <string-array name="pref_tasks_tab_values">
@@ -165,11 +167,7 @@
     <string name="pref_title_tasks_group_by_date">Группировать задания по датам</string>
     <string name="pref_description_tasks_group_by_date">Первое задание в группе будет занимать все колонки списка</string>
 
-    <string name="pref_title_displace_1C_settings">Использовать настройки приложения</string>
-    <string name="pref_description_displace_1C_settings">Нижеследующие настройки будут вытеснять настройки 1С</string>
-
-    <string name="pref_title_task_settings">Настройки приложения</string>
-    <string name="pref_key_displace_1C_settings">displace_1C_settings</string>
+    <string name="pref_title_task_settings">Настройки документа</string>
 
     <string name="pref_title_fill_in_fact">Заполнять факт</string>
     <string name="pref_description_fill_in_fact">Устанавливать фактическое значение показателя равным нормативному при заполнении задания</string>
@@ -202,10 +200,44 @@
     <string name="pref_title_odata_path">Путь к стандартному интерфейсу oData</string>
     <string name="pref_default_odata_path">https://storm.bit-it.ru/auditor/odata/standard.odata</string>
 
+    <string name="pref_title_file_path">Путь к медиафайлам</string>
+    <string name="pref_default_file_path">https://storm.bit-it.ru/auditor/hs</string>
+
     <string name="pref_title_odata_user">Имя пользователя для подключения</string>
     <string name="pref_default_odata_user">eduardf</string>
 
     <string name="pref_title_odata_password">Пароль для подключения</string>
     <string name="pref_default_odata_password">12345678</string>
 
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+
+    <!--
+     Copyright 2014 The Android Open Source Project
+     Licensed under the Apache License, Version 2.0 (the "License");
+     you may not use this file except in compliance with the License.
+     You may obtain a copy of the License at
+         http://www.apache.org/licenses/LICENSE-2.0
+     Unless required by applicable law or agreed to in writing, software
+     distributed under the License is distributed on an "AS IS" BASIS,
+     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     See the License for the specific language governing permissions and
+     limitations under the License.
+    -->
+    <string name="picture">Picture</string>
+    <string name="description_info">Info</string>
+    <string name="request_permission">This sample needs camera permission.</string>
+    <string name="camera_error">This device doesn\'t support Camera2 API.</string>
+    <string name="intro_message">
+        <![CDATA[
+
+
+            This sample demonstrates the basic use of Camera2 API. Check the source code to see how
+            you can display camera preview and take pictures.
+
+
+        ]]>
+    </string>
+    <string name="title_activity_gallery">Галлерея</string>
+    <string name="section_format">Hello World from section: %1$d</string>
 </resources>

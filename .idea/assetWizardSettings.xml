@@ -3,6 +3,11 @@
   <component name="WizardSettings">
     <option name="children">
       <map>
+        <entry key="imageWizard">
+          <value>
+            <PersistentState />
+          </value>
+        </entry>
         <entry key="vectorWizard">
           <value>
             <PersistentState>
@@ -14,9 +19,11 @@
                         <option name="values">
                           <map>
                             <entry key="assetSourceType" value="FILE" />
-                            <entry key="outputName" value="ic_baseline_add_a_photo_24px" />
+                            <entry key="height" value="660" />
+                            <entry key="outputName" value="ic_audit2" />
                             <entry key="overrideSize" value="true" />
-                            <entry key="sourceFile" value="C:\Users\eduardf\Desktop\Icons\baseline-add_a_photo-24px.svg" />
+                            <entry key="sourceFile" value="C:\Users\eduardf\Pictures\audit2.svg" />
+                            <entry key="width" value="852" />
                           </map>
                         </option>
                       </PersistentState>

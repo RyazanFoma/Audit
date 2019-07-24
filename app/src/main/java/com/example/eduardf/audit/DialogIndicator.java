@@ -42,7 +42,7 @@ public class DialogIndicator extends DialogFragment {
 
     //Аргументы
     private static final String ARG_POSITION = "position"; //Аргумент Позиция показателя
-    private static final String ARG_TITLE = "title"; //Аргумент Число
+    private static final String ARG_TITLE = "title"; //Аргумент Заголовок
     private static final String ARG_NUMBER = "number"; //Аргумент Число
     private static final String ARG_UNIT = "unit"; //Аргумент ед. измерения
     private static final String ARG_DATE = "date"; //Аргумент Дата
@@ -127,15 +127,13 @@ public class DialogIndicator extends DialogFragment {
         return f;
     }
 
-    //Проверяем наличие интеракшин в родительском классе
-
     /**
      * Проверка наличия обработчика кнопки Изменить в контексте
      * @param context - текущй контекст с обработчиком нажатия Изменить
      */
     static private void instanceOf(Fragment context) {
-        if (context instanceof DialogIndicator.DialogInteractionListener) {
-            mListener = (DialogIndicator.DialogInteractionListener) context;
+        if (context instanceof DialogInteractionListener) {
+            mListener = (DialogInteractionListener) context;
         } else {
             throw new RuntimeException(context.toString()
                     + " must implement DialogsIndicator.DialogInteractionListener");
@@ -365,9 +363,25 @@ public class DialogIndicator extends DialogFragment {
     public void onDestroyView () {
         if (!(afterRotate || getActivity() == null)) {
             final FragmentManager fragmentManager = getActivity().getSupportFragmentManager();
-            final Fragment fragment = fragmentManager.findFragmentById(R.id.fragment_date);
-            if (fragment != null)
+            final String tag = getTag();
+            int id = -1;
+            if (tag != null) {
+                switch (tag) {
+                    case TAG_NUMBER:
+                        id = R.id.text_value;
+                        break;
+                    case TAG_COMMENT:
+                        id = R.id.text_comment;
+                        break;
+                    case TAG_DATE:
+                        id = R.id.fragment_date;
+                        break;
+                }
+            }
+            final Fragment fragment = fragmentManager.findFragmentById(id);
+            if (fragment != null) {
                 fragmentManager.beginTransaction().remove(fragment).commit();
+            }
         }
         super.onDestroyView();
     }

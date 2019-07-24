@@ -120,16 +120,23 @@ abstract class Stack extends Items {
     private void addTextView(final LinearLayout linearLayout, Context context, View.OnClickListener onClickListener) {
         linearLayout.removeAllViews(); // удаляем предыдущий список
         //Выводим список предков
-        for(int i = 0; i < size(); i++) {
+        if (size()>0) {
+            for(int i = 0; i < size(); i++) {
+                final TextView textView = new TextView(context);
+                final Items.Item item = get(i);
+                textView.setTag(item);
+                textView.setText(item.name);
+                textView.setCompoundDrawablesWithIntrinsicBounds(0, 0,
+                        R.drawable.ic_baseline_navigate_next_24px, 0);
+                textView.setOnClickListener(onClickListener);
+                textView.setSingleLine();
+                textView.setEllipsize(TextUtils.TruncateAt.END);
+                linearLayout.addView(textView);
+            }
+        }
+        else { //чтобы лайаут не схлопывался по высоте без вью
             final TextView textView = new TextView(context);
-            final Items.Item item = get(i);
-            textView.setTag(item);
-            textView.setText(item.name);
-            textView.setCompoundDrawablesWithIntrinsicBounds(0, 0,
-                    R.drawable.ic_baseline_navigate_next_24px, 0);
-            textView.setOnClickListener(onClickListener);
-            textView.setSingleLine();
-            textView.setEllipsize(TextUtils.TruncateAt.END);
+            textView.setText("");
             linearLayout.addView(textView);
         }
     }

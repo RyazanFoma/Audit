@@ -2,6 +2,10 @@ package com.example.eduardf.audit;
 
 import android.app.Activity;
 import android.content.Context;
+import android.graphics.Color;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffColorFilter;
+import android.media.Image;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
@@ -12,6 +16,7 @@ import android.util.DisplayMetrics;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -136,8 +141,10 @@ public class Analytics extends Fragment implements
         this.enabled = enabled;
         final View view = getView();
         if (view != null) {
-            view.findViewById(R.id.add).setEnabled(enabled);
             if (recyclerAdapter != null) recyclerAdapter.setEnabled(enabled);
+            final ImageButton add = view.findViewById(R.id.add);
+            add.setEnabled(enabled);
+            add.getDrawable().mutate().setColorFilter(enabled? null: new PorterDuffColorFilter(Color.GRAY, PorterDuff.Mode.SRC_IN));
         }
     }
 

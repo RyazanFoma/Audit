@@ -25,7 +25,7 @@ class ParcelableTask implements Parcelable {
     }
 
     //Создатель экземпляров
-    static final Creator<ParcelableTask> CREATOR = new Creator<ParcelableTask>() {
+    static public final Creator<ParcelableTask> CREATOR = new Creator<ParcelableTask>() {
 
         // распаковываем объект из Parcel
         public ParcelableTask createFromParcel(Parcel in) {

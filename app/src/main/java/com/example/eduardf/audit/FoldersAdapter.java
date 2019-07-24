@@ -61,7 +61,7 @@ class FoldersAdapter extends RecyclerView.Adapter<ViewHolderRefs> {
     /**
      * Чистка списка пунктов
      */
-    void clearItems() {
+    void clear() {
         if (!items.isEmpty()) {
             int count = items.size();
             items.clear();

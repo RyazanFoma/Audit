@@ -41,6 +41,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="@dimen/field_vertical_margin"
                     android:orientation="horizontal"
+                    android:paddingStart="@dimen/field_vertical_margin"
                     android:paddingTop="@dimen/field_vertical_margin"
                     android:paddingBottom="@dimen/field_vertical_margin">
 
@@ -99,23 +100,40 @@
                         android:layout_marginEnd="@dimen/field_horizontal_margin"
                         android:orientation="horizontal">
 
-                        <ImageView
-                            android:id="@+id/achived"
+                        <ImageButton
+                            android:id="@+id/camera"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:layout_gravity="bottom|center_horizontal"
                             android:layout_margin="@dimen/field_vertical_margin"
-                            app:srcCompat="@drawable/ic_black_thumb_up_alt_24px" />
+                            android:background="@drawable/round_image"
+                            android:padding="10dp"
+                            android:src="@drawable/ic_black_camera_24px" />
 
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:orientation="vertical">
 
-                            <TextView
-                                android:id="@+id/criterion"
+                            <LinearLayout
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:layout_weight="1" />
+                                android:layout_weight="1"
+                                android:orientation="horizontal">
+
+                                <ImageView
+                                    android:id="@+id/achived"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginRight="@dimen/field_vertical_margin"
+                                    app:srcCompat="@drawable/ic_black_thumb_up_alt_24px" />
+
+                                <TextView
+                                    android:id="@+id/criterion"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1" />
+                            </LinearLayout>
 
                             <TextView
                                 android:id="@+id/desc"

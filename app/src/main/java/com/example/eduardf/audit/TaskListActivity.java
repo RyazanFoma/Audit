@@ -54,10 +54,12 @@ public class TaskListActivity extends AppCompatActivity
         DialogsReferenceManager.DialogInteractionListener,
         View.OnClickListener,
         View.OnLongClickListener,
-        TaskListAdapter.OnInvalidateActivity {
+        TaskListAdapter.OnInvalidateActivity,
+        TaskActivity.GetAuditor {
 
     private AuditOData oData; //Объект OData для доступа к 1С:Аудитор
-    private String sAuditor; //guid аудитора
+    private String auditorKey; //guid аудитора
+    private String auditorName; //имя аудитора
     private Tasks.Task.Status mStatus; //Статус заданий текущей закладки
     private String sLike; //Строка отбора по наименованию объекта
     private boolean full; //Признак группировки заданий по датам
@@ -76,7 +78,8 @@ public class TaskListActivity extends AppCompatActivity
     private ActionMode mActionMode; //Контекстное меню
 
     //Аргументы для интент и поворота экрана
-    private static final String ARG_AUDITOR_KEY = "auditor_key"; //Идентификатор аудитора
+    private static final String ARG_AUDITOR_KEY = "author_key"; //Идентификатор аудитора
+    private static final String ARG_AUDITOR_NAME = "author_name"; //Идентификатор аудитора
     private static final String ARG_STATUS = "status"; //Текущая закладка / статус задания
     private static final String ARG_LIKE = "like"; //Строка поиска
     private static final String ARG_FULL = "full"; //Группировка по датам
@@ -91,9 +94,10 @@ public class TaskListActivity extends AppCompatActivity
      * @param auditor_key - guid аудитора
      * @return - интент
      */
-    public static Intent intentActivity(Context context, String auditor_key) {
+    public static Intent intentActivity(Context context, String auditor_key, String auditor_name) {
         Intent intent = new Intent(context, TaskListActivity.class);
         intent.putExtra(ARG_AUDITOR_KEY, auditor_key);
+        intent.putExtra(ARG_AUDITOR_NAME, auditor_name);
         return intent;
     }
 
@@ -160,7 +164,8 @@ public class TaskListActivity extends AppCompatActivity
 
         if (savedInstanceState==null) { //активность запускается впервые
             final Intent intent = getIntent();
-            sAuditor = intent.getStringExtra(ARG_AUDITOR_KEY);
+            auditorKey = intent.getStringExtra(ARG_AUDITOR_KEY);
+            auditorName = intent.getStringExtra(ARG_AUDITOR_NAME);
             final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
             full = preferences.getBoolean(getString(R.string.pref_key_tasks_group_by_date), false);
             final String value = preferences.getString(getString(R.string.pref_key_tasks_tab),
@@ -174,7 +179,8 @@ public class TaskListActivity extends AppCompatActivity
         }
         else { //активность восстатавливаем после поворота экрана
             mStatus = Tasks.Task.Status.toValue(savedInstanceState.getInt(ARG_STATUS, 0));
-            sAuditor = savedInstanceState.getString(ARG_AUDITOR_KEY);
+            auditorKey = savedInstanceState.getString(ARG_AUDITOR_KEY);
+            auditorName = savedInstanceState.getString(ARG_AUDITOR_NAME);
             sLike = savedInstanceState.getString(ARG_LIKE, "");
             full = savedInstanceState.getBoolean(ARG_FULL, false);
         }
@@ -234,7 +240,7 @@ public class TaskListActivity extends AppCompatActivity
     private void loader() {
         final Bundle bArgs = new Bundle(); //Агрументы для загрузчика списка
         bArgs.putInt(ARG_STATUS, mStatus.number); //Текущая закладка
-        bArgs.putString(ARG_AUDITOR_KEY, sAuditor);
+        bArgs.putString(ARG_AUDITOR_KEY, auditorKey);
         bArgs.putString(ARG_LIKE, sLike);
         final Loader loader = getSupportLoaderManager().getLoader(0);
         if (loader != null && !loader.isReset())
@@ -292,7 +298,8 @@ public class TaskListActivity extends AppCompatActivity
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        outState.putString(ARG_AUDITOR_KEY, sAuditor);
+        outState.putString(ARG_AUDITOR_KEY, auditorKey);
+        outState.putString(ARG_AUDITOR_NAME, auditorName);
         outState.putString(ARG_LIKE, sLike);
         outState.putBoolean(ARG_FULL, full);
         outState.putInt(ARG_STATUS, mStatus.number);
@@ -390,10 +397,10 @@ public class TaskListActivity extends AppCompatActivity
         switch (item.getItemId()) {
             case R.id.create:
                 startActivityForResult(TaskActivity.intentActivityCreate(this,
-                        sAuditor, mStatus), 0);
+                        auditorKey, mStatus), 0);
                 return true;
             case R.id.setting:
-                startActivity(SettingTask.intentActivity(this, sAuditor));
+                startActivity(SettingTask.intentActivity(this, auditorKey));
                 return true;
         }
         return super.onOptionsItemSelected(item);
@@ -653,6 +660,16 @@ public class TaskListActivity extends AppCompatActivity
     @Override
     public void onInvalidateActivity() {
         mActionMode.invalidate();
+    }
+
+    @Override
+    public String getKey() {
+        return auditorKey;
+    }
+
+    @Override
+    public String getName() {
+        return auditorName;
     }
 
     //Асинхронный загрузчик списка заданий

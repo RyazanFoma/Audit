@@ -25,7 +25,7 @@ class AType {
 //    boolean deleted; //Пометка на удаление
 //    boolean predefined; //Предопределенный
 //    String prenamed; //Предопределенное имя
-//    Criterions criterion; //Критерий достижения цели
+//    Criteria criterion; //Критерий достижения цели
 //    float value; //Целевое значение
     boolean fillActualValue; //Заполнять фактические значения по умолчанию
     boolean openWithIndicators; //Открывать задания с показателей
@@ -93,7 +93,7 @@ class AType {
                 case "МинимальныйПроцентПунктовГруппыСДостигнутымиЦелями":
                     return PERCENT;
                 default:
-                    throw new RuntimeException("Criterions.toValue('"+id+
+                    throw new RuntimeException("Criteria.toValue('"+id+
                             "') Not exist the criterion for this id.");
             }
         }

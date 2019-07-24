@@ -24,7 +24,7 @@ public class ParcelableType implements Parcelable {
     }
 
     //Создатель экземпляров
-    static final Creator<ParcelableType> CREATOR = new Creator<ParcelableType>() {
+    static public final Creator<ParcelableType> CREATOR = new Creator<ParcelableType>() {
 
         // распаковываем объект из Parcel
         public ParcelableType createFromParcel(Parcel in) {

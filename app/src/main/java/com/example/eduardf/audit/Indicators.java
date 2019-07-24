@@ -26,7 +26,7 @@ class Indicators extends ArrayList<Indicators.Indicator> {
         Types type; //Тип показателя
         String subject; //предмет аудита
         boolean not_involved; //Не участвует
-        Criterions criterion; //Критерий достижения цели
+        Criteria criterion; //Критерий достижения цели
         String unit; //Единица измерения
         Object goal; //Целевое значение
         Object value; //Значение по умолчанию
@@ -39,7 +39,7 @@ class Indicators extends ArrayList<Indicators.Indicator> {
     }
 
     //Критерии достижения цели по показателю
-    enum Criterions {
+    enum Criteria {
         NOT_INVOLVED("НеУчаствует", "Не участвует"),
         EQUALLY("Равно","Равно"),
         NOT_EQUAL("НеРавно", "Не равно"),
@@ -53,7 +53,7 @@ class Indicators extends ArrayList<Indicators.Indicator> {
         String id; //Идентификатор
         private String desc; //Описание
 
-        Criterions(String id, String desc) {
+        Criteria(String id, String desc) {
             this.id = id;
             this.desc = desc;
         }
@@ -66,9 +66,9 @@ class Indicators extends ArrayList<Indicators.Indicator> {
         /**
          * Определение значения перечесления по идентификатору
          * @param id - идентификатор
-         * @return - значение перечисления
+         * @return - значение перечисления или null
          */
-        static public Criterions toValue(String id) {
+        static public Criteria toValue(String id) {
             switch (id) {
                 case "НеУчаствует":
                     return NOT_INVOLVED;

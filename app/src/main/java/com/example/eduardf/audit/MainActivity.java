@@ -163,7 +163,8 @@ public class MainActivity extends AppCompatActivity implements
                 editor.apply();
                 //Открываем список заданий
                 startActivity(TaskListActivity.intentActivity(this,
-                        usersMap.get(iPosition).get("id").toString()));
+                        usersMap.get(iPosition).get("id").toString(),
+                        usersMap.get(iPosition).get("name").toString()));
             }
             else {
                 //Неверный пароль

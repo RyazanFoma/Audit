@@ -34,6 +34,7 @@ class IndicatorsAdapter extends RecyclerView.Adapter<ViewHolderInds> {
 
     private List<com.example.eduardf.audit.IndList.Ind> items; //Список пунктов
     private View.OnClickListener onClickListener;
+    private View.OnLongClickListener onLongClickListener;
     private CheckBox.OnCheckedChangeListener onCheckedChangeListener;
     private boolean enabled = true;
 
@@ -43,9 +44,11 @@ class IndicatorsAdapter extends RecyclerView.Adapter<ViewHolderInds> {
      * @param onCheckedChangeListener - обработчик нажатия на флажок пункта
      */
     IndicatorsAdapter(View.OnClickListener OnClickListener,
+                      View.OnLongClickListener onLongClickListener,
                       CheckBox.OnCheckedChangeListener onCheckedChangeListener) {
         items = new ArrayList<>();
         this.onClickListener = OnClickListener;
+        this.onLongClickListener = onLongClickListener;
         this.onCheckedChangeListener = onCheckedChangeListener;
     }
 
@@ -221,12 +224,13 @@ class IndicatorsAdapter extends RecyclerView.Adapter<ViewHolderInds> {
             }
 
             //Цвет карточки
-//                if (holder.item.criterion == Indicators.Criterions.NOT_INVOLVED) //Не участвует
+//                if (holder.item.criterion == Indicators.Criteria.NOT_INVOLVED) //Не участвует
 //                    holder.card.setBackgroundResource(R.color.cardview_light_background); //Белый фон
 //                else if (holder.item.achieved) //Цель достигнута
 //                    holder.card.setBackgroundResource(R.color.colorBackgroundGreen); //Зеленый фон
 //                else
 //                    holder.card.setBackgroundResource(R.color.colorBackgroundRed); //Красный фон
+
             holder.expand.setVisibility(View.VISIBLE);
             holder.expand.setOnClickListener(onClickListener);
             holder.expand.setTag(holder.item);
@@ -251,6 +255,10 @@ class IndicatorsAdapter extends RecyclerView.Adapter<ViewHolderInds> {
                     holder.desc.setVisibility(View.VISIBLE);
                     holder.desc.setText(holder.item.desc);
                 }
+                holder.camera.setTag(holder.item);
+                holder.camera.setOnClickListener(onClickListener);
+                holder.camera.setOnLongClickListener(onLongClickListener);
+                holder.comment.setTag(position);
                 holder.comment.setOnClickListener(onClickListener);
                 holder.comment.setTag(position);
                 holder.comment.setText(holder.item.comment);

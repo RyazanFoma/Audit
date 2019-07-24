@@ -34,6 +34,7 @@ import static android.support.v7.widget.RecyclerView.SCROLL_STATE_IDLE;
  */
 public class IndicatorFragment extends Fragment implements
         View.OnClickListener,
+        View.OnLongClickListener,
         CheckBox.OnCheckedChangeListener,
         DialogIndicator.DialogInteractionListener,
         LoadIndList.OnLoadIndListExecute {
@@ -46,6 +47,8 @@ public class IndicatorFragment extends Fragment implements
 
     private OnScrollUpListener onScrollUpListener; //Ссылка на обработчик скролинга списка показателей ввниз
     private static int iScroll; //Количество скроллинга для вызова обработчика
+
+    private OnCallMediaApp onCallMediaApp; //Обработчик вызова медиа-приложения
 
     //Стек с предками для навигации по папкам показателей
     private Stack stack = new Stack() {
@@ -66,7 +69,7 @@ public class IndicatorFragment extends Fragment implements
     private boolean bySubject; //Признак вывода показателей по предметам
 
     //Адаптер для списка показателей
-    private IndicatorsAdapter indicatorAdapter = new IndicatorsAdapter(this, this);
+    private IndicatorsAdapter indicatorAdapter = new IndicatorsAdapter(this, this, this);
     //Адаптер для папок показателей
     private FoldersAdapter foldersAdapter = new FoldersAdapter(this, stack);
     //Признак вывода списка с папками 1-го уровня
@@ -85,11 +88,27 @@ public class IndicatorFragment extends Fragment implements
                        final String type,
                        final boolean bySubject) {
         this.bySubject = bySubject;
+        foldersAdapter.clear();
         indicatorAdapter.clear();
+
+        //Готовим корень предков
+        if (!stack.isEmpty()) stack.clear();
+        final Items.Item item = new Items.Item();
+        item.name = bySubject ? getString(R.string.tab_sbj): getString(R.string.tab_ind);
+        stack.push(item);
+
         //Начинаем загрузку показателей
         if (!(type == null || indicatorRows == null || indicatorRows.isEmpty()))
             new LoadIndList(this, oData, type, bySubject).
                     execute(indicatorRows.toArray(new Tasks.Task.IndicatorRow[0]));
+        else {
+            indicatorAdapter.notifyDataSetChanged();
+            foldersAdapter.notifyDataSetChanged();
+            final View view = getView();
+            if (view != null)
+                stack.addTextView((LinearLayout) view.findViewById(R.id.ancestors),
+                    IndicatorFragment.this);
+        }
     }
 
     /**
@@ -158,8 +177,8 @@ public class IndicatorFragment extends Fragment implements
     public void onAttach(Context context) {
         super.onAttach(context);
         oData = new AuditOData(context);
-        if (context instanceof OnScrollUpListener)
-            onScrollUpListener = (OnScrollUpListener) context;
+        if (context instanceof OnScrollUpListener) onScrollUpListener = (OnScrollUpListener) context;
+        if (context instanceof OnCallMediaApp) onCallMediaApp = (OnCallMediaApp) context;
         //Выводим отдельный список папок первого уровня в зависимости от размера экрана;
         isGrandpaters = isLargeTablet(context);
     }
@@ -278,7 +297,7 @@ public class IndicatorFragment extends Fragment implements
                 break;
             }
             case R.id.expand: { //Развертываем/свертываем пункт
-                IndList.Ind ind = (IndList.Ind) v.getTag();
+                final IndList.Ind ind = (IndList.Ind) v.getTag();
                 ind.expand = !ind.expand;
                 indicatorAdapter.notifyItemChanged(ind); //Обновим пункт
                 break;
@@ -292,6 +311,18 @@ public class IndicatorFragment extends Fragment implements
                         DialogIndicator.newInstance(IndicatorFragment.this, position, ind.name, ind.comment).
                                 show(getChildFragmentManager(), DialogIndicator.TAG_COMMENT);
                     }
+                }
+                break;
+            }
+            case R.id.camera: {
+                if (onCallMediaApp != null) {
+                    final IndList.Ind ind = (IndList.Ind) v.getTag();
+                    final MediaFiles.MediaFile mediaFile = new MediaFiles.MediaFile();
+                    mediaFile.type = MediaFiles.MediaType.PHOTO;
+                    mediaFile.indicator_key = ind.id;
+                    mediaFile.indicator_name = ind.name;
+                    mediaFile.comment = ind.comment;
+                    onCallMediaApp.onCallMediaApp(mediaFile);
                 }
                 break;
             }
@@ -353,14 +384,8 @@ public class IndicatorFragment extends Fragment implements
 
         this.indicators = indicators;
 
-        //Готовим предков начиная с корня
-        if (!stack.isEmpty()) stack.clear();
-        final Items.Item item = new Items.Item();
-        item.name = bySubject ? getString(R.string.tab_sbj): getString(R.string.tab_ind);
-        stack.push(item);
-
         //Заполняем адаптеры папок и показателей
-        if (isGrandpaters) foldersAdapter.clearItems();
+        if (isGrandpaters) foldersAdapter.clear();
         indicatorAdapter.clear();
         for (Map.Entry<String, IndList.Ind> entry: indicators.entrySet()) {
             final IndList.Ind ind = entry.getValue();
@@ -419,11 +444,32 @@ public class IndicatorFragment extends Fragment implements
         foldersAdapter.notifyDataSetChanged();
     }
 
+    @Override
+    public boolean onLongClick(View v) {
+        if (v.getId() == R.id.camera) {
+            if (onCallMediaApp != null) {
+                final IndList.Ind ind = (IndList.Ind) v.getTag();
+                final MediaFiles.MediaFile mediaFile = new MediaFiles.MediaFile();
+                mediaFile.type = MediaFiles.MediaType.VIDEO;
+                mediaFile.indicator_key = ind.id;
+                mediaFile.indicator_name = ind.name;
+                mediaFile.comment = ind.comment;
+                onCallMediaApp.onCallMediaApp(mediaFile);
+                return true;
+            }
+        }
+        return false;
+    }
+
     /**
      * Интерфейс обработчика скроллинга списка вверх
      */
     public interface OnScrollUpListener {
         void onScrollUpListener(int visibility);
+    }
+
+    public interface OnCallMediaApp {
+        void onCallMediaApp(MediaFiles.MediaFile mediaFile);
     }
 
     /**

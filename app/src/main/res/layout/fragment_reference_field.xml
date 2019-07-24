@@ -37,6 +37,8 @@
                     android:layout_height="wrap_content"
                     android:drawableEnd="@drawable/ic_black_arrow_drop_down_24px"
                     android:maxLength="55"
+                    android:maxLines="1"
+                    android:scrollHorizontally="true"
                     android:textAppearance="?attr/textAppearanceListItem" />
 
             </android.support.design.widget.TextInputLayout>

@@ -18,6 +18,7 @@ import android.os.AsyncTask;
 class SaveTask extends AsyncTask<Tasks.Task, Void, Void> {
     private final AuditOData oData;
     private final OnSaveTaskExecute onExecute;
+    private final MediaHttps mediaHttps;
     //Конструктор
     SaveTask(Context context, AuditOData oData) {
         if (context instanceof OnSaveTaskExecute) {
@@ -26,6 +27,7 @@ class SaveTask extends AsyncTask<Tasks.Task, Void, Void> {
         }
         else
             throw new RuntimeException(context.toString()+" must implement OnSaveTaskExecute");
+        mediaHttps = new MediaHttps(context);
     }
     @Override
     protected void onPreExecute() {
@@ -37,6 +39,7 @@ class SaveTask extends AsyncTask<Tasks.Task, Void, Void> {
             oData.updateTask(tasks[0]);
         else //Создаем новое задание
             oData.createTask(tasks[0]);
+        mediaHttps.updateMediaFiles(tasks[0].id, tasks[0].mediaFiles);
         return null;
     }
     @Override

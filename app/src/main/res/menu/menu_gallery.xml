@@ -1,0 +1,31 @@
+<!--
+  ~ /**
+  ~  * Created by Eduard Fomin on 18.06.19 11:43
+  ~  * Copyright (c) 2019 . All rights reserved.
+  ~  * Last modified 18.06.19 11:43
+  ~  */
+  -->
+
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="com.example.eduardf.audit.MediaGallery">
+    <item
+        android:id="@+id/delete"
+        android:enabled="false"
+        android:icon="@drawable/ic_white_delete_24px"
+        android:title="@string/btn_delete"
+        app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/edit"
+        android:enabled="false"
+        android:icon="@drawable/ic_white_edit_24px"
+        android:title="@string/txt_cmt"
+        app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/settings"
+        android:icon="@drawable/ic_white_settings_20px"
+        android:orderInCategory="100"
+        android:title="@string/action_settings"
+        app:showAsAction="ifRoom" />
+</menu>

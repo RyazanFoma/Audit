@@ -192,6 +192,7 @@ public class SettingsAudit extends AppCompatPreferenceActivity {
             super.onCreate(savedInstanceState);
             addPreferencesFromResource(R.xml.pref_odata);
             bindPreferenceSummaryToValue(findPreference("odata_path"));
+            bindPreferenceSummaryToValue(findPreference("file_path"));
             bindPreferenceSummaryToValue(findPreference("odata_user"));
 //          Закомментировано, чтобы не показывать пароль
 //          bindPreferenceSummaryToValue(findPreference("odata_password"));

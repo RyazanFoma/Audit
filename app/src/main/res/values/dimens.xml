@@ -22,4 +22,5 @@
     <dimen name="min_width_datetime">2in</dimen>
     <dimen name="column_task">3in</dimen>
     <dimen name="min_column_reference">3in</dimen>
+    <dimen name="appbar_padding_top">8dp</dimen>
 </resources>

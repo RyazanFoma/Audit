@@ -21,7 +21,7 @@
 
         <TextView
             android:id="@+id/title"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_margin="@dimen/field_horizontal_margin"
             android:drawableStart="@drawable/ic_black_edit_24px"

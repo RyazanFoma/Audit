@@ -31,7 +31,7 @@ class IndList extends HashMap<String, IndList.Ind> {
         String desc; //Описание
         Indicators.Types type; //Тип показателя
         boolean not_involved; //Не участвует
-        Indicators.Criterions criterion; //Критерий достижения цели
+        Indicators.Criteria criterion; //Критерий достижения цели
         String subject; //Предмет аудита
         String unit; //Единица измерения
         Object goal; //Целевое значение

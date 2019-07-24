@@ -22,8 +22,6 @@ import static java.text.DateFormat.getDateInstance;
 import static java.text.DateFormat.getDateTimeInstance;
 import static java.text.DateFormat.getTimeInstance;
 
-//Фрагмент для ввода даты и времени
-
 /*
  * *
  *  * Created by Eduard Fomin on 05.02.19 9:42
