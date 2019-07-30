@@ -346,20 +346,6 @@ public class AuditOData{
     //Возвращает true, если ключ - пустая ссылка
 //    private boolean noEmptyKey(String key) { return !(key==null || EMPTY_KEY.equals(key)); }
 
-    /**
-     * Для вывода служебного сообщения в спиннере на время загрузки и т.п.
-     * @param message - текст служебного сообщения
-     * @return - список с единственным пунктом служебного сообщения
-     */
-    static List<Map<String, Object>> newDataSpinner(String message) {
-        List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
-        Map<String, Object> map = new HashMap<String, Object>();
-        map.put("id", EMPTY_KEY);
-        map.put("name", message);
-        list.add(map);
-        return list;
-    }
-
     //Выводит сообщение об ошибке в диалоговом окне
     private boolean sayErrorMessage(@NonNull Exception e) {
         //ДОБАВИТЬ ДИАГНОСТИКУ ПО ЧЕЛОВЕЧЕСКИ!!!

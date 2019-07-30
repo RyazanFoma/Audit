@@ -67,6 +67,7 @@
         <activity
             android:name="com.bit.eduardf.audit.MediaGallery"
             android:label="@string/title_activity_gallery"
+            android:screenOrientation="landscape"
             android:theme="@style/AppTheme" />
 
         <provider

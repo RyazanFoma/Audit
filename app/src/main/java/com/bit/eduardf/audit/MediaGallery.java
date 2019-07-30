@@ -139,6 +139,7 @@ public class MediaGallery extends AppCompatActivity implements
         // Set up the ViewPager with the sections adapter.
         viewPager = findViewById(R.id.container);
         viewPager.setAdapter(mSectionsPagerAdapter);
+        //noinspection deprecation
         viewPager.setOnPageChangeListener(new ViewPager.OnPageChangeListener() {
 
             @Override
@@ -155,6 +156,7 @@ public class MediaGallery extends AppCompatActivity implements
             public void onPageScrollStateChanged(int state) {
             }
         });
+
         FloatingActionButton fab = findViewById(R.id.fab);
         fab.setOnClickListener(fabOnClickListener);
         fab.setOnLongClickListener(fabOnLongClickListener);
@@ -255,7 +257,7 @@ public class MediaGallery extends AppCompatActivity implements
     }
 
     /**
-     * Сохранение перед поворотом экрана
+     * Сохранение параметров активности
      * @param outState - среда для хранения
      */
     @Override
@@ -327,7 +329,6 @@ public class MediaGallery extends AppCompatActivity implements
         if (onChangeMediaFiles != null) {
             onChangeMediaFiles.onUpdateMediaFile(position, mediaFile);
         }
-        mSectionsPagerAdapter.notifyDataSetChanged();
     }
 
     /**
@@ -336,6 +337,7 @@ public class MediaGallery extends AppCompatActivity implements
     @Override
     public void onPostLoad() {
         findViewById(R.id.progressBar).setVisibility(View.GONE);
+        mSectionsPagerAdapter.notifyDataSetChanged();
         invalidateOptionsMenu();
     }
 
@@ -347,9 +349,7 @@ public class MediaGallery extends AppCompatActivity implements
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.video_play:
-                if (mSectionsPagerAdapter.primaryFragment != null) {
-                    ((PlaceholderFragment) mSectionsPagerAdapter.primaryFragment).play();
-                }
+                mSectionsPagerAdapter.play();
                 break;
             case R.id.delete_mark:
                 mSectionsPagerAdapter.switchDeleteMark(viewPager);
@@ -382,7 +382,7 @@ public class MediaGallery extends AppCompatActivity implements
             final File file = new File(getExternalFilesDir(dirType), filePrefix+fileSuffix);
             Uri photoURI;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                photoURI = FileProvider.getUriForFile(this, "com.example.eduardf.audit.fileprovider", file);
+                photoURI = FileProvider.getUriForFile(this, "com.bit.eduardf.audit.fileprovider", file);
                 takePictureIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
             } else {
                 photoURI = Uri.fromFile(file);
@@ -432,10 +432,10 @@ public class MediaGallery extends AppCompatActivity implements
          * fragment.
          */
         private static final String ARG_MEDIAFILE = "mediafile";
-        private static final String ARG_POSITION = "position";
 
         private Context context;
         private MediaFiles.MediaFile mediaFile;
+
         private TextView indicator;
         private TextView comment;
         private ImageView photoView;
@@ -480,41 +480,7 @@ public class MediaGallery extends AppCompatActivity implements
             deleteView = rootView.findViewById(R.id.delete_mark);
             playView = rootView.findViewById(R.id.video_play);
             videoView = rootView.findViewById(R.id.video);
-            if (savedInstanceState == null) {
-                if (mediaFile != null && mediaFile.loaded && !mediaFile.path.isEmpty()) {
-                    int deleteVisibility = View.GONE;
-                    int playVisibility = View.GONE;
-                    indicator.setText(mediaFile.indicator_name);
-                    if (mediaFile.act == MediaFiles.Act.Remove ||
-                            mediaFile.act == MediaFiles.Act.RemovePostSave) {
-                        deleteVisibility = View.VISIBLE;
-                    }
-                    Bitmap bitmap = null;
-                    switch (mediaFile.type) {
-                        case PHOTO:
-                            playVisibility = View.GONE;
-                            bitmap = BitmapFactory.decodeFile(mediaFile.path);
-                            break;
-                        case VIDEO:
-                            playVisibility = View.VISIBLE;
-                            bitmap = ThumbnailUtils.createVideoThumbnail(mediaFile.path,
-                                    MediaStore.Images.Thumbnails.FULL_SCREEN_KIND);
-                            break;
-                    }
-                    photoView.setImageBitmap(bitmap);
-                    playView.setVisibility(playVisibility);
-                    deleteView.setVisibility(deleteVisibility);
-                    final String text = mediaFile.comment + "\n" + mediaFile.author_name + ", " + mediaFile.date.toString();
-                    comment.setText(text);
-                }
-            }
-            else {
-                final int position = savedInstanceState.getInt(ARG_POSITION, -1);
-                if (position > -1) {
-                    videoView.seekTo(position);
-                    videoView.start();
-                }
-            }
+            notifyView();
             return rootView;
         }
 
@@ -524,22 +490,43 @@ public class MediaGallery extends AppCompatActivity implements
             this.context = context;
         }
 
-        @Override
-        public void onSaveInstanceState(@NonNull Bundle outState) {
-            super.onSaveInstanceState(outState);
-            if (videoView != null && videoView.isPlaying()) {
-                outState.putInt(ARG_POSITION, videoView.getCurrentPosition());
+        /**
+         * Обновление фрагмента
+         */
+        void notifyView() {
+            if (mediaFile != null && mediaFile.loaded && !mediaFile.path.isEmpty()) {
+                int deleteVisibility = View.GONE;
+                int playVisibility = View.GONE;
+                indicator.setText(mediaFile.indicator_name);
+                if (mediaFile.act == MediaFiles.Act.Remove ||
+                        mediaFile.act == MediaFiles.Act.RemovePostSave) {
+                    deleteVisibility = View.VISIBLE;
+                }
+                Bitmap bitmap = null;
+                switch (mediaFile.type) {
+                    case PHOTO:
+                        playVisibility = View.GONE;
+                        bitmap = BitmapFactory.decodeFile(mediaFile.path);
+                        break;
+                    case VIDEO:
+                        playVisibility = View.VISIBLE;
+                        bitmap = ThumbnailUtils.createVideoThumbnail(mediaFile.path,
+                                MediaStore.Images.Thumbnails.FULL_SCREEN_KIND);
+                        break;
+                }
+                photoView.setImageBitmap(bitmap);
+                playView.setVisibility(playVisibility);
+                deleteView.setVisibility(deleteVisibility);
+                final String text = mediaFile.comment + "\n" + mediaFile.author_name + ", " + mediaFile.date.toString();
+                comment.setText(text);
             }
         }
 
+        /**
+         * Начать проигрываение видео файла
+         */
         void play() {
-            indicator.setVisibility(View.GONE);
-            comment.setVisibility(View.GONE);
-            photoView.setVisibility(View.GONE);
-            playView.setVisibility(View.GONE);
-            videoView.setVisibility(View.VISIBLE);
-            videoView.setVideoPath(mediaFile.path);
-            videoView.requestFocus();
+            startVisible(true);
             videoView.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
                 public void onPrepared(MediaPlayer mp){
                     videoView.setMediaController(new MediaController(context));
@@ -549,13 +536,41 @@ public class MediaGallery extends AppCompatActivity implements
             videoView.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
                 @Override
                 public void onCompletion(MediaPlayer mp) {
-                    indicator.setVisibility(View.VISIBLE);
-                    comment.setVisibility(View.VISIBLE);
-                    photoView.setVisibility(View.VISIBLE);
-                    playView.setVisibility(View.VISIBLE);
-                    videoView.setVisibility(View.GONE);
+                    startVisible(false);
                 }
             });
+            videoView.setVideoPath(mediaFile.path);
+            videoView.requestFocus();
+        }
+
+        /**
+         * Остановка проигрывателя видеофайла и отображение пометки на удаление
+         * @param deleted признак поментки на удаление
+         */
+        void stop(boolean deleted) {
+            deleteView.setVisibility(deleted ? View.VISIBLE: View.GONE);
+            if (videoView.isPlaying()) {
+                videoView.stopPlayback();
+                startVisible(false);
+            }
+        }
+
+        /**
+         * Управление видимостью элементов по проигрыванию видео файлов
+         * @param visible - признак
+         */
+        private void startVisible(boolean visible) {
+            int start = View.GONE;
+            int stop = View.VISIBLE;
+            if (visible) {
+                start = View.VISIBLE;
+                stop = View.GONE;
+            }
+            videoView.setVisibility(start);
+            indicator.setVisibility(stop);
+            comment.setVisibility(stop);
+            photoView.setVisibility(stop);
+            playView.setVisibility(stop);
         }
     }
 
@@ -609,15 +624,6 @@ public class MediaGallery extends AppCompatActivity implements
             super.setPrimaryItem(container, position, object);
         }
 
-//        @Override
-//        public int getItemPosition(@NonNull Object object) {
-//            if (mediaFiles.contains((MediaFiles.MediaFile)object)) {
-//                return mediaFiles.indexOf((MediaFiles.MediaFile)object);
-//            } else {
-//                return POSITION_NONE;
-//            }
-//        }
-
         /**
          * Обновляет значение записи медиафайла
          * @param mediaFile - запись о медиафайле
@@ -633,7 +639,9 @@ public class MediaGallery extends AppCompatActivity implements
                     if (onChangeMediaFiles != null) {
                         onChangeMediaFiles.onUpdateMediaFile(position, mediaFile);
                     }
-                    notifyDataSetChanged();
+                    if (primaryFragment != null) {
+                        ((PlaceholderFragment) primaryFragment).notifyView();
+                    }
                     break;
                 }
                 position++;
@@ -683,57 +691,6 @@ public class MediaGallery extends AppCompatActivity implements
             return mediaFiles.get(position);
         }
 
-//        /**
-//         * Переключает признак удаления для всех медиафайлов
-//         */
-//        void switchAllDeleteMark() {
-//            boolean allDeletedMark = false;
-//            for (MediaFiles.MediaFile mediaFile: mediaFiles) {
-//                if (mediaFile.act != MediaFiles.Act.Remove && mediaFile.act != MediaFiles.Act.RemovePostSave) {
-//                    allDeletedMark = true;
-//                    break;
-//                }
-//            }
-//            if (allDeletedMark) {
-//                int position = 0;
-//                for (MediaFiles.MediaFile mediaFile: mediaFiles) {
-//                    switch (mediaFile.act) {
-//                        case NoAction:
-//                            mediaFile.act = MediaFiles.Act.Remove;
-//                            break;
-//                        case Save:
-//                            mediaFile.act = MediaFiles.Act.RemovePostSave;
-//                            break;
-//                        default:
-//                            position++;
-//                            continue;
-//                    }
-//                    if (onChangeMediaFiles != null) {
-//                        onChangeMediaFiles.onUpdateMediaFile(position++, mediaFile);
-//                    }
-//                }
-//            }
-//            else {
-//                int position = 0;
-//                for (MediaFiles.MediaFile mediaFile: mediaFiles) {
-//                    switch (mediaFile.act) {
-//                        case Remove:
-//                            mediaFile.act = MediaFiles.Act.NoAction;
-//                            break;
-//                        case RemovePostSave:
-//                            mediaFile.act = MediaFiles.Act.Save;
-//                            break;
-//                        default:
-//                            position++;
-//                            continue;
-//                    }
-//                    if (onChangeMediaFiles != null) {
-//                        onChangeMediaFiles.onUpdateMediaFile(position++, mediaFile);
-//                    }
-//                }
-//            }
-//            notifyDataSetChanged();
-//        }
 
         /**
          * Изменение комментария в записи медиафайла
@@ -742,7 +699,7 @@ public class MediaGallery extends AppCompatActivity implements
          */
         void changeComment(int position, String comment) {
             if (position >= 0 && position < getCount()) {
-                final MediaFiles.MediaFile mediaFile = mediaFiles.get(position);
+                final MediaFiles.MediaFile mediaFile = getMediaFile(position);
                 mediaFile.comment = comment;
                 if (onChangeMediaFiles != null) {
                     onChangeMediaFiles.onUpdateMediaFile(position, mediaFile);
@@ -759,16 +716,16 @@ public class MediaGallery extends AppCompatActivity implements
             final View view = primaryFragment.getView();
             if (view != null) {
                 final int position = viewPager.getCurrentItem();
-                final MediaFiles.MediaFile mediaFile = mediaFiles.get(position);
-                int visibility = View.GONE;
+                final MediaFiles.MediaFile mediaFile = getMediaFile(position);
+                boolean deleded = false;
                 switch (mediaFile.act) {
                     case NoAction:
                         mediaFile.act = MediaFiles.Act.Remove;
-                        visibility = View.VISIBLE;
+                        deleded = true;
                         break;
                     case Save:
                         mediaFile.act = MediaFiles.Act.RemovePostSave;
-                        visibility = View.VISIBLE;
+                        deleded = true;
                         break;
                     case Remove:
                         mediaFile.act = MediaFiles.Act.NoAction;
@@ -780,16 +737,15 @@ public class MediaGallery extends AppCompatActivity implements
                 if (onChangeMediaFiles != null) {
                     onChangeMediaFiles.onUpdateMediaFile(position, mediaFile);
                 }
-                view.findViewById(R.id.delete_mark).setVisibility(visibility);
-                VideoView videoView = view.findViewById(R.id.video);
-                if (videoView.isPlaying()) {
-                    videoView.stopPlayback();
-                    videoView.setVisibility(View.GONE);
-                    view.findViewById(R.id.indicator).setVisibility(View.VISIBLE);
-                    view.findViewById(R.id.comment).setVisibility(View.VISIBLE);
-                    view.findViewById(R.id.picture).setVisibility(View.VISIBLE);
-                    view.findViewById(R.id.video_play).setVisibility(View.VISIBLE);
+                if (primaryFragment != null) {
+                    ((PlaceholderFragment) primaryFragment).stop(deleded);
                 }
+            }
+        }
+
+        void play() {
+            if (primaryFragment != null) {
+                ((PlaceholderFragment) primaryFragment).play();
             }
         }
 
@@ -802,7 +758,7 @@ public class MediaGallery extends AppCompatActivity implements
         public Fragment getItem(int position) {
             // getItem is called to instantiate the fragment for the given page.
             // Return a PlaceholderFragment (defined as a static inner class below).
-            return PlaceholderFragment.newInstance(/*MediaGallery.this, */mediaFiles.get(position));
+            return PlaceholderFragment.newInstance(/*MediaGallery.this, */getMediaFile(position));
         }
 
         @Override
