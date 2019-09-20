@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.Semaphore;
 
 import org.apache.olingo.client.api.communication.request.cud.ODataEntityUpdateRequest;
 import org.apache.olingo.client.api.communication.request.cud.UpdateType;
@@ -37,6 +38,14 @@ import org.apache.olingo.commons.api.ex.ODataRuntimeException;
 import org.apache.olingo.commons.api.format.ContentType;
 import org.jetbrains.annotations.NotNull;
 
+import static com.bit.eduardf.audit.ParcelableUser.USER_ID;
+import static com.bit.eduardf.audit.ParcelableUser.USER_NAME;
+import static com.bit.eduardf.audit.ParcelableUser.USER_OBJECT;
+import static com.bit.eduardf.audit.ParcelableUser.USER_ORGANIZATION;
+import static com.bit.eduardf.audit.ParcelableUser.USER_PASSWORD;
+import static com.bit.eduardf.audit.ParcelableUser.USER_RESPONSIBLE;
+import static com.bit.eduardf.audit.ParcelableUser.USER_TYPE;
+
 /*
  * *
  *  * Created by Eduard Fomin on 05.02.19 9:42
@@ -46,7 +55,7 @@ import org.jetbrains.annotations.NotNull;
  */
 
 //Класс для доступа в 1С:Аудитор через OData
-public class AuditOData{
+public class AuditOData {
 
     static final String EMPTY_KEY = "00000000-0000-0000-0000-000000000000"; //Пустая ссылка
 
@@ -154,7 +163,7 @@ public class AuditOData{
     private static final String COMMON_GROUP = "GroupMark";
     private static final String COMMON_OWNER = "Owner_Key";
     private static final String COMMON_PARENT = "Parent_Key";
-    private static final String COMMON_CODE = "Code";
+//    private static final String COMMON_CODE = "Code";
     private static final String COMMON_PREDEFINED = "Predefined";
     private static final String COMMON_PRENAMED = "PredefinedDataName";
     private static final String COMMON_COMMENT = "Комментарий";
@@ -244,16 +253,16 @@ public class AuditOData{
     //Реквизиты класса
     private final ODataClient client; //Клиент OData
     private final String serviceRootOData; //Путь к oData
-    private final FragmentActivity activity; //Контент активности для сообщения об ошибке доступа к 1С с помощью DialogFragment
 
     //Конструктор
     AuditOData(Context context) {
-        this.activity = (FragmentActivity) context;
         final SharedPreferences pr = PreferenceManager.getDefaultSharedPreferences(context);
         serviceRootOData = pr.getString("odata_path", "");
         client = ODataClientFactory.getClient();
         client.getConfiguration().setDefaultPubFormat(ContentType.JSON_NO_METADATA);
-        client.getConfiguration().setHttpClientFactory(new BasicAuthHttpClientFactory(pr.getString("odata_user", ""), pr.getString("odata_password", "")));
+        client.getConfiguration().setHttpClientFactory(new BasicAuthHttpClientFactory(
+                pr.getString("odata_user", ""),
+                pr.getString("odata_password", "")));
     }
 
     //Возвращает значение в виде объекта, определенного вида
@@ -348,10 +357,7 @@ public class AuditOData{
 
     //Выводит сообщение об ошибке в диалоговом окне
     private boolean sayErrorMessage(@NonNull Exception e) {
-        //ДОБАВИТЬ ДИАГНОСТИКУ ПО ЧЕЛОВЕЧЕСКИ!!!
-        (DialogODataError.newInstance("666",
-                e.getLocalizedMessage())).show(activity.getSupportFragmentManager(), "");
-        return false;
+        return true;
     }
 
     /**
@@ -389,7 +395,6 @@ public class AuditOData{
         return key;
     }
 
-
     /**
      * Получить элемент по guid из множества
      * @param key - guid элемента
@@ -409,7 +414,7 @@ public class AuditOData{
 
     //ВСЕ ДЛЯ СПИСКА АУДИТОРОВ
     //возвращает список Entity с аудиторами
-    private List<ClientEntity> getAllUsers() {
+    private List<ClientEntity> getAllUsers() throws HttpClientException, ODataRuntimeException {
         final URI userEntitySetURI = client
                 .newURIBuilder(serviceRootOData)
                 .appendEntitySetSegment(Set.AUDITOR.name)
@@ -418,32 +423,29 @@ public class AuditOData{
                         USERS_TYPE, USERS_OBJECT, USERS_ORGANIZATION, USERS_RESPONSIBLE)
                 .build();
         final ODataRetrieveResponse<ClientEntitySet>
-            users = client.getRetrieveRequestFactory()
+                users = client.getRetrieveRequestFactory()
                 .getEntitySetRequest(userEntitySetURI).execute();
-        return users.getBody().getEntities();
+        return users.getBody().getEntities(); //in case of luck
     }
 
     //возвращает список Map с аудиторами для Spinner
-    List<Map<String, Object>> getUsers() {
+    List<Map<String, Object>> getUsers() throws RuntimeException {
         List<Map<String, Object>> usersMap = new ArrayList<>();
         try {
             for (ClientEntity clientEntity : getAllUsers()) {
                 Map<String, Object> user = new HashMap<>();
-                user.put("id", clientEntity.getProperty(COMMON_KEY).getValue());
-                user.put("name", clientEntity.getProperty(COMMON_NAME).getValue());
-                user.put("password", clientEntity.getProperty(USERS_PASSWORD).getValue());
-                user.put("type", clientEntity.getProperty(USERS_TYPE).getValue());
-                user.put("object", clientEntity.getProperty(USERS_OBJECT).getValue());
-                user.put("organization", clientEntity.getProperty(USERS_ORGANIZATION).getValue());
-                user.put("responsible", clientEntity.getProperty(USERS_RESPONSIBLE).getValue());
+                user.put(USER_ID, clientEntity.getProperty(COMMON_KEY).getValue());
+                user.put(USER_NAME, clientEntity.getProperty(COMMON_NAME).getValue());
+                user.put(USER_PASSWORD, clientEntity.getProperty(USERS_PASSWORD).getValue());
+                user.put(USER_TYPE, clientEntity.getProperty(USERS_TYPE).getValue());
+                user.put(USER_OBJECT, clientEntity.getProperty(USERS_OBJECT).getValue());
+                user.put(USER_ORGANIZATION, clientEntity.getProperty(USERS_ORGANIZATION).getValue());
+                user.put(USER_RESPONSIBLE, clientEntity.getProperty(USERS_RESPONSIBLE).getValue());
                 usersMap.add(user);
             }
         }
         catch (HttpClientException | ODataRuntimeException e) {
-            if (sayErrorMessage(e)) {
-                e.printStackTrace();
-                throw new RuntimeException("AuditOData.getAllUsers() Error on requesting of users." + e.getMessage());
-            }
+            throw new RuntimeException(e);
         }
         return usersMap;
     }

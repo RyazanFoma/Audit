@@ -79,7 +79,7 @@
             android:layout_width="300dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:drawableLeft="@drawable/ic_baseline_lock_24px"
+            android:drawableStart="@drawable/ic_baseline_lock_24px"
             android:ems="10"
             android:inputType="textPassword"
             android:text="Password" />

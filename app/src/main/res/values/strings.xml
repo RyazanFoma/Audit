@@ -64,6 +64,7 @@
     <string name="msg_is_empty">НЕТ ЭЛЕМЕНТОВ ДЛЯ ОТОБРАЖЕНИЯ</string>
     <string name="msg_input_number">Введите число!</string>
     <string name="msg_no_input">Не введено</string>
+    <string name="msg_odata_error">Ошибка доступа к 1С! Устраните причину и сделайте новую попытку.</string>
 
 
     <string name="ttl_indicator">Показатель</string>
@@ -195,7 +196,7 @@
     <string name="pref_key_display_subject">display_subject</string>
 
     <!-- Settings for oData -->
-    <string name="pref_header_odata">Связь с 1С</string>
+    <string name="pref_header_odata">Доступ к 1С</string>
 
     <string name="pref_title_odata_path">Путь к стандартному интерфейсу oData</string>
     <string name="pref_default_odata_path">https://storm.bit-it.ru/auditor/odata/standard.odata</string>
@@ -240,4 +241,7 @@
     </string>
     <string name="title_activity_gallery">Галлерея</string>
     <string name="section_format">Hello World from section: %1$d</string>
+    <string name="btn_continue">Продолжить</string>
+    <string name="btn_repeat">Повторить</string>
+    <string name="msg_repeat">Повторить попытку доступа к 1С?</string>
 </resources>

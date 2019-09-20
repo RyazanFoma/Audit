@@ -733,9 +733,9 @@ public class TaskActivity extends AppCompatActivity implements
      * Вызывается после окончания сохранения задания
      */
     @Override
-    public void onSaveTaskPostExecute() {
+    public void onSaveTaskPostExecute(int status) {
         Intent intent = new Intent();
-        intent.putExtra(ARG_STATUS, task.status.number);
+        intent.putExtra(ARG_STATUS, status);
         setResult(RESULT_OK, intent);
         finish(); //Закрываем активность
     }

@@ -19,6 +19,7 @@ class SaveTask extends AsyncTask<Tasks.Task, Void, Void> {
     private final AuditOData oData;
     private final OnSaveTaskExecute onExecute;
     private final MediaHttps mediaHttps;
+    private int status;
     //Конструктор
     SaveTask(Context context, AuditOData oData) {
         if (context instanceof OnSaveTaskExecute) {
@@ -40,11 +41,12 @@ class SaveTask extends AsyncTask<Tasks.Task, Void, Void> {
         else //Создаем новое задание
             oData.createTask(tasks[0]);
         mediaHttps.updateMediaFiles(tasks[0].id, tasks[0].mediaFiles);
+        status = tasks[0].status.number;
         return null;
     }
     @Override
     protected void onPostExecute(Void voids) {
-        onExecute.onSaveTaskPostExecute();
+        onExecute.onSaveTaskPostExecute(status);
     }
 
     /**
@@ -52,7 +54,7 @@ class SaveTask extends AsyncTask<Tasks.Task, Void, Void> {
      */
     interface OnSaveTaskExecute {
         void onSaveTaskPreExecute();
-        void onSaveTaskPostExecute();
+        void onSaveTaskPostExecute(int status);
     }
 }
 //Фома2018

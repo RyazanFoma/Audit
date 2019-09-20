@@ -1,8 +1,9 @@
 package com.bit.eduardf.audit;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.net.Uri;
+import android.os.Parcelable;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -29,6 +30,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.bit.eduardf.audit.ParcelableUser.USER_ID;
+import static com.bit.eduardf.audit.ParcelableUser.USER_NAME;
+import static com.bit.eduardf.audit.ParcelableUser.USER_OBJECT;
+import static com.bit.eduardf.audit.ParcelableUser.USER_ORGANIZATION;
+import static com.bit.eduardf.audit.ParcelableUser.USER_PASSWORD;
+import static com.bit.eduardf.audit.ParcelableUser.USER_RESPONSIBLE;
+import static com.bit.eduardf.audit.ParcelableUser.USER_TYPE;
+
 /*
  * *
  *  * Created by Eduard Fomin on 05.02.19 9:42
@@ -43,18 +52,20 @@ public class MainActivity extends AppCompatActivity implements
         View.OnClickListener,
         Spinner.OnItemSelectedListener {
 
-    private static final String ARG_USER = "user";
+//    private static final String ARG_USER = "user";
     private static final String PREF_LASTUSER = "lastuser";
+    private static final String ARG_USERS = "users";
 
     private AuditOData oData; //OData для доступа в 1С
     private SimpleAdapter usersAdapter; //Адаптер для списка пользователей
-    private List<Map<String, Object>> users = new ArrayList<Map<String, Object>>(); //Список пользователей
+    private List<Map<String, Object>> users = new ArrayList<>(); //Список пользователей
     private SharedPreferences preferences;
 
     private Spinner user;
     private ProgressBar progressBar;
     private FloatingActionButton enter;
     private String lastUser;
+    private boolean loaded = false;
 
     private int iPosition = 0;
 
@@ -68,18 +79,18 @@ public class MainActivity extends AppCompatActivity implements
         setSupportActionBar(toolbar);
 
         //Кнопка Вперед
-        enter = (FloatingActionButton) findViewById(R.id.enter);
+        enter = findViewById(R.id.enter);
         enter.setOnClickListener(this);
 
         //Готовим все для спиннера
         usersAdapter = new SimpleAdapter(this, users, android.R.layout.simple_spinner_item,
-                new String[]{"name"}, new int[]{android.R.id.text1});
+                new String[]{USER_NAME}, new int[]{android.R.id.text1});
         usersAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
 
         preferences = PreferenceManager.getDefaultSharedPreferences(this);
         lastUser = preferences.getString(PREF_LASTUSER, AuditOData.EMPTY_KEY);
 
-        user = (Spinner) findViewById(R.id.user);
+        user = findViewById(R.id.user);
         user.setAdapter(usersAdapter);
         user.setOnItemSelectedListener(this);
 
@@ -99,9 +110,9 @@ public class MainActivity extends AppCompatActivity implements
      * Для вывода служебного сообщения в спиннере на время загрузки и т.п.
      * @param message - текст служебного сообщения
      */
-    void setMessage(String message) {
-        Map<String, Object> map = new HashMap<String, Object>();
-        map.put("name", message);
+    private void setMessage(String message) {
+        Map<String, Object> map = new HashMap<>();
+        map.put(USER_NAME, message);
         users.add(map);
         usersAdapter.notifyDataSetChanged();
     }
@@ -110,12 +121,18 @@ public class MainActivity extends AppCompatActivity implements
     protected void onResume() {
         super.onResume();
 
-        //Создаем загрузчик для чтения данных
-        Loader loader = getSupportLoaderManager().getLoader(0);
-        if (loader != null && !loader.isReset()) {
-            getSupportLoaderManager().restartLoader(0, null, this);
-        } else {
-            getSupportLoaderManager().initLoader(0, null, this);
+        if (loaded) {
+            user.setSelection(iPosition);
+            enter.setVisibility(View.VISIBLE);
+        }
+        else {
+            //Создаем загрузчик для чтения данных
+            final Loader loader = getSupportLoaderManager().getLoader(0);
+            if (loader != null && !loader.isReset()) {
+                getSupportLoaderManager().restartLoader(0, null, this);
+            } else {
+                getSupportLoaderManager().initLoader(0, null, this);
+            }
         }
     }
 
@@ -153,7 +170,17 @@ public class MainActivity extends AppCompatActivity implements
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        outState.putParcelable(ARG_USER, user.onSaveInstanceState());
+
+        if (loaded) {
+//            outState.putParcelable(ARG_USER, user.onSaveInstanceState());
+            final Parcelable[] parcelables = new Parcelable[users.size()];
+            int i = 0;
+            for (Map<String, Object> u: users) {
+                parcelables[i++] = new ParcelableUser(u);
+            }
+            outState.putParcelableArray(ARG_USERS, parcelables);
+        }
+
         outState.putInt("position", iPosition);
         outState.putString("password", ((EditText) findViewById(R.id.password)).getText().toString());
     }
@@ -162,7 +189,17 @@ public class MainActivity extends AppCompatActivity implements
     @Override
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
-        user.onRestoreInstanceState(savedInstanceState.getParcelable(ARG_USER));
+
+        final Parcelable[] parcelables = savedInstanceState.getParcelableArray(ARG_USERS);
+        if (parcelables != null) {
+            for (Parcelable parcelable: parcelables) {
+                users.add(((ParcelableUser) parcelable).user);
+            }
+//            user.onRestoreInstanceState(savedInstanceState.getParcelable(ARG_USER));
+            loaded = true;
+            usersAdapter.notifyDataSetChanged();
+        }
+
         iPosition = savedInstanceState.getInt("position");
         ((EditText) findViewById(R.id.password)).setText(savedInstanceState.getString("password", ""));
     }
@@ -173,27 +210,28 @@ public class MainActivity extends AppCompatActivity implements
         //Нажата именно Вперед?
         if (v.getId()==R.id.enter) {
             //Текущие значения пароля
-            final String password = users.get(iPosition).get("password").toString();
+            final String password = users.get(iPosition).get(USER_PASSWORD).toString();
 
-            EditText input = (EditText) findViewById(R.id.password);
+            EditText input = findViewById(R.id.password);
             //Пароль верный?
             if (equalsPassword(password, input.getText().toString())) {
 //                final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
+                final String id = users.get(iPosition).get(USER_ID).toString();
                 final SharedPreferences.Editor editor = preferences.edit();
                 editor.putString(SettingTask.DEFAULT_TYPE,
-                        users.get(iPosition).get("type").toString());
+                        users.get(iPosition).get(USER_TYPE).toString());
                 editor.putString(SettingTask.DEFAULT_ORGANIZATION,
-                        users.get(iPosition).get("organization").toString());
+                        users.get(iPosition).get(USER_ORGANIZATION).toString());
                 editor.putString(SettingTask.DEFAULT_OBJECT,
-                        users.get(iPosition).get("object").toString());
+                        users.get(iPosition).get(USER_OBJECT).toString());
                 editor.putString(SettingTask.DEFAULT_RESPONSIBLE,
-                        users.get(iPosition).get("responsible").toString());
-                editor.putString(PREF_LASTUSER, users.get(iPosition).get("id").toString());
+                        users.get(iPosition).get(USER_RESPONSIBLE).toString());
+                editor.putString(PREF_LASTUSER, id);
                 editor.apply();
                 //Открываем список заданий
                 startActivity(TaskListActivity.intentActivity(this,
-                        users.get(iPosition).get("id").toString(),
-                        users.get(iPosition).get("name").toString()));
+                        id,
+                        users.get(iPosition).get(USER_NAME).toString()));
             }
             else {
                 //Неверный пароль
@@ -247,14 +285,17 @@ public class MainActivity extends AppCompatActivity implements
             usersAdapter.notifyDataSetChanged();
         }
         else {
+            loaded = true;
             usersAdapter.notifyDataSetChanged();
-            int i = 0;
-            for (Map<String, Object> objectMap: users) {
-                if(lastUser.equals(objectMap.get("id").toString())) {
-                    user.setSelection(i);
-                    break;
+            if (lastUser != null) {
+                int i = 0;
+                for (Map<String, Object> objectMap: users) {
+                    if(lastUser.equals(objectMap.get(USER_ID).toString())) {
+                        user.setSelection(i);
+                        break;
+                    }
+                    i++;
                 }
-                i++;
             }
             enter.setVisibility(View.VISIBLE);
         }
@@ -270,10 +311,12 @@ public class MainActivity extends AppCompatActivity implements
     //Загрузчик списка пользователей
     static class MyLoader extends AsyncTaskLoader<List<Map<String, Object>>> {
 
-        AuditOData oData;
+        final AuditOData oData;
+        final Activity activity;
 
-        MyLoader(@NonNull Context context, AuditOData oData) {
+        MyLoader(@NonNull Context context, @NonNull AuditOData oData) {
             super(context);
+            this.activity = (Activity) context;
             this.oData = oData;
         }
 
@@ -289,7 +332,26 @@ public class MainActivity extends AppCompatActivity implements
 
         @Override
         public List<Map<String, Object>> loadInBackground() {
-            return oData.getUsers();
+            List<Map<String, Object>> usersMap = new ArrayList<>();
+            try {
+                usersMap.addAll(oData.getUsers());
+            }
+            catch (RuntimeException e) {
+                if (!(activity == null || activity.isFinishing())) {
+                    activity.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            //We find any view that has a CoordinatorLayout at the root.
+                            // Example - toolbar
+                            final View view = activity.findViewById(R.id.toolbar);
+                            if (view != null) {
+                                Snackbar.make(view, R.string.msg_odata_error, Snackbar.LENGTH_LONG).show();
+                            }
+                        }
+                    });
+                }
+            }
+            return usersMap;
         }
     }
 }
