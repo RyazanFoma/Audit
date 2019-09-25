@@ -1,5 +1,6 @@
 package com.bit.eduardf.audit;
 
+import android.app.Activity;
 import android.app.SearchManager;
 import android.content.Context;
 import android.content.Intent;
@@ -87,6 +88,8 @@ public class TaskListActivity extends AppCompatActivity
     private static final String ARG_STATE = "state"; //Состояние списка до поворота
     private static final String ARG_CHECKED = "checked"; //Отмеченные задания
     private static final String ARG_FROM = "from"; //Статус, откуда копируем/перемещаем
+
+    private static final int MILLISEC_PER_DAY = 86400000; //Milliseconds per day
 
     /**
      * Интент активности списка заданий
@@ -675,15 +678,17 @@ public class TaskListActivity extends AppCompatActivity
     //Асинхронный загрузчик списка заданий
     private static class LoaderTasks extends AsyncTaskLoader<Tasks> {
 
-        AuditOData oData;
-        String auditor;
-        Tasks.Task.Status status;
-        String like;
-        boolean full;
+        final Activity activity;
+        final AuditOData oData;
+        final String auditor;
+        final Tasks.Task.Status status;
+        final String like;
+        final boolean full;
 
-        private LoaderTasks(Context context, AuditOData oData, String auditor, Tasks.Task.Status status,
-                            String like, boolean full) {
+        private LoaderTasks(Context context, AuditOData oData, String auditor,
+                            Tasks.Task.Status status, String like, boolean full) {
             super(context);
+            this.activity = (Activity) context;
             this.oData = oData;
             this.auditor = auditor;
             this.status = status;
@@ -699,17 +704,23 @@ public class TaskListActivity extends AppCompatActivity
 
         @Override
         public Tasks loadInBackground() {
-            final Tasks tasks = oData.getTasks(auditor, status, like);
-            if (full && !tasks.isEmpty()) {
-                long date = tasks.get(0).date.getTime()/86400000;
-                for (Tasks.Task task: tasks) {
-                    final long next = task.date.getTime()/86400000;
-                    if (date != next) {
-                        //Первое задание в группировке по датам занимает все колонки в списке
-                        task.full = true;
-                        date = next;
+            final Tasks tasks = new Tasks();
+            try {
+                tasks.addAll(oData.getTasks(auditor, status, like));
+                if (full && !tasks.isEmpty()) {
+                    long date = tasks.get(0).date.getTime()/MILLISEC_PER_DAY;
+                    for (Tasks.Task task: tasks) {
+                        final long next = task.date.getTime()/MILLISEC_PER_DAY;
+                        if (date != next) {
+                            //Первое задание в группировке по датам занимает все колонки в списке
+                            task.full = true;
+                            date = next;
+                        }
                     }
                 }
+            }
+            catch (ODataErrorException e) {
+                e.snackbarShow(activity, R.id.toolbar);
             }
             return tasks;
         }

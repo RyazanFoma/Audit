@@ -311,8 +311,8 @@ public class MainActivity extends AppCompatActivity implements
     //Загрузчик списка пользователей
     static class MyLoader extends AsyncTaskLoader<List<Map<String, Object>>> {
 
-        final AuditOData oData;
         final Activity activity;
+        final AuditOData oData;
 
         MyLoader(@NonNull Context context, @NonNull AuditOData oData) {
             super(context);
@@ -336,20 +336,8 @@ public class MainActivity extends AppCompatActivity implements
             try {
                 usersMap.addAll(oData.getUsers());
             }
-            catch (RuntimeException e) {
-                if (!(activity == null || activity.isFinishing())) {
-                    activity.runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            //We find any view that has a CoordinatorLayout at the root.
-                            // Example - toolbar
-                            final View view = activity.findViewById(R.id.toolbar);
-                            if (view != null) {
-                                Snackbar.make(view, R.string.msg_odata_error, Snackbar.LENGTH_LONG).show();
-                            }
-                        }
-                    });
-                }
+            catch (ODataErrorException e) {
+                e.snackbarShow(activity, R.id.toolbar);
             }
             return usersMap;
         }

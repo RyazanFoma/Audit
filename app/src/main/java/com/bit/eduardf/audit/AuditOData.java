@@ -5,7 +5,6 @@ import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.v4.app.FragmentActivity;
 
 import java.net.URI;
 import java.text.ParseException;
@@ -16,7 +15,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.Semaphore;
 
 import org.apache.olingo.client.api.communication.request.cud.ODataEntityUpdateRequest;
 import org.apache.olingo.client.api.communication.request.cud.UpdateType;
@@ -425,11 +423,11 @@ public class AuditOData {
         final ODataRetrieveResponse<ClientEntitySet>
                 users = client.getRetrieveRequestFactory()
                 .getEntitySetRequest(userEntitySetURI).execute();
-        return users.getBody().getEntities(); //in case of luck
+        return users.getBody().getEntities();
     }
 
     //возвращает список Map с аудиторами для Spinner
-    List<Map<String, Object>> getUsers() throws RuntimeException {
+    List<Map<String, Object>> getUsers() throws ODataErrorException {
         List<Map<String, Object>> usersMap = new ArrayList<>();
         try {
             for (ClientEntity clientEntity : getAllUsers()) {
@@ -445,7 +443,7 @@ public class AuditOData {
             }
         }
         catch (HttpClientException | ODataRuntimeException e) {
-            throw new RuntimeException(e);
+            throw new ODataErrorException(e, "Error requesting user list");
         }
         return usersMap;
     }
@@ -716,17 +714,15 @@ public class AuditOData {
      * @param like - подстрока для отбора
      * @return - возвращает список заданий для рециклервью и не только
      */
-    @NonNull Tasks getTasks(String auditor, Tasks.Task.Status status, String like, int... skip) {
+    @NonNull Tasks getTasks(String auditor, Tasks.Task.Status status, String like, int... skip)
+            throws ODataErrorException {
         Tasks tasks = new Tasks();
         try {
             for (ClientEntity clientEntity: getAllTasks(auditor, status, like, skip))
                 tasks.add(parseShortTask(clientEntity, false, false)); //Не отмечен и свернут
         }
         catch (ODataRuntimeException e) {
-                if (sayErrorMessage(e)) {
-                    e.printStackTrace();
-                    throw new RuntimeException("Error on requesting of tasks ." + e.getMessage());
-                }
+            throw new ODataErrorException(e, "Error requesting task list");
             }
         return tasks;
     }
