@@ -25,6 +25,7 @@ import android.widget.ProgressBar;
 import android.widget.SimpleAdapter;
 import android.widget.Spinner;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -69,6 +70,15 @@ public class MainActivity extends AppCompatActivity implements
 
     private int iPosition = 0;
 
+    private void startLoader() {
+        final Loader loader = getSupportLoaderManager().getLoader(0);
+        if (loader != null && !loader.isReset()) {
+            getSupportLoaderManager().restartLoader(0, null, this);
+        } else {
+            getSupportLoaderManager().initLoader(0, null, this);
+        }
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -100,10 +110,7 @@ public class MainActivity extends AppCompatActivity implements
         //Открываем клиента
         oData = new AuditOData(this);
 
-//        // ATTENTION: This was auto-generated to handle app links.
-//        Intent appLinkIntent = getIntent();
-//        String appLinkAction = appLinkIntent.getAction();
-//        Uri appLinkData = appLinkIntent.getData();
+        startLoader();
     }
 
     /**
@@ -126,13 +133,7 @@ public class MainActivity extends AppCompatActivity implements
             enter.setVisibility(View.VISIBLE);
         }
         else {
-            //Создаем загрузчик для чтения данных
-            final Loader loader = getSupportLoaderManager().getLoader(0);
-            if (loader != null && !loader.isReset()) {
-                getSupportLoaderManager().restartLoader(0, null, this);
-            } else {
-                getSupportLoaderManager().initLoader(0, null, this);
-            }
+            startLoader();
         }
     }
 
@@ -311,12 +312,12 @@ public class MainActivity extends AppCompatActivity implements
     //Загрузчик списка пользователей
     static class MyLoader extends AsyncTaskLoader<List<Map<String, Object>>> {
 
-        final Activity activity;
-        final AuditOData oData;
+        private final WeakReference<Activity> wrActivity;
+        private final AuditOData oData;
 
         MyLoader(@NonNull Context context, @NonNull AuditOData oData) {
             super(context);
-            this.activity = (Activity) context;
+            wrActivity = new WeakReference<>((Activity)context);
             this.oData = oData;
         }
 
@@ -337,7 +338,10 @@ public class MainActivity extends AppCompatActivity implements
                 usersMap.addAll(oData.getUsers());
             }
             catch (ODataErrorException e) {
-                e.snackbarShow(activity, R.id.toolbar);
+                final Activity activity = wrActivity.get();
+                if (activity != null) {
+                    e.snackbarShow(activity, R.id.toolbar);
+                }
             }
             return usersMap;
         }

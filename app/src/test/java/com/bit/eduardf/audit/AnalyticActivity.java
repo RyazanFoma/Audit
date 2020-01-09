@@ -37,7 +37,7 @@ public class AnalyticActivity extends AppCompatActivity implements
     //Аргументы интент
     private final static String ARG_MODE = "mode"; //Режим
     private final static String ARG_ID = "id"; //Идентификатор аналитики объекта аудита
-    private final static String ARG_PATER = "pater"; //Родитель аналитики объекта аудита
+    private final static String ARG_PATER = "parent"; //Родитель аналитики объекта аудита
 
     //Аргументы для поворота экрана
     private final static String ARG_TAG = "tag"; //Текущая закладка

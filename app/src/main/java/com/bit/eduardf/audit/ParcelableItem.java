@@ -42,7 +42,7 @@ public class ParcelableItem implements Parcelable {
     @Override
     public void writeToParcel(Parcel dest, int flag) {
         dest.writeString(item.id);
-        dest.writeString(item.pater);
+        dest.writeString(item.parent);
         dest.writeInt(item.folder? 1: 0);
         dest.writeString(item.name);
         dest.writeInt(item.deleted? 1: 0);
@@ -55,7 +55,7 @@ public class ParcelableItem implements Parcelable {
     //Извлекает объект из парсел
     private ParcelableItem(Parcel in) {
         item.id = in.readString();
-        item.pater = in.readString();
+        item.parent = in.readString();
         item.folder = (in.readInt() == 1);
         item.name = in.readString();
         item.deleted = (in.readInt() == 1);

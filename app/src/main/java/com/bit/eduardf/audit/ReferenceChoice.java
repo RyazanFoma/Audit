@@ -89,7 +89,7 @@ public class ReferenceChoice extends AppCompatActivity implements
     private static final String ARG_MODE = "mode"; //Режим выбора
     private static final String ARG_ID = "id"; //Текущие отмеченные идентификаторы элементов
 
-    private static final String ARG_PATER = "pater"; //Текущий родитель
+    private static final String ARG_PATER = "parent"; //Текущий родитель
     private final static String ARG_STACK = "stack";
     private static final String ARG_STATE = "state"; //Состояние RecyclerView
     private static final String ARG_LIKE = "like"; //Строка поиска
@@ -447,11 +447,11 @@ public class ReferenceChoice extends AppCompatActivity implements
 //        }
 //        @Override
 //        protected String doInBackground(String... key) {
-//            return oData.getItem(table, key[0]).pater;
+//            return oData.getItem(table, key[0]).parent;
 //        }
 //        @Override
-//        protected void onPostExecute(String pater) {
-//            bArgs.putString(ARG_PATER, pater);
+//        protected void onPostExecute(String parent) {
+//            bArgs.putString(ARG_PATER, parent);
 //            findViewById(R.id.progressBar).setVisibility(View.INVISIBLE);
 //        }
 //    }

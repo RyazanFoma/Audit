@@ -235,9 +235,9 @@ public class AuditDB {
 //                items.addItem(new Items.Item(cursor.getInt(cursor.getColumnIndex(ID)),
 //                        cursor.getInt(cursor.getColumnIndex(IS_GROUP))==1,
 //                        NOT_SELECTED, NOT_SELECTED,
-//                        pater,
+//                        parent,
 //                        cursor.getString(cursor.getColumnIndex(NAME)),
-//                        getAncestors(table, pater)));
+//                        getAncestors(table, parent)));
             } while (cursor.moveToNext());
         }
         cursor.close();
@@ -287,7 +287,7 @@ public class AuditDB {
                         desc = "Папок "+folders+", элементов "+child(table, id, like); //В описании указываем с учетом фильтра
                     }
                     else desc = cursor.getString(cursor.getColumnIndex(DESC));
-//                    items.addItem(new Items.Item(id, folder, folders, files, pater, cursor.getString(cursor.getColumnIndex(NAME)), desc));
+//                    items.addItem(new Items.Item(id, folder, folders, files, parent, cursor.getString(cursor.getColumnIndex(NAME)), desc));
                 } while (cursor.moveToNext());
             }
         }
@@ -333,7 +333,7 @@ public class AuditDB {
                         desc = "Папок "+folders+", элементов "+child(table, id, like); //В описании указываем с учетом фильтра
                     }
                     else desc = cursor.getString(cursor.getColumnIndex(DESC));
-//                    items.addItem(new Items.Item(id, folder, folders, files, pater, cursor.getString(cursor.getColumnIndex(NAME)), desc));
+//                    items.addItem(new Items.Item(id, folder, folders, files, parent, cursor.getString(cursor.getColumnIndex(NAME)), desc));
                 } while (cursor.moveToNext());
             }
         }
@@ -354,7 +354,7 @@ public class AuditDB {
                     int id = cursor.getInt(cursor.getColumnIndex(ID));
                     int folders = child(table, true, id);
                     int files = child(table, id, null); //Файлы подсчитываем без учета фильтра
-//                    items.addItem(new Items.Item(id, true, folders, files, pater,
+//                    items.addItem(new Items.Item(id, true, folders, files, parent,
 //                            cursor.getString(cursor.getColumnIndex(NAME)),
 //                            "Папок " + folders + ", элементов " + files));
                 } while (cursor.moveToNext());
@@ -459,7 +459,7 @@ public class AuditDB {
         ContentValues cv = new ContentValues();
         cv.put(NAME, item.name);
 //        cv.put(DESC, item.desc);
-        cv.put(PATER, item.pater);
+        cv.put(PATER, item.parent);
         mDB.beginTransaction();
         try {
 //            mDB.update(table, cv,ID+" = ?;", new String[]{Integer.toString(item.id)});
@@ -521,7 +521,7 @@ public class AuditDB {
         cv.put(NAME, item.name);
         cv.put(IS_GROUP, item.folder?1:0);
 //        cv.put(DESC, item.desc);
-        cv.put(PATER, item.pater);
+        cv.put(PATER, item.parent);
         if (keyName!=null) cv.put(keyName, key);
         mDB.beginTransaction();
         try {

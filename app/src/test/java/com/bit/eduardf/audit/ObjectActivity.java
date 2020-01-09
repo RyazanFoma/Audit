@@ -37,7 +37,7 @@ public class ObjectActivity extends AppCompatActivity implements
     //Аргументы интент
     private final static String ARG_MODE = "mode"; //Режим
     private final static String ARG_ID = "id"; //Идентификатор объекта аудита
-    private final static String ARG_PATER = "pater"; //Родитель объекта аудита
+    private final static String ARG_PATER = "parent"; //Родитель объекта аудита
 
     //Аргументы для поворота экрана
     private final static String ARG_TAG = "tag"; //Текущая закладка

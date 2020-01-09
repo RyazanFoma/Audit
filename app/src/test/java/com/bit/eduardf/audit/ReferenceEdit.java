@@ -69,7 +69,7 @@ public class ReferenceEdit extends AppCompatActivity implements View.OnClickList
     //Аргументы
     private static final String ARG_TITLE = "title"; //Заголовок активности
     private static final String ARG_TABLE = "table"; //Таблица элементов
-    private static final String ARG_PATER = "pater"; //Текущий родитель
+    private static final String ARG_PATER = "parent"; //Текущий родитель
     private static final String ARG_STATE = "state"; //Состояние RecyclerView
     private static final String ARG_LIKE = "like"; //Строка поиска
     private static final String ARG_STATUS = "status"; //Статус отметки пунктов для контектного меню

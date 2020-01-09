@@ -52,7 +52,7 @@ public class TypeActivity extends AppCompatActivity implements
     private final static String ARG_MODE = "mode"; //Режим
     private final static String ARG_ID = "id"; //Идентификатор вида аудита
     private final static String ARG_CODE = "code"; //Код вида аудита
-    private final static String ARG_PATER = "pater"; //Родитель вида аудита
+    private final static String ARG_PATER = "parent"; //Родитель вида аудита
 
     //Аргументы для поворота экрана
     private final static String ARG_TAG = "tag"; //Текущая закладка
@@ -73,7 +73,7 @@ public class TypeActivity extends AppCompatActivity implements
 
     /* возвращает Интент для создания нового вида аудита
     context - контекст формы списка видов аудита
-    pater - идентификатор родителя
+    parent - идентификатор родителя
     */
     public static Intent intentActivityCreate(Context context, String pater) {
         Intent intent = new Intent(context, TypeActivity.class);

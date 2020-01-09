@@ -349,15 +349,15 @@ class ReferenceAdapter extends RecyclerView.Adapter<ViewHolderRefs> {
      * наименование группы
      */
     private class createRowAsyncTask extends AsyncTask<String, Void, Items.Item> {
-        final private boolean isFolder;
-        private createRowAsyncTask(boolean isFolder) {
-            this.isFolder = isFolder;
+        private final boolean isGroup;
+        createRowAsyncTask(boolean isGroup) {
+            this.isGroup = isGroup;
         }
         protected void onPreExecute() {
             ((ProgressBar) activity.findViewById(R.id.progressBar)).setVisibility(View.VISIBLE);
         }
         protected Items.Item doInBackground(String... name) {
-            return oData.createItem(table, name[0], name[1], isFolder);
+            return oData.createItem(table, name[0], name[1], isGroup);
         }
         protected void onPostExecute(Items.Item item) {
             items.add(item);

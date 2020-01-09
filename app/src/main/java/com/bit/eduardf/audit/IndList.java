@@ -3,8 +3,11 @@ package com.bit.eduardf.audit;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.support.annotation.NonNull;
+
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 
 /*
  * *
@@ -19,6 +22,8 @@ import java.util.HashMap;
  * Используется для рециклервью
  */
 class IndList extends HashMap<String, IndList.Ind> {
+
+    private ArrayList<String> index = new ArrayList<>(); // A list of the indicators guid focused on the order of reading / adding items
 
     /**
      * Показатель аудита
@@ -223,12 +228,28 @@ class IndList extends HashMap<String, IndList.Ind> {
     }
 
     /**
+     * Clearing all indicators and their indexes
+     */
+    @Override
+    public void clear() {
+        super.clear();
+        index.clear();
+    }
+
+    /**
      * Добавление показателя в дерево показателей
      * @param ind - показетель
      */
     void add(Ind ind) {
         this.put(ind.id, ind);
+        index.add(ind.id);
     }
+
+    /**
+     *
+     * @return - A list of the indicators guid focused on the order of reading / adding items
+     */
+    List<String> index() { return index; }
 
     /**
      * Сохранить содержимое списка

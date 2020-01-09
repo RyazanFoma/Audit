@@ -20,7 +20,7 @@ class ODataErrorException extends RuntimeException {
      * @param e - exception
      * @param errorMessage - message of error
      */
-    ODataErrorException(Exception e, String errorMessage) {
+    ODataErrorException(@NonNull Exception e, @NonNull String errorMessage) {
         super(e);
         this.errorMessage = errorMessage;
     }

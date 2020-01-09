@@ -7,6 +7,7 @@ import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.system.ErrnoException;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -60,7 +61,7 @@ public class IndicatorFragment extends Fragment implements
                 item = new Item();
                 item.id = id;
                 item.name = ind.name;
-                item.pater = ind.pater;
+                item.parent = ind.pater;
             }
             return item;
         }
@@ -117,19 +118,26 @@ public class IndicatorFragment extends Fragment implements
      */
     ArrayList<Tasks.Task.IndicatorRow> getIndicators() {
         final ArrayList<Tasks.Task.IndicatorRow> indicatorRows = new ArrayList<>();
-        for (Map.Entry<String, IndList.Ind> entry: indicators.entrySet()) {
-            final IndList.Ind ind = entry.getValue();
-            if (!ind.folder) {
-                final Tasks.Task.IndicatorRow row = new Tasks.Task(). new IndicatorRow();
-                row.indicator = ind.id;
-                row.achived = ind.achieved;
-                row.comment = ind.comment;
-                row.error = ind.error;
-                row.goal = ind.goal;
-                row.maximum = ind.maximum;
-                row.minimum = ind.minimum;
-                row.value = ind.value;
-                indicatorRows.add(row);
+//        for (Map.Entry<String, IndList.Ind> entry: indicators.entrySet()) {
+//            final IndList.Ind ind = entry.getValue();
+        for (String id: indicators.index()) {
+            final IndList.Ind ind = indicators.get(id);
+            if (ind != null) {
+                if (!ind.folder) {
+                    final Tasks.Task.IndicatorRow row = new Tasks.Task(). new IndicatorRow();
+                    row.indicator = ind.id;
+                    row.achived = ind.achieved;
+                    row.comment = ind.comment;
+                    row.error = ind.error;
+                    row.goal = ind.goal;
+                    row.maximum = ind.maximum;
+                    row.minimum = ind.minimum;
+                    row.value = ind.value;
+                    indicatorRows.add(row);
+                }
+            }
+            else {
+                throw new RuntimeException("index of indicators are null");
             }
         }
         return indicatorRows;
@@ -387,20 +395,28 @@ public class IndicatorFragment extends Fragment implements
         //Заполняем адаптеры папок и показателей
         if (isGrandpaters) foldersAdapter.clear();
         indicatorAdapter.clear();
-        for (Map.Entry<String, IndList.Ind> entry: indicators.entrySet()) {
-            final IndList.Ind ind = entry.getValue();
-            if(ind.pater == null) {
-                if (isGrandpaters && ind.folder) {
-                    // Добавляем в папки
-                    final Items.Item folder = new Items.Item();
-                    folder.id = ind.id;
-                    folder.name = ind.name;
-                    foldersAdapter.addItem(folder);
+//        for (Map.Entry<String, IndList.Ind> entry: indicators.entrySet()) {
+//            final IndList.Ind ind = entry.getValue();
+        for (String id: indicators.index()) {
+            final IndList.Ind ind = indicators.get(id);
+            if (ind != null) {
+                // If the indicator level is the first level?
+                if(ind.pater == null) {
+                    if (isGrandpaters && ind.folder) {
+                        // Добавляем в папки
+                        final Items.Item folder = new Items.Item();
+                        folder.id = ind.id;
+                        folder.name = ind.name;
+                        foldersAdapter.addItem(folder);
+                    }
+                    else {
+                        // Добавляем в таблицу
+                        indicatorAdapter.addItem(ind);
+                    }
                 }
-                else {
-                    // Добавляем в таблицу
-                    indicatorAdapter.addItem(ind);
-                }
+            }
+            else {
+                throw new RuntimeException("index of indicators are null");
             }
         }
 
@@ -419,17 +435,24 @@ public class IndicatorFragment extends Fragment implements
     private void update(final String pater) {
         //Заполняем адаптер показателей
         indicatorAdapter.clear();
-        for (Map.Entry<String, IndList.Ind> entry: indicators.entrySet()) {
-            final IndList.Ind ind = entry.getValue();
-            if (pater == null) {
-                if (ind.pater == null && !(isGrandpaters && ind.folder)) {
-                    indicatorAdapter.addItem(ind);
+//        for (Map.Entry<String, IndList.Ind> entry: indicators.entrySet()) {
+//            final IndList.Ind ind = entry.getValue();
+        for (String id: indicators.index()) {
+            final IndList.Ind ind = indicators.get(id);
+            if (ind != null) {
+                if (pater == null) {
+                    if (ind.pater == null && !(isGrandpaters && ind.folder)) {
+                        indicatorAdapter.addItem(ind);
+                    }
+                }
+                else {
+                    if (pater.equals(ind.pater)) {
+                        indicatorAdapter.addItem(ind);
+                    }
                 }
             }
             else {
-                if (pater.equals(ind.pater)) {
-                    indicatorAdapter.addItem(ind);
-                }
+                throw new RuntimeException("index of indicators are null");
             }
         }
         //Заполняем стек с предками

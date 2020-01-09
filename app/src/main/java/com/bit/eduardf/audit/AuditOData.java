@@ -18,6 +18,7 @@ import java.util.Map;
 
 import org.apache.olingo.client.api.communication.request.cud.ODataEntityUpdateRequest;
 import org.apache.olingo.client.api.communication.request.cud.UpdateType;
+import org.apache.olingo.client.api.communication.request.retrieve.ODataEntitySetRequest;
 import org.apache.olingo.client.api.communication.response.ODataEntityCreateResponse;
 import org.apache.olingo.client.api.communication.response.ODataEntityUpdateResponse;
 import org.apache.olingo.client.api.communication.response.ODataRetrieveResponse;
@@ -248,6 +249,8 @@ public class AuditOData {
     private static final String MEDIA_FILE_DATE = "ДатаСоздания";
     private static final String MEDIA_COMMENT = "Комментарий";
 
+    private static final String CONNECTION_ERROR = "Connection error";
+    
     //Реквизиты класса
     private final ODataClient client; //Клиент OData
     private final String serviceRootOData; //Путь к oData
@@ -340,53 +343,57 @@ public class AuditOData {
                 client.getObjectFactory().newPrimitiveValueBuilder().buildString(type)));
     }
 
-    //возвращает entity
-    private ClientEntity getFullEntity(Set table, String key) {
+    /**
+     * Get record from table of database 1C by guid
+     * @param table - table name of 1C date base
+     * @param key - record guid
+     * @return - client entity
+     * @throws HttpClientException - in case of connection failure
+     * @throws ODataRuntimeException - in case of request failure
+     */
+    private ClientEntity getFullEntity(Set table, String key)
+            throws HttpClientException, ODataRuntimeException {
         final URI entityURI = client.newURIBuilder(serviceRootOData)
                 .appendEntitySetSegment(table.name)
                 .appendKeySegment("guid'"+key+"'")
                 .build();
-        final ODataRetrieveResponse<ClientEntity> entity = client.getRetrieveRequestFactory().getEntityRequest(entityURI).execute();
+        final ODataRetrieveResponse<ClientEntity> entity = client.getRetrieveRequestFactory().
+                getEntityRequest(entityURI).execute();
         return entity.getBody();
     }
 
-    //Возвращает true, если ключ - пустая ссылка
-//    private boolean noEmptyKey(String key) { return !(key==null || EMPTY_KEY.equals(key)); }
-
-    //Выводит сообщение об ошибке в диалоговом окне
-    private boolean sayErrorMessage(@NonNull Exception e) {
-        return true;
-    }
-
+//    //Выводит сообщение об ошибке в диалоговом окне
+//    private boolean sayErrorMessage(@NonNull Exception e) {
+//        return true;
+//    }
+//
     /**
-     *  Наименование элемента справочника по id
-     *  @param table Имя сущности
-     *  @param key Guid экземпляра сущности
-     *  @return Свойство Description экземпляра сущности или "", если key пустой
+     * Get the description of the item from the database table 1C
+     * @param table - table name
+     * @param key - item guid or null
+     * @return - item description or "" if key is null or empty
+     * @throws HttpClientException - in case of connection failure
+     * @throws ODataRuntimeException - in case of request failure
      */
-    String getName(Set table, String key) {
+    String getName(Set table, String key) throws HttpClientException, ODataRuntimeException {
         if (!(key == null || key.isEmpty() || EMPTY_KEY.equals(key))) {
             final URI entityURI = client.newURIBuilder(serviceRootOData)
                     .appendEntitySetSegment(table.name)
                     .appendKeySegment("guid'"+key+"'")
                     .select(COMMON_NAME)
                     .build();
-            try {
-                final ODataRetrieveResponse<ClientEntity> entity =
-                        client.getRetrieveRequestFactory().getEntityRequest(entityURI).execute();
-                return entity.getBody().getProperty(COMMON_NAME).getValue().toString();
-            } catch (ODataRuntimeException e) {
-                if (sayErrorMessage(e)) {
-                    e.printStackTrace();
-                    throw new RuntimeException("AuditOData.getName('" + table.name + "', guid'" + key +
-                            "') Error on requesting of id ." + e.getMessage());
-                }
-            }
+            final ODataRetrieveResponse<ClientEntity> entity =
+                    client.getRetrieveRequestFactory().getEntityRequest(entityURI).execute();
+            return entity.getBody().getProperty(COMMON_NAME).getValue().toString();
         }
         return "";
     }
 
-    // возвращает guid или null вместо EMPTY_KEY
+    /**
+     * Get key from guid string or null if guid is empty
+     * @param key - guid string
+     * @return guid or null
+     */
     @Nullable
     private String getKey(String key) {
         if (key.isEmpty() || EMPTY_KEY.equals(key)) return null;
@@ -410,8 +417,13 @@ public class AuditOData {
         }
     }
 
-    //ВСЕ ДЛЯ СПИСКА АУДИТОРОВ
-    //возвращает список Entity с аудиторами
+    //EVERYTHING FOR USER LIST
+    /**
+     * Get a list of client entities with users from 1C database
+     * @return - list with users
+     * @throws HttpClientException - in case of connection error
+     * @throws ODataRuntimeException - in case of request error
+     */
     private List<ClientEntity> getAllUsers() throws HttpClientException, ODataRuntimeException {
         final URI userEntitySetURI = client
                 .newURIBuilder(serviceRootOData)
@@ -420,13 +432,20 @@ public class AuditOData {
                 .select(COMMON_KEY, COMMON_NAME, USERS_PASSWORD,
                         USERS_TYPE, USERS_OBJECT, USERS_ORGANIZATION, USERS_RESPONSIBLE)
                 .build();
-        final ODataRetrieveResponse<ClientEntitySet>
-                users = client.getRetrieveRequestFactory()
-                .getEntitySetRequest(userEntitySetURI).execute();
+//        final ODataRetrieveResponse<ClientEntitySet>
+//                users = client.getRetrieveRequestFactory()
+//                .getEntitySetRequest(userEntitySetURI).execute();
+        final ODataEntitySetRequest<ClientEntitySet> setRequest = client.getRetrieveRequestFactory()
+                .getEntitySetRequest(userEntitySetURI);
+        final ODataRetrieveResponse<ClientEntitySet> users = setRequest.execute();
         return users.getBody().getEntities();
     }
 
-    //возвращает список Map с аудиторами для Spinner
+    /**
+     * Get a list of users for the spinner
+     * @return - list of users
+     * @throws ODataErrorException - in case of request failure
+     */
     List<Map<String, Object>> getUsers() throws ODataErrorException {
         List<Map<String, Object>> usersMap = new ArrayList<>();
         try {
@@ -442,22 +461,25 @@ public class AuditOData {
                 usersMap.add(user);
             }
         }
-        catch (HttpClientException | ODataRuntimeException e) {
+        catch (HttpClientException e) {
+            throw new ODataErrorException(e, CONNECTION_ERROR);
+        }
+        catch (ODataRuntimeException e) {
             throw new ODataErrorException(e, "Error requesting user list");
         }
         return usersMap;
     }
 
     /**
-     * Подготовить ентити с индивидуальными настройками пользователя
-     * @param type -  giud вида аудита
-     * @param organization - giud организации
-     * @param object - giud объекта
-     * @param responsible - giud ответственного
-     * @return ентити с настройками
+     * Build a client entity with user parameters
+     * @param type - audit type giud
+     * @param organization - organization giud
+     * @param object - object giud
+     * @param responsible - responsible giud
+     * @return - client entity with user parameters
      */
-    private ClientEntity bindUserEntity(@NotNull String type, @NotNull String organization, @NotNull String object, @NotNull String responsible) {
-        //Создаем entity
+    private ClientEntity buildUserEntity(@NotNull String type, @NotNull String organization,
+                                         @NotNull String object, @NotNull String responsible) {
         final ClientEntity entity = client.getObjectFactory().newEntity(null);
         final List<ClientProperty> properties = entity.getProperties();
         properties.add(client.getObjectFactory().newPrimitiveProperty(USERS_TYPE,
@@ -472,37 +494,48 @@ public class AuditOData {
     }
 
     /**
-     * Сохранить параметры пользователя
-     * @param auditor - giud пользователя
-     * @param type -  giud вида аудита
-     * @param organization - giud организации
-     * @param object - giud объекта
-     * @param responsible - giud ответственного
+     * Save user parameters in 1C database
+     * @param auditor - user giud
+     * @param type - audit type giud
+     * @param organization - organization giud
+     * @param object - object giud
+     * @param responsible - responsible giud
+     * @throws ODataErrorException - in case of request failure
      */
-    void saveUser(@NotNull String auditor, @NotNull String type, @NotNull String organization, @NotNull String object, @NotNull String responsible) {
-        //Запрос на изменение
+    void saveUser(@NotNull String auditor, @NotNull String type, @NotNull String organization,
+                  @NotNull String object, @NotNull String responsible) throws ODataErrorException {
         final URI entityURI = client.newURIBuilder(serviceRootOData)
                 .appendEntitySetSegment(Set.AUDITOR.name)
                 .appendKeySegment("guid'"+auditor+"'")
                 .build();
         try {
             ODataEntityUpdateRequest<ClientEntity> request = client.getCUDRequestFactory().getEntityUpdateRequest(entityURI, UpdateType.PATCH,
-                    bindUserEntity(type, organization, object, responsible));
+                    buildUserEntity(type, organization, object, responsible));
             request.execute();
-//            client.getCUDRequestFactory().getEntityUpdateRequest(entityURI, UpdateType.PATCH,
-//                    bindUserEntity(type, organization, object, responsible)).execute();
-        } catch (ODataRuntimeException e) {
-            if (sayErrorMessage(e)) {
-                e.printStackTrace();
-                throw new RuntimeException("AuditOData.saveUser('"+auditor+
-                        "', ...) Error on update of user. "+e.getMessage());
-            }
+        }
+        catch (HttpClientException e) {
+            throw new ODataErrorException(e, CONNECTION_ERROR);
+        }
+        catch (ODataRuntimeException e) {
+            throw new ODataErrorException(e,"Error updating user" );
         }
     }
 
-    //ВСЕ ДЛЯ ЗАДАНИЙ НА АУДИТ
-    //возвращает список Entity с заданиями с обором по аудитору, статусу и наименованию
-    private List<ClientEntity> getAllTasks(String auditor, Tasks.Task.Status status, String like, int... skip) {
+    //EVERYTHING FOR AUDIT TASKS
+    /**
+     * Get a list of client entity with a audit tasks from 1C database
+     * @param auditor - auditor guid
+     * @param status - audit status
+     * @param like - substring for selection a tasks by a object name
+     * @param skip - load portion parameters:
+     *            skip[0] - how many items to skip,
+     *            skip[1] - how many items to load
+     * @return - loaded part of client entity with a audit task
+     * @throws HttpClientException - in case of connection failure
+     * @throws ODataErrorException - in case of request failure
+     */
+    private List<ClientEntity> getAllTasks(String auditor, Tasks.Task.Status status, String like, int... skip)
+            throws HttpClientException, ODataRuntimeException {
         String filter = TASK_AUDITOR_KEY+" eq guid'"+auditor+"' and "+TASK_STATUS+" eq '"+status.id+"'";
         if (!(like==null||like.isEmpty())) filter += " and substringof('"+like+"',"+TASK_OBJECT+"/"+COMMON_NAME+")";
         final URIBuilder uriBuilder = client.newURIBuilder(serviceRootOData);
@@ -520,27 +553,40 @@ public class AuditOData {
         return entitySet.getBody().getEntities();
     }
 
-    //извлекает дату из строки
-    private Date parseDate(String string) {
+    /**
+     * Parsing dates from a string in 1c format
+     * @param string - string with a date
+     * @return - date from string
+     * @throws ODataErrorException - in case of data failure
+     */
+    private Date parseDate(String string) throws ODataErrorException {
         try {
             return (new SimpleDateFormat(DATE_FORMAT_1C, Locale.US)).parse(string);
         } catch (ParseException e) {
-            return null;
+            throw new ODataErrorException(e, "Date parsing error");
         }
     }
 
-    // возвращает строку с датой
+    /**
+     * Building a string with a date in 1C format
+     * @param date - date or null
+     * @return - date string
+     */
     private String bindDate(Date date) {
         if (date != null)
             return (new SimpleDateFormat(DATE_FORMAT_1C, Locale.US)).format(date);
         else {
-            Date empty = new Date();
+            final Date empty = new Date();
             empty.setTime(0);
             return (new SimpleDateFormat(DATE_FORMAT_1C, Locale.US)).format(empty);
         }
     }
 
-    // возвращает коллекцию аналитикой для табличной части задания
+    /**
+     * Building a client collection from a list of audit task analytics
+     * @param analytics - analitics list
+     * @return - client collection
+     */
     private ClientCollectionValue<ClientValue> bindTaskAnalytics(List<String> analytics) {
         int line = 1;
         final ClientCollectionValue<ClientValue> collectionValue = client.getObjectFactory().newCollectionValue(null);
@@ -555,8 +601,12 @@ public class AuditOData {
         return collectionValue;
     }
 
-    // возвращает коллекцию показателей для табличной части задания
-    private ClientCollectionValue<ClientValue> bindTaskIndicators(List<Tasks.Task.IndicatorRow> indicators) {
+    /**
+     * Building a client collection from a list of audit task indicators
+     * @param indicators - indicators list
+     * @return - client collection
+     */
+    private ClientCollectionValue<ClientValue> buildTaskIndicators(List<Tasks.Task.IndicatorRow> indicators) {
         int line = 1;
         final ClientCollectionValue<ClientValue> collectionValue = client.getObjectFactory().newCollectionValue(null);
         for (Tasks.Task.IndicatorRow row: indicators) {
@@ -578,9 +628,12 @@ public class AuditOData {
         return collectionValue;
     }
 
-    // возвращает ентити, заполненную по заданию
-    private ClientEntity bindTaskEntity(Tasks.Task task) {
-        //Создаем entity
+    /**
+     * Building a client entity from an audit task
+     * @param task - audit task
+     * @return - client entity
+     */
+    private ClientEntity buildTaskEntity(Tasks.Task task) {
         final ClientEntity entity = client.getObjectFactory().newEntity(null);
         if (task!= null) {
             final List<ClientProperty> properties = entity.getProperties();
@@ -608,22 +661,30 @@ public class AuditOData {
             properties.add(client.getObjectFactory().newPrimitiveProperty(COMMON_COMMENT,
                     client.getObjectFactory().newPrimitiveValueBuilder().
                             buildString(task.comment)));
-            //Аналитика объекта
+            //Object analytics
             if (task.analytics != null) {
                 properties.add(client.getObjectFactory().newCollectionProperty(TASK_ANALYTICS,
                         bindTaskAnalytics(task.analytics)));
             }
-            //Показатели аудита
+            //Audit indicators
             if (task.indicators != null) {
                 properties.add(client.getObjectFactory().newCollectionProperty(TASK_INDICATORS,
-                        bindTaskIndicators(task.indicators)));
+                        buildTaskIndicators(task.indicators)));
             }
         }
         return entity;
     }
 
-    //Возвращает задачу, заполненную данными из ентити
-    private Tasks.Task parseFullTask(ClientEntity entity, boolean checked, boolean expand) {
+    /**
+     * Full parse a task from an client entity
+     * @param entity - cliect entity
+     * @return - audit task
+     * @throws HttpClientException - in case of connection failure
+     * @throws ODataRuntimeException - in case of parse failure
+     * @throws ODataErrorException - in case of request failure
+     */
+    private Tasks.Task parseFullTask(ClientEntity entity)
+            throws HttpClientException, ODataRuntimeException, ODataErrorException {
         Tasks.Task task = null;
         if (entity!=null) {
             task = new Tasks.Task();
@@ -641,12 +702,10 @@ public class AuditOData {
             task.posted = (boolean) entity.getProperty(COMMON_POSTED).getPrimitiveValue().toValue();
             task.analytic_names = entity.getProperty(TASK_ANALYTIC_NAMES).getPrimitiveValue().toString();
             task.comment = entity.getProperty(COMMON_COMMENT).getPrimitiveValue().toString();
-            task.checked = checked;
-            task.expand = expand;
-            //Таблица с аналитикой
+            //Table with analytics
             for(Object e: entity.getProperty(TASK_ANALYTICS).getCollectionValue().asCollection())
                 task.analytics.add(((ClientComplexValue)e).get(TASK_ANALYTIC_VALUE).getPrimitiveValue().toString());
-            //Таблица показателей
+            //Table with indicators
             for(Object e: entity.getProperty(TASK_INDICATORS).getCollectionValue().asCollection()) {
                 Tasks.Task.IndicatorRow row = task.new IndicatorRow();
                 row.indicator = getKey(((ClientComplexValue)e).get(TASK_INDICATOR_KEY).getPrimitiveValue().toString());
@@ -659,24 +718,34 @@ public class AuditOData {
                 row.achived = (boolean) ((ClientComplexValue)e).get(TASK_INDICATOR_ACHIEVED).getPrimitiveValue().toValue();
                 task.indicators.add(row);
             }
-            //Список медиафайлов из регистра
+            //Media files list
             getMediaFiles(task.mediaFiles, task.id);
         }
         return task;
     }
 
-    //Возвращает задачу, частично заполненную данными из ентити
-    private Tasks.Task parseShortTask(ClientEntity entity, boolean checked, boolean expand) {
+    /**
+     * Selective parse a task from an client entity
+     * @param entity - client entity of task
+     * @param checked - default flag value with name is the checked
+     * @return - audit task
+     * @throws HttpClientException - in case of connection failure
+     * @throws ODataRuntimeException - in case of parse failure
+     */
+    private Tasks.Task parseShortTask(ClientEntity entity, boolean checked)
+            throws HttpClientException, ODataRuntimeException {
         Tasks.Task task = null;
         if (entity!=null) {
             task = new Tasks.Task();
             task.id = entity.getProperty(COMMON_KEY).getPrimitiveValue().toString();
             task.date = parseDate(entity.getProperty(TASK_DATE).getPrimitiveValue().toString());
-            task.status = Tasks.Task.Status.toValue(entity.getProperty(TASK_STATUS).getPrimitiveValue().toString());
+            task.status = Tasks.Task.Status.toValue(entity.getProperty(TASK_STATUS).
+                    getPrimitiveValue().toString());
             task.type_key = getKey(entity.getProperty(TASK_TYPE_KEY).getValue().toString());
             if (task.type_key!=null) {
                 if (entity.getProperties().contains(entity.getProperty(TASK_TYPE)))
-                    task.type_name = entity.getProperty(TASK_TYPE).getComplexValue().get(COMMON_NAME).getPrimitiveValue().toString();
+                    task.type_name = entity.getProperty(TASK_TYPE).getComplexValue().
+                            get(COMMON_NAME).getPrimitiveValue().toString();
                 else
                     task.type_name = getName(Set.TYPE, task.type_key);
             }
@@ -684,11 +753,14 @@ public class AuditOData {
             task.object_key = getKey(entity.getProperty(TASK_OBJECT_KEY).getValue().toString());
             if (task.object_key!= null) {
                 if (entity.getProperties().contains(entity.getProperty(TASK_OBJECT)))
-                    task.object_name = entity.getProperty(TASK_OBJECT).getComplexValue().get(COMMON_NAME).getPrimitiveValue().toString();
+                    task.object_name = entity.getProperty(TASK_OBJECT).getComplexValue().
+                            get(COMMON_NAME).getPrimitiveValue().toString();
                 else
                     task.object_name = getName(Set.OBJECT, task.object_key);
             }
-            else task.object_name = "";
+            else {
+                task.object_name = "";
+            }
             task.achieved = (boolean) entity.getProperty(TASK_ACHIEVED).getPrimitiveValue().toValue();
             task.deleted = (boolean) entity.getProperty(COMMON_DELETED).getPrimitiveValue().toValue();
             task.posted = (boolean) entity.getProperty(COMMON_POSTED).getPrimitiveValue().toValue();
@@ -696,139 +768,155 @@ public class AuditOData {
             task.analytic_names = entity.getProperty(TASK_ANALYTIC_NAMES).getPrimitiveValue().toString();
             task.comment = entity.getProperty(COMMON_COMMENT).getPrimitiveValue().toString();
             task.checked = checked;
-            task.expand = expand;
         }
         return task;
     }
 
-    //Возвращает строку с guid или EMPTY_KEY, если аргумент пустой
+    /**
+     * Returns 1С guid on a string with a key, which may be empty or null
+     * @param key - string with key
+     * @return - 1C guid
+     */
     private String bindGuid(String key) {
         if (key == null || key.isEmpty()) return EMPTY_KEY;
         return key;
     }
 
     /**
-     * Получить список заданий
-     * @param auditor - guid аудитора
-     * @param status - статус задания
-     * @param like - подстрока для отбора
-     * @return - возвращает список заданий для рециклервью и не только
+     * Get a tasks list of auditor from 1C database
+     * @param auditor - auditor guid
+     * @param status - tasks status for selection
+     * @param like - substring for selecting tasks by object name
+     * @param skip - load portion parameters:
+     *            skip[0] - how many items to skip,
+     *            skip[1] - how many items to load
+     * @return - loaded part of tasks list
+     * @throws ODataErrorException - in case of request failure
      */
     @NonNull Tasks getTasks(String auditor, Tasks.Task.Status status, String like, int... skip)
             throws ODataErrorException {
         Tasks tasks = new Tasks();
         try {
             for (ClientEntity clientEntity: getAllTasks(auditor, status, like, skip))
-                tasks.add(parseShortTask(clientEntity, false, false)); //Не отмечен и свернут
+                tasks.add(parseShortTask(clientEntity, false)); //No checked
+        }
+        catch (HttpClientException e) {
+            throw new ODataErrorException(e, CONNECTION_ERROR);
         }
         catch (ODataRuntimeException e) {
             throw new ODataErrorException(e, "Error requesting task list");
-            }
+        }
         return tasks;
     }
 
     /**
-     * Получить задание
-     * @param key - giud задания
-     * @return - задание
+     * Get audit task
+     * @param key - task giud
+     * @return - received task
+     * @throws ODataErrorException - in case of request failure
      */
-    Tasks.Task getTask(String key) {
+    Tasks.Task getTask(String key) throws ODataErrorException {
         Tasks.Task task = null;
         try {
-            task = parseFullTask(getFullEntity(Set.TASK, key), false, false);
+            task = parseFullTask(getFullEntity(Set.TASK, key));
+        }
+        catch (HttpClientException e) {
+            throw new ODataErrorException(e, CONNECTION_ERROR);
         }
         catch (ODataRuntimeException e) {
-            if (sayErrorMessage(e)) {
-                e.printStackTrace();
-                throw new RuntimeException("AuditOData.getTask(guid'"+key+"') Error on requesting of task." + e.getMessage());
-            }
+            throw new ODataErrorException(e, "Error requesting of task");
+        }
+        catch (ODataErrorException e) {
+            throw new ODataErrorException(e, "Error requesting of media files");
         }
         return task;
     }
 
     /**
-     * Создание нового задания
-     * @param task объект с новым заданием
+     * Create new task
+     * @param task - new task
+     * @throws ODataErrorException - in case of request failure
      */
-    void createTask(Tasks.Task task) {
-        //Запрос на создание задания
+    void createTask(Tasks.Task task) throws ODataErrorException {
         final URI entityURI = client.newURIBuilder(serviceRootOData)
                 .appendEntitySetSegment(Set.TASK.name)
                 .build();
         try {
             final ODataEntityCreateResponse<ClientEntity> response =
-                    client.getCUDRequestFactory().getEntityCreateRequest(entityURI, bindTaskEntity(task)).execute();
-            //guid нового задания получаем в ответе на запрос создания
+                    client.getCUDRequestFactory().getEntityCreateRequest(entityURI, buildTaskEntity(task)).
+                            execute();
+            //guid of the new task obtained from the response to the request for creation
             task.id = response.getBody().getProperty(COMMON_KEY).getPrimitiveValue().toString();
-        } catch (ODataRuntimeException e) {
-            if (sayErrorMessage(e)) {
-                e.printStackTrace();
-                throw new RuntimeException("AuditOData.createTask('" + task.toString() +
-                        "') Error creating new task. " + e.getMessage());
-            }
         }
-//        MediaHttps.updateMediaFiles(task.id, task.mediaFiles);
+        catch (HttpClientException e) {
+            throw new ODataErrorException(e, CONNECTION_ERROR);
+        }
+        catch (ODataRuntimeException e) {
+            throw new ODataErrorException(e, "Error creating new task");
+        }
     }
 
     /**
-     * Изменение реквизитов задания - сохранение
-     * @param task задание с новыми значениями реквизитов
+     * Update task
+     * @param task - changed task
+     * @throws ODataErrorException - in case of request failure
      */
-    void updateTask(Tasks.Task task) {
+    void updateTask(Tasks.Task task) throws ODataErrorException {
         //Запрос на изменение
         final URI entityURI = client.newURIBuilder(serviceRootOData)
                 .appendEntitySetSegment(Set.TASK.name)
                 .appendKeySegment("guid'"+task.id+"'")
                 .build();
         try {
-            client.getCUDRequestFactory().getEntityUpdateRequest(entityURI, UpdateType.PATCH, bindTaskEntity(task)).execute();
-        } catch (ODataRuntimeException e) {
-            if (sayErrorMessage(e)) {
-                e.printStackTrace();
-                throw new RuntimeException("AuditOData.updateTask('"+task.toString()+
-                        "') Error on update of task. "+e.getMessage());
-            }
+            client.getCUDRequestFactory().
+                    getEntityUpdateRequest(entityURI, UpdateType.PATCH, buildTaskEntity(task)).
+                    execute();
         }
-//        updateMediaFiles(task.id, task.mediaFiles);
+        catch (HttpClientException e) {
+            throw new ODataErrorException(e, CONNECTION_ERROR);
+        }
+        catch (ODataRuntimeException e) {
+            throw new ODataErrorException(e, "Error updating task");
+        }
     }
 
     /**
-     * Перемещение задания в другую папку - изменение статуса.
-     * @param key - giud задания
-     * @param status - новое значение статуса задания
-     * @return - измененное задание с реквизитами, достаточными для отображения в списке.
+     * Change task status
+     * @param key - task giud
+     * @param status - new status vaalue
+     * @return - changed task
+     * @throws ODataErrorException - in case of request failure
      */
-    Tasks.Task moveTask(String key, Tasks.Task.Status status) {
-        //Создаем entity
+    Tasks.Task moveTask(String key, Tasks.Task.Status status) throws ODataErrorException {
         final ClientEntity entity = client.getObjectFactory().newEntity(null);
         entity.getProperties().add(client.getObjectFactory().newPrimitiveProperty(TASK_STATUS,
                 client.getObjectFactory().newPrimitiveValueBuilder().buildString(status.id)));
-        //Запрос на изменение
         final URI entityURI = client.newURIBuilder(serviceRootOData)
                 .appendEntitySetSegment(Set.TASK.name)
                 .appendKeySegment("guid'"+key+"'")
                 .build();
         final ODataEntityUpdateResponse<ClientEntity> response;
         try {
-            response = client.getCUDRequestFactory().getEntityUpdateRequest(entityURI, UpdateType.PATCH, entity).execute();
-        } catch (ODataRuntimeException e) {
-            if (sayErrorMessage(e)) {
-                e.printStackTrace();
-                throw new RuntimeException("AuditOData.moveTask(guid'"+key+"', "+status+
-                        ") Error on movening of task. "+e.getMessage());
-            }
-            return null;
+            response = client.getCUDRequestFactory().
+                    getEntityUpdateRequest(entityURI, UpdateType.PATCH, entity).execute();
+            return parseShortTask(response.getBody(),true); //Checked
         }
-        return parseShortTask(response.getBody(),true, false); //Помечен в списке, свернут
+        catch (HttpClientException e) {
+            throw new ODataErrorException(e, CONNECTION_ERROR);
+        }
+        catch (ODataRuntimeException e) {
+            throw new ODataErrorException(e, "Error changing task status");
+        }
     }
 
     /**
-     * Копирование задания в другую папку - с изменением статуса
-     * @param key - giud старого задания
-     * @param status - нзначение статуса нового задания
-     * @return - новое задание с реквизитами, достаточными для отображения в списке.
+     * Copy task with status change
+     * @param key - giud of old task
+     * @param status - new status value
+     * @return - new task
+     * @throws ODataErrorException - in case of request failure
      */
-    Tasks.Task copyTask(String key, Tasks.Task.Status status) {
+    Tasks.Task copyTask(String key, Tasks.Task.Status status) throws ODataErrorException {
         final ODataEntityCreateResponse<ClientEntity> response;
         try {
             //Исходное задание
@@ -855,64 +943,59 @@ public class AuditOData {
                     .appendEntitySetSegment(Set.TASK.name)
                     .build();
             response = client.getCUDRequestFactory().getEntityCreateRequest(entityURI, entity).execute();
-        } catch (ODataRuntimeException e) {
-            if (sayErrorMessage(e)) {
-                e.printStackTrace();
-                throw new RuntimeException("AuditOData.copyTask(guid'"+key+"', "+status+
-                        ") Error on copy of task. "+e.getMessage());
-            }
-            return null;
+            return parseShortTask(response.getBody(), false); //No checked
         }
-        return parseShortTask(response.getBody(), false, false); //Новое задание пункт будет в списке свернуто и не отмечено
+        catch (HttpClientException e) {
+            throw new ODataErrorException(e, CONNECTION_ERROR);
+        }
+        catch (ODataRuntimeException e) {
+            throw new ODataErrorException(e, "Error copying task");
+        }
     }
 
     /**
-     * Изменение пометки на удаление у задания
-     * @param key - giud задания
-     * @param delete - значение пометки на удаление
-     * @return - измененное задание с реквизитами, достаточными для отображения в списке.
+     * Change the value of the delete task flag
+     * @param key - task giud
+     * @param delete - value of the delete flag
+     * @return - changed task
+     * @throws ODataErrorException - in case of request error
      */
-    Tasks.Task deleteTask(String key, boolean delete) {
-        //Создаем entity
+    Tasks.Task deleteTask(String key, boolean delete) throws ODataErrorException {
         final ClientEntity entity = client.getObjectFactory().newEntity(null);
-        //Устанавливаем значение пометки на удаление
         entity.getProperties().add(client.getObjectFactory().newPrimitiveProperty(COMMON_DELETED,
                 client.getObjectFactory().newPrimitiveValueBuilder().buildBoolean(delete)));
-        //Запрос на изменение
         final URI entityURI = client.newURIBuilder(serviceRootOData)
                 .appendEntitySetSegment(Set.TASK.name)
                 .appendKeySegment("guid'"+key+"'")
                 .build();
         final ODataEntityUpdateResponse<ClientEntity> response;
         try {
-            response = client.getCUDRequestFactory().getEntityUpdateRequest(entityURI, UpdateType.PATCH, entity).execute();
-        } catch (ODataRuntimeException e) {
-            if (sayErrorMessage(e)) {
-                e.printStackTrace();
-                throw new RuntimeException("AuditOData.deleteTask(guid'"+key+"', "+delete+
-                        ") Error on deleting of task. "+e.getMessage());
-            }
-            return new Tasks.Task();
+            response = client.getCUDRequestFactory().
+                    getEntityUpdateRequest(entityURI, UpdateType.PATCH, entity).execute();
+            return parseShortTask(response.getBody(), true); //Checked
         }
-        return parseShortTask(response.getBody(), true, false); //Помечен в списке, свернут
+        catch (HttpClientException e) {
+            throw new ODataErrorException(e, CONNECTION_ERROR);
+        }
+        catch (ODataRuntimeException e) {
+            throw new ODataErrorException(e, "Error deleting task");
+        }
     }
 
     //ВСЕ ДЛЯ ВИДОВ АУДИТА
     //возвращает вид аудита
+
+    /**
+     * Parse audit type from client entity
+     * @param entity - client entity
+     * @return - audit type
+     */
     private AType parseType(ClientEntity entity) {
         AType type = null;
         if (entity != null) {
             type = new AType();
             type.id = entity.getProperty(COMMON_KEY).getPrimitiveValue().toString();;
             type.name = entity.getProperty(COMMON_NAME).getPrimitiveValue().toString();
-//            type.code = entity.getProperty(COMMON_CODE).getPrimitiveValue().toString();
-//            type.pater = entity.getProperty(COMMON_PARENT).getPrimitiveValue().toString();
-//            type.folder = (boolean) entity.getProperty(COMMON_FOLDER).getPrimitiveValue().toValue();
-//            type.deleted = (boolean) entity.getProperty(COMMON_DELETED).getPrimitiveValue().toValue();
-//            type.predefined = (boolean) entity.getProperty(COMMON_PREDEFINED).getPrimitiveValue().toValue();
-//            type.prenamed = entity.getProperty(COMMON_PRENAMED).getPrimitiveValue().toString();
-//            type.criterion = parseATypeCriterion(entity.getProperty(TYPE_CRITERION).getPrimitiveValue().toString());
-//            type.value = Float.valueOf(entity.getProperty(TYPE_VALUE).getPrimitiveValue().toString());
             type.fillActualValue = (boolean) entity.getProperty(TYPE_FILL_ACTUAL_VALUE).getPrimitiveValue().toValue();
             type.openWithIndicators = (boolean) entity.getProperty(TYPE_OPEN_WITH_INDICATORS).getPrimitiveValue().toValue();
             type.clearCopy = (boolean) entity.getProperty(TYPE_CLEAR_COPY).getPrimitiveValue().toValue();
@@ -923,19 +1006,28 @@ public class AuditOData {
     }
 
     /**
-     * Получить все типы объектов вида аудита
-     * @param type - guid вида аудита
-     * @return - список ентити
+     * Get a list of client entity with all object types of audit type
+     * @param type - audit type guid
+     * @return - list of client entity with object types
+     * @throws HttpClientException - in case of connection failure
+     * @throws ODataRuntimeException - in case of requesting failure
      */
-    private List<ClientEntity> getAllObjectTypes(String type) {
+    private List<ClientEntity> getAllObjectTypes(String type)
+            throws HttpClientException, ODataRuntimeException {
         final URI entitySetURI = client.newURIBuilder(serviceRootOData)
                 .appendEntitySetSegment(Set.OBJECT_TYPES.name)
                 .filter(OBJECT_TYPES_KEY+" eq guid'"+type+"'")
                 .build();
-        final ODataRetrieveResponse<ClientEntitySet> entitySet = client.getRetrieveRequestFactory().getEntitySetRequest(entitySetURI).execute();
+        final ODataRetrieveResponse<ClientEntitySet> entitySet = client.getRetrieveRequestFactory().
+                getEntitySetRequest(entitySetURI).execute();
         return entitySet.getBody().getEntities();
     }
 
+    /**
+     * Parse object type from client entity
+     * @param entity - client entity with object type
+     * @return - object type or null if client entity is null
+     */
     private String parseObjectType(ClientEntity entity) {
         String objectType = null;
         if (entity != null)
@@ -944,60 +1036,62 @@ public class AuditOData {
     }
 
     /**
-     * Подичить список типов объекта по виду аудита
-     * @param type - guid вида аудита
-     * @return - список типов объектов
+     * Get a guid list of all object types of audit type from 1C database
+     * @param type - audit type guid
+     * @return - guid list of object types
+     * @throws ODataErrorException - in case of request failure
      */
-    private ArrayList<String> getObjectTypes(String type) {
+    private ArrayList<String> getObjectTypes(String type) throws ODataErrorException {
         final ArrayList<String> list = new ArrayList<>();
         try {
             for(ClientEntity entity: getAllObjectTypes(type)) {
                 list.add(parseObjectType(entity));
             }
         }
+        catch (HttpClientException e) {
+            throw new ODataErrorException(e, CONNECTION_ERROR);
+        }
         catch (ODataRuntimeException e) {
-            if (sayErrorMessage(e)) {
-                e.printStackTrace();
-                throw new RuntimeException("AuditOData.getObjectTypes() Error on requesting of object types." + e.getMessage());
-            }
+            throw new ODataErrorException(e, "Error requesting object type");
         }
         return list;
     }
 
     /**
-     * Получить вид аудита
-     * @param key guid вида аудита
-     * @return - вид аудита
+     * Get the type of audit with all types of objects from the 1C database
+     * @param key - audit type guid
+     * @return - audit type
+     * @throws ODataErrorException - in case of request failure
      */
-    AType getAType(String key) {
+    AType getAType(String key) throws ODataErrorException {
         AType type = null;
         try {
             type = parseType(getFullEntity(Set.TYPE, key));
             type.objectTypes = getObjectTypes(key);
         }
+        catch (HttpClientException e) {
+            throw new ODataErrorException(e, CONNECTION_ERROR);
+        }
         catch (ODataRuntimeException e) {
-            if (sayErrorMessage(e)) {
-                e.printStackTrace();
-                throw new RuntimeException("AuditOData.getAType() Error on requesting of type." + e.getMessage());
-            }
+            throw new ODataErrorException(e, "Error requesting audit type");
+        }
+        catch (ODataErrorException e) {
+            throw new ODataErrorException(e, "Error requesting object types");
         }
         return type;
     }
 
     /**
-     * Изменение вида аудита.
-     * @param type - измененний вид аудита
+     * Updating the type of audit in the 1C database
+     * @param type - new audit type
+     * @throws ODataErrorException - in case of request failure
      */
-    void updateType(AType type) {
+    void updateType(AType type) throws ODataErrorException {
         //Создаем entity
         final ClientEntity entity = client.getObjectFactory().newEntity(null);
         //новые значения:
         entity.getProperties().add(client.getObjectFactory().newPrimitiveProperty(COMMON_NAME,
                 client.getObjectFactory().newPrimitiveValueBuilder().buildString(type.name)));
-//        entity.getProperties().add(client.getObjectFactory().newPrimitiveProperty(TYPE_CRITERION,
-//                client.getObjectFactory().newPrimitiveValueBuilder().buildString(type.criterion.id)));
-//        entity.getProperties().add(client.getObjectFactory().newPrimitiveProperty(TYPE_VALUE,
-//                client.getObjectFactory().newPrimitiveValueBuilder().buildSingle(type.value)));
         entity.getProperties().add(client.getObjectFactory().newPrimitiveProperty(TYPE_SELECTION,
                 client.getObjectFactory().newPrimitiveValueBuilder().buildString(type.selection.id)));
         entity.getProperties().add(client.getObjectFactory().newPrimitiveProperty(TYPE_FILL_ACTUAL_VALUE,
@@ -1013,23 +1107,24 @@ public class AuditOData {
                 .appendEntitySetSegment(Set.TYPE.name)
                 .appendKeySegment("guid'"+type.id+"'")
                 .build();
-        final ODataEntityUpdateResponse<ClientEntity> response;
         try {
-            response = client.getCUDRequestFactory().getEntityUpdateRequest(entityURI, UpdateType.PATCH, entity).execute();
-        } catch (ODataRuntimeException e) {
-            if (sayErrorMessage(e)) {
-                e.printStackTrace();
-                throw new RuntimeException("AuditOData.updateType('"+type.name+
-                        "') Error on update of type. "+e.getMessage());
-            }
+            client.getCUDRequestFactory().
+                    getEntityUpdateRequest(entityURI, UpdateType.PATCH, entity).execute();
+        }
+        catch (HttpClientException e) {
+            throw new ODataErrorException(e, CONNECTION_ERROR);
+        }
+        catch (ODataRuntimeException e) {
+            throw new ODataErrorException(e, "Error updating audit type");
         }
     }
 
     /**
-     * Создание нового вида аудита
-     * @param type - новый вида аудита
+     * Create a new type of audit in the 1C database
+     * @param type - new audit type
+     * @throws ODataErrorException - in case of request failure
      */
-    void createType(AType type) {
+    void createType(AType type) throws ODataErrorException {
         final URI entityURI = client.newURIBuilder(serviceRootOData)
                 .appendEntitySetSegment(Set.TYPE.name)
                 .build();
@@ -1054,27 +1149,27 @@ public class AuditOData {
 //        entity.getProperties().add(client.getObjectFactory().newPrimitiveProperty(COMMON_FOLDER,
 //                client.getObjectFactory().newPrimitiveValueBuilder().buildBoolean(type.folder)));
 //        entity.getProperties().add(client.getObjectFactory().newPrimitiveProperty(COMMON_PARENT,
-//                client.getObjectFactory().newPrimitiveValueBuilder().buildString(type.pater)));
+//                client.getObjectFactory().newPrimitiveValueBuilder().buildString(type.parent)));
 //        entity.getProperties().add(client.getObjectFactory().newPrimitiveProperty(COMMON_PREDEFINED,
 //                client.getObjectFactory().newPrimitiveValueBuilder().buildBoolean(type.predefined)));
 //        ODataEntityCreateResponse<ClientEntity> response;
         try {
             /*response =*/
             client.getCUDRequestFactory().getEntityCreateRequest(entityURI, entity).execute();
-        } catch (ODataRuntimeException e) {
-            if (sayErrorMessage(e)) {
-                e.printStackTrace();
-                throw new RuntimeException("AuditOData.createType('"+type.name+
-                        "') Error on create of type. "+e.getMessage());
-            }
+        }
+        catch (HttpClientException e) {
+            throw new ODataErrorException(e, CONNECTION_ERROR);
+        }
+        catch (ODataRuntimeException e) {
+            throw new ODataErrorException(e, "Error creating audit type");
         }
     }
 
-    //ВСЕ ДЛЯ ОБЪЕКТОВ АУДИТА
+    //EVERYTHING FOR AUDIT OBJECT
     /**
-     * Рапаковать объект аудита
-     * @param entity - ентити
-     * @return - объект аудита
+     * Parse an audit object from an client entity
+     * @param entity - client entity
+     * @return - audit object
      */
     private AObject parseObject(ClientEntity entity) {
         AObject object = null;
@@ -1088,20 +1183,21 @@ public class AuditOData {
     }
 
     /**
-     * Получить объект аудита
-     * @param key - guid объекта
-     * @return - объект
+     * Get the audit object from the 1C database
+     * @param key - object guid
+     * @return - audit object
+     * @throws ODataErrorException - in case of request failure
      */
-    AObject getAObject(String key) {
+    private AObject getAObject(String key) throws ODataErrorException {
         AObject object = null;
         try {
             object = parseObject(getFullEntity(Set.OBJECT, key));
         }
+        catch (HttpClientException e) {
+            throw new ODataErrorException(e, CONNECTION_ERROR);
+        }
         catch (ODataRuntimeException e) {
-            if (sayErrorMessage(e)) {
-                e.printStackTrace();
-                throw new RuntimeException("AuditOData.getAObject() Error on requesting of object." + e.getMessage());
-            }
+            throw new ODataErrorException(e, "Error requesting object");
         }
         return object;
     }
@@ -1130,10 +1226,10 @@ public class AuditOData {
 //     * @param paters - список guid предков
 //     */
 //    private void addPaters(@NonNull final URIBuilder uriBuilder, @NonNull final String children, @NonNull final ArrayList<String> paters) {
-//        final String pater = getPater(uriBuilder, children);
-//        if (!(EMPTY_KEY.equals(pater) || paters.contains(pater))) {
-//            paters.add(pater);
-//            addPaters(uriBuilder, pater, paters);
+//        final String parent = getPater(uriBuilder, children);
+//        if (!(EMPTY_KEY.equals(parent) || paters.contains(parent))) {
+//            paters.add(parent);
+//            addPaters(uriBuilder, parent, paters);
 //        }
 //    }
 
@@ -1155,9 +1251,23 @@ public class AuditOData {
 //        return paters;
 //    }
 
-    //возвращает все пункты указанного родителя с отбором по наименованию
-    private List<ClientEntity> getAllItems(Set table, String owner, String pater, String like,
-                                           ArrayList<String> parentTypes, int... skip) {
+    /**
+     * Get a table items from 1C database from a specific owner and parent
+     * @param table - table name
+     * @param owner - owner guid
+     * @param parent - parent guid
+     * @param like - substring for selection by item name
+     * @param parentTypes - parent types list for selection
+     * @param skip - load portion parameters:
+     *            skip[0] - how many items to skip,
+     *            skip[1] - how many items to load
+     * @return - loaded part of table items
+     * @throws HttpClientException - in case of connection failure
+     * @throws ODataRuntimeException - in case of request failure
+     */
+    private List<ClientEntity> getAllItems(Set table, String owner, String parent, String like,
+                                           ArrayList<String> parentTypes, int... skip)
+            throws HttpClientException, ODataRuntimeException {
         final StringBuilder filter = new StringBuilder();
         final URIBuilder uriBuilder = client.newURIBuilder(serviceRootOData);
         final ArrayList<String> select = new ArrayList<>();
@@ -1170,13 +1280,13 @@ public class AuditOData {
         switch (table.hierarchy) {
             case FOLDER_HIERARCHY:
                 select.add(COMMON_FOLDER);
-                filter.append(COMMON_PARENT).append(" eq guid'").append(pater).append("'");
+                filter.append(COMMON_PARENT).append(" eq guid'").append(parent).append("'");
                 if (!(like==null||like.isEmpty()))
                     filter.append("and(substringof('").append(like).append("',").append(COMMON_NAME).append(")or ").append(COMMON_FOLDER).append(")");
                 break;
             case ELEMENT_HIERARCHY:
                 select.add(COMMON_GROUP);
-                filter.append(COMMON_PARENT).append(" eq guid'").append(pater).append("'");
+                filter.append(COMMON_PARENT).append(" eq guid'").append(parent).append("'");
                 if (!(like==null||like.isEmpty()))
                     filter.append("and(substringof('").append(like).append("',").append(COMMON_NAME).append(")or ").append(COMMON_GROUP).append(")");
                 break;
@@ -1215,26 +1325,39 @@ public class AuditOData {
         return entitySet.getBody().getEntities();
     }
 
-    //возвращает пункт - элемент справочника из ентити
-    private Items.Item parseItem(ClientEntity entity, int hierarchy, boolean checked, boolean expand) {
+    /**
+     * Parse a item from client entity
+     * @param entity - client entity
+     * @param hierarchy - hierarchy type
+     * @param checked - checked flag of item
+     * @return - item
+     */
+    private Items.Item parseItem(ClientEntity entity, int hierarchy, boolean checked) {
         Items.Item item = null;
         if (entity!=null) {
             item = new Items.Item();
             item.id = entity.getProperty(COMMON_KEY).getPrimitiveValue().toString();
-            item.pater = entity.getProperty(COMMON_PARENT).getPrimitiveValue().toString();
+            item.parent = entity.getProperty(COMMON_PARENT).getPrimitiveValue().toString();
             item.folder = isFolder(entity, hierarchy);
             item.name = entity.getProperty(COMMON_NAME).getPrimitiveValue().toString();
             item.deleted = (boolean) entity.getProperty(COMMON_DELETED).getPrimitiveValue().toValue();
             item.predefined = (boolean) entity.getProperty(COMMON_PREDEFINED).getPrimitiveValue().toValue();
             item.prenamed = entity.getProperty(COMMON_PRENAMED).getPrimitiveValue().toString();
             item.checked = checked;
-            item.expand = expand;
         }
         return item;
     }
 
-    //возвращает пункт справочника для списка
-    private ClientEntity getShortItem(Set table, String key) {
+    /**
+     * Get table item from 1C database for list
+     * @param table - table name
+     * @param key - item guid
+     * @return - client entity
+     * @throws HttpClientException in case of connection failure
+     * @throws ODataRuntimeException in case of request failure
+     */
+    private ClientEntity getShortItem(Set table, String key)
+            throws HttpClientException, ODataRuntimeException {
         final URIBuilder uriBuilder = client.newURIBuilder(serviceRootOData);
         switch (table.hierarchy) {
             case FOLDER_HIERARCHY:
@@ -1258,7 +1381,12 @@ public class AuditOData {
         return entity.getBody();
     }
 
-    //Проверяет, является ли объект папкой?
+    /**
+     * Return true if the item is a folder
+     * @param entity - client entity with item
+     * @param hierarchy - hirerachy type
+     * @return - folder flag
+     */
     private boolean isFolder(ClientEntity entity, int hierarchy) {
         switch (hierarchy) {
             case FOLDER_HIERARCHY:
@@ -1270,44 +1398,256 @@ public class AuditOData {
     }
 
     /**
-     * Извлечение списка элементов справочника
-     * @param table - имя сущности
-     * @param owner - guid владелеца / null
-     * @param pater - guid нового родителя
-     * @param like - строка для отбора по наименованию / null
-     * @param parentTypes - родительские справочники для отбора / null
-     * @param skip - массив из 2х элементов: 0 - сколько пропустить, 1 - сколько загрузить пунктов
-     * @return - список пунтов
+     *  Get a part of table items from 1C database from a specific owner and parent
+     * @param table - table name
+     * @param owner - owner guid
+     * @param parent - parent guid
+     * @param like - substring for selection by item name
+     * @param parentTypes - parent types list for selection
+     * @param skip - load portion parameters:
+     *            skip[0] - how many items to skip,
+     *            skip[1] - how many items to load
+     * @return - loaded part of table items
+     * @throws ODataRuntimeException - in case of request failure
      */
-    Items getItems(Set table, String owner, String pater, String like, ArrayList<String> parentTypes,
-                   int... skip) {
+    Items getItems(Set table, String owner, String parent, String like, ArrayList<String> parentTypes,
+                   int... skip) throws ODataErrorException {
         Items items = new Items();
         try {
-            for (ClientEntity entity: getAllItems(table, owner, pater, like, parentTypes, skip))
-                items.add(parseItem(entity, table.hierarchy,false,false));
+            for (ClientEntity entity: getAllItems(table, owner, parent, like, parentTypes, skip))
+                items.add(parseItem(entity, table.hierarchy,false)); //No checked
+        }
+        catch (HttpClientException e) {
+            throw new ODataErrorException(e, CONNECTION_ERROR);
         }
         catch (ODataRuntimeException e) {
-            if (sayErrorMessage(e)) {
-                e.printStackTrace();
-                throw new RuntimeException("AuditOData.getItems() Error on requesting of items." + e.getMessage());
-            }
+            throw new ODataErrorException(e, "Error requesting items");
         }
         return items;
     }
 
     /**
-     * Извлечение записей из регистра СвязьПоТипамОбъектаАналитики по виду аудита и типу объекта
-     * @param typeKey - giud вида аудита
-     * @param objectType - тип объекта аудита
-     * @return - список ентити
+     * Get table item from 1C database
+     * @param table - table name
+     * @param key - item guid
+     * @return - table item
+     * @throws ODataErrorException - in case of request failure
      */
-    private List<ClientEntity> getAllAnalyticTypes (@NonNull String typeKey, @NonNull String objectType) {
+    Items.Item getItem(Set table, String key) throws ODataErrorException {
+        Items.Item item = new Items.Item();
+        try {
+            item = parseItem(getShortItem(table, key), table.hierarchy, false);
+        }
+        catch (HttpClientException e) {
+            throw new ODataErrorException(e, CONNECTION_ERROR);
+        }
+        catch (ODataRuntimeException e) {
+            throw new ODataErrorException(e, "Error requesting item");
+        }
+        return item;
+    }
+
+    /**
+     * Copy table item to new parent in 1C database
+     * @param table - table name
+     * @param key - old item guid
+     * @param parent - new parent guid
+     * @return - new item
+     * @throws ODataErrorException - in case of request failure
+     */
+    Items.Item copyItem(Set table, String key, String parent) throws ODataErrorException {
+        final ODataEntityCreateResponse<ClientEntity> response;
+        try {
+            final ClientEntity entity = getFullEntity(table, key);
+            //Удаляем свойство с идентификатором - 1С присвоит новый
+            entity.getProperties().remove(entity.getProperty(COMMON_KEY));
+            //Меняем родителя
+            entity.getProperties().add(client.getObjectFactory().newPrimitiveProperty(COMMON_PARENT,
+                    client.getObjectFactory().newPrimitiveValueBuilder().buildString(parent)));
+            //Отметка на удаление должна быть снята
+            entity.getProperties().add(client.getObjectFactory().newPrimitiveProperty(COMMON_DELETED,
+                    client.getObjectFactory().newPrimitiveValueBuilder().buildBoolean(false)));
+            //Предопределенность должна быть снята
+            entity.getProperties().add(client.getObjectFactory().newPrimitiveProperty(COMMON_PREDEFINED,
+                    client.getObjectFactory().newPrimitiveValueBuilder().buildBoolean(false)));
+            entity.getProperties().add(client.getObjectFactory().newPrimitiveProperty(COMMON_PRENAMED,
+                    client.getObjectFactory().newPrimitiveValueBuilder().buildString("")));
+            final URI entityURI = client.newURIBuilder(serviceRootOData)
+                    .appendEntitySetSegment(table.name)
+                    .build();
+            response = client.getCUDRequestFactory().getEntityCreateRequest(entityURI, entity).execute();
+        }
+        catch (HttpClientException e) {
+            throw new ODataErrorException(e, CONNECTION_ERROR);
+        }
+        catch (ODataRuntimeException e) {
+            throw new ODataErrorException(e, "Error copying item");
+        }
+        return parseItem(response.getBody(), table.hierarchy,false);
+    }
+
+    /**
+     * Move table item to new parent in 1C database.
+     * Cyclic error control will be carried out externally in ReferenceChoice
+     * @param table - table name
+     * @param key - old item guid
+     * @param parent - new parent guid
+     * @return - moved item
+     * @throws ODataErrorException - in case of request failure
+     */
+    Items.Item moveItem(Set table, String key, String parent) throws ODataErrorException {
+        if (table.hierarchy==NOT_HIERARCHY) { //Если набор не является иерархией!!!
+            throw new RuntimeException("AuditOData.moveItem('"+table+"', guid'"+key+"', guid'"+parent+"') Entity set '"+table+"' is not the hierarchy.");
+        }
+        final URI entityURI = client.newURIBuilder(serviceRootOData)
+                .appendEntitySetSegment(table.name)
+                .appendKeySegment("guid'"+key+"'")
+                .build();
+        final ClientEntity entity = client.getObjectFactory().newEntity(null);
+        //Изменяем родителя
+        entity.getProperties().add(client.getObjectFactory().newPrimitiveProperty(COMMON_PARENT,
+                client.getObjectFactory().newPrimitiveValueBuilder().buildString(parent)));
+        ODataEntityUpdateResponse<ClientEntity> response;
+        try {
+            response = client.getCUDRequestFactory().getEntityUpdateRequest(entityURI,
+                    UpdateType.PATCH, entity).execute();
+        }
+        catch (HttpClientException e) {
+            throw new ODataErrorException(e, CONNECTION_ERROR);
+        }
+        catch (ODataRuntimeException e) {
+            throw new ODataErrorException(e, "Error moving item");
+        }
+        return parseItem(response.getBody(), table.hierarchy, true);
+    }
+
+    /**
+     * Update the delete label of a table in 1C database
+     * @param table - table name
+     * @param key - item guid
+     * @param delete - delete label value
+     * @return - updated item
+     * @throws ODataErrorException - in case of connection failure
+     */
+    Items.Item deleteItem(Set table, String key, boolean delete) throws ODataErrorException {
+        final URI entityURI = client.newURIBuilder(serviceRootOData)
+                .appendEntitySetSegment(table.name)
+                .appendKeySegment("guid'"+key+"'")
+                .build();
+        final ClientEntity entity = client.getObjectFactory().newEntity(null);
+        //Устанавливаем пометку на удаление
+        entity.getProperties().add(client.getObjectFactory().newPrimitiveProperty(COMMON_DELETED,
+                client.getObjectFactory().newPrimitiveValueBuilder().buildBoolean(delete)));
+        ODataEntityUpdateResponse<ClientEntity> response;
+        try {
+            response = client.getCUDRequestFactory().getEntityUpdateRequest(entityURI,
+                    UpdateType.PATCH, entity).execute();
+        }
+        catch (HttpClientException e) {
+            throw new ODataErrorException(e, CONNECTION_ERROR);
+        }
+        catch (ODataRuntimeException e) {
+            throw new ODataErrorException(e, "Error updating delete label");
+        }
+        return parseItem(response.getBody(), table.hierarchy, true);
+    }
+
+    /**
+     * Update the description item of a table in 1C database
+     * @param table - table name
+     * @param item - table item with new description
+     * @return - updated item
+     * @throws ODataErrorException - in case of request failure
+     */
+    Items.Item updateItem(Set table, Items.Item item) throws ODataErrorException {
+        final URI entityURI = client.newURIBuilder(serviceRootOData)
+                .appendEntitySetSegment(table.name)
+                .appendKeySegment("guid'"+item.id+"'")
+                .build();
+        final ClientEntity entity = client.getObjectFactory().newEntity(null);
+        //новое наименование
+        entity.getProperties().add(client.getObjectFactory().newPrimitiveProperty(COMMON_NAME,
+                client.getObjectFactory().newPrimitiveValueBuilder().buildString(item.name)));
+        ODataEntityUpdateResponse<ClientEntity> response;
+        try {
+            response = client.getCUDRequestFactory().getEntityUpdateRequest(entityURI,
+                    UpdateType.PATCH, entity).execute();
+        }
+        catch (HttpClientException e) {
+            throw new ODataErrorException(e, CONNECTION_ERROR);
+        }
+        catch (ODataRuntimeException e) {
+            throw new ODataErrorException(e, "Error updating item");
+        }
+        return parseItem(response.getBody(), table.hierarchy, true);
+    }
+
+    /**
+     * Create a new item or group in the 1C database table
+     * It is suitable for creating folders
+     * @param table - table name
+     * @param parent - parent guid
+     * @param name - desription
+     * @param isGroup - group creation flag
+     * @return - new item group
+     * @throws RuntimeException - in case of data or request failure
+     */
+    Items.Item createItem(Set table, String parent, String name, boolean isGroup)
+            throws RuntimeException {
+        final URI entityURI = client.newURIBuilder(serviceRootOData)
+                .appendEntitySetSegment(table.name)
+                .build();
+        final ClientEntity entity = client.getObjectFactory().newEntity(null);
+        //Наименование
+        entity.getProperties().add(client.getObjectFactory().newPrimitiveProperty(COMMON_NAME,
+                client.getObjectFactory().newPrimitiveValueBuilder().buildString(name)));
+        //Устанавливаем признак группы
+        switch (table.hierarchy) {
+            case FOLDER_HIERARCHY:
+                entity.getProperties().add(client.getObjectFactory().newPrimitiveProperty(COMMON_FOLDER,
+                        client.getObjectFactory().newPrimitiveValueBuilder().buildBoolean(isGroup)));
+                break;
+            case ELEMENT_HIERARCHY:
+                entity.getProperties().add(client.getObjectFactory().newPrimitiveProperty(COMMON_GROUP,
+                        client.getObjectFactory().newPrimitiveValueBuilder().buildBoolean(isGroup)));
+                break;
+            case NOT_HIERARCHY: default:
+                if (isGroup) {
+                    throw new RuntimeException("Error on create of item group. The '\"+table+\"' set do not have hierarchy.");
+                }
+        }
+        //Родитель
+        entity.getProperties().add(client.getObjectFactory().newPrimitiveProperty(COMMON_PARENT,
+                client.getObjectFactory().newPrimitiveValueBuilder().buildString(parent)));
+        ODataEntityCreateResponse<ClientEntity> response;
+        try {
+            response = client.getCUDRequestFactory().getEntityCreateRequest(entityURI, entity).execute();
+        }
+        catch (HttpClientException e) {
+            throw new ODataErrorException(e, CONNECTION_ERROR);
+        }
+        catch (ODataRuntimeException e) {
+            throw new ODataErrorException(e, "Error creating item");
+        }
+        return parseItem(response.getBody(), table.hierarchy, false);
+    }
+
+    //EVERYTHING FOR ANALYTIC TYPES
+    /**
+     * Get all analytical types of any object and type from 1C database
+     * @param typeKey - audit type giud
+     * @param objectKey - audit object giud
+     * @return - list of client entity with analytics types
+     * @throws HttpClientException - in case of connect failure
+     * @throws ODataRuntimeException - in case of request failure
+     */
+    private List<ClientEntity> getAllAnalyticTypes (@NonNull String typeKey, @NonNull String objectKey)
+            throws HttpClientException, ODataRuntimeException {
         final URIBuilder uriBuilder = client.newURIBuilder(serviceRootOData);
-        //Отбор по наименованию аналитики
         final URI entitySetURI = uriBuilder
                 .appendEntitySetSegment(Set.ANALYTIC_RELAT.name)
                 .filter(RELAT_TYPE_KEY+" eq guid'"+typeKey+"' and "+
-                        RELAT_OBJECT_TYPE+" eq '"+objectType+"'")
+                        RELAT_OBJECT_TYPE+" eq '"+objectKey+"'")
                 .build();
         final ODataRetrieveResponse<ClientEntitySet> entitySet =
                 client.getRetrieveRequestFactory().getEntitySetRequest(entitySetURI).execute();
@@ -1315,9 +1655,9 @@ public class AuditOData {
     }
 
     /**
-     * Извлечение типа аудита из ентити
-     * @param entity - ентити
-     * @return - тип аудита / null
+     * Parse a analytic type from client entity
+     * @param entity - client entity with analytics type
+     * @return - analytic type or null if client entity is null
      */
     private String parseAnalyticTypes(ClientEntity entity) {
         String analyticType = null;
@@ -1327,46 +1667,49 @@ public class AuditOData {
     }
 
     /**
-     * Получение списка типов аналитик для отбора по виду аудита и типу объекта
-     * @param typeKey - guid вида аудита
-     * @param objectType - тип объекта аудита
-     * @return - список типов аналитик
+     * Get all analytical types of any object and type of audit from 1C database
+     * @param typeKey - audit type giud
+     * @param objectKey - audit object giud
+     * @return - guid list with analytics types
+     * @throws ODataErrorException - in case of request failure
      */
-    ArrayList<String> getAnalyticTypes(@NonNull String typeKey, @NonNull String objectType) {
+    ArrayList<String> getAnalyticTypes(@NonNull String typeKey, @NonNull String objectKey) {
         ArrayList<String> parentTypes = new ArrayList<>();
         try {
-            for (ClientEntity entity: getAllAnalyticTypes(typeKey, objectType))
+            for (ClientEntity entity: getAllAnalyticTypes(typeKey, objectKey))
                 parentTypes.add(parseAnalyticTypes(entity));
         }
+        catch (HttpClientException e) {
+            throw new ODataErrorException(e, CONNECTION_ERROR);
+        }
         catch (ODataRuntimeException e) {
-            if (sayErrorMessage(e)) {
-                e.printStackTrace();
-                throw new RuntimeException("AuditOData.getAnalyticTypes() Error on requesting of analytic types." +
-                        e.getMessage());
-            }
+            throw new ODataErrorException(e, "Error requesting analytics types");
         }
         return parentTypes;
     }
 
     /**
-     * Получение списка ентити соответствующих виду и объекту аудита
-     * @param type - guid вида аудита
-     * @param object - guid объекта аудита
-     * @param like - строка отбора по наименованию аналитики
-     * @param skip - массив из 2х элементов: 0 - сколько пропустить, 1 - сколько загрузить пунктов
-     * @return список ентити
+     * Get a analytics of any object and type of audit from 1C database
+     * @param typeKey - audit type giud
+     * @param objectKey - audit object giud
+     * @param like - substring for selection by analytics name
+     * @param skip - load portion parameters:
+     *            skip[0] - how many items to skip,
+     *            skip[1] - how many items to load
+     * @return - loaded part of client entities with analytics
+     * @throws HttpClientException - in case of connection failure
+     * @throws ODataRuntimeException - in case of requesting failure
      */
-    private List<ClientEntity> getAllAnalytics (@NonNull String type, @NonNull String object, String like, int... skip) {
+    private List<ClientEntity> getAllAnalytics (@NonNull String typeKey, @NonNull String objectKey,
+                                                String like, int... skip)
+            throws HttpClientException, ODataRuntimeException {
         final URIBuilder uriBuilder = client.newURIBuilder(serviceRootOData);
         final StringBuilder filter = new StringBuilder();
-        //Отбор по виду и объекту аудита
-        filter.append(CORR_TYPE_KEY).append(" eq guid'").append(type).append("' and ")
-                .append(CORR_OBJECT_KEY).append(" eq guid'").append(object).append("'");
-        //Отбор по наименованию аналитики
+        filter.append(CORR_TYPE_KEY).append(" eq guid'").append(typeKey).append("' and ")
+                .append(CORR_OBJECT_KEY).append(" eq guid'").append(objectKey).append("'");
         if (!(like==null||like.isEmpty()))
             filter.append(" and substringof('").append(like).append("',")
                     .append(CORR_ANALYTIC+"/"+COMMON_NAME).append(")");
-        //Для порционной загрузки
         if (skip.length == 2) uriBuilder.skip(skip[0]).top(skip[1]);
         final URI entitySetURI = uriBuilder
                 .appendEntitySetSegment(Set.ANALYTIC_CORR.name)
@@ -1385,13 +1728,11 @@ public class AuditOData {
     }
 
     /**
-     * Извлекает пункт из ентити с аналитикой
-     * @param entity - ентити
-     * @param checked - признак отметки пункта
-     * @param expand - признак раскрытия пункта
-     * @return - пункт с аналитикой
+     * Parse a analytic item from client entity
+     * @param entity - client entity with analytic
+     * @return - analytic or null if client entity is null
      */
-    private Items.Item parseAnalytic(ClientEntity entity, boolean checked, boolean expand) {
+    private Items.Item parseAnalytic(ClientEntity entity) {
         Items.Item item = null;
         if (entity!=null) {
             item = new Items.Item();
@@ -1404,8 +1745,6 @@ public class AuditOData {
                     item.deleted = (boolean) value.get(COMMON_DELETED).getPrimitiveValue().toValue();
                     item.predefined = (boolean) value.get(COMMON_PREDEFINED).getPrimitiveValue().toValue();
                     item.prenamed = value.get(COMMON_PRENAMED).getPrimitiveValue().toString();
-                    item.checked = checked;
-                    item.expand = expand;
                 }
             }
         }
@@ -1413,243 +1752,54 @@ public class AuditOData {
     }
 
     /**
-     * Извлечение списка аналитик соответствующих виду и объекту аудита
-     * @param type - guid вида аудита
-     * @param object - guid объекта аудита
-     * @param like - строка отбора по наименованию аналитики
-     * @param skip - массив из 2х элементов: 0 - сколько пропустить, 1 - сколько загрузить пунктов
-     * @return - список пунктов
+     * Get a analytics of any object and type of audit from 1C database
+     * @param typeKey - audit type giud
+     * @param objectKey - audit object giud
+     * @param like - substring for selection by analytics name
+     * @param skip - load portion parameters:
+     *            skip[0] - how many items to skip,
+     *            skip[1] - how many items to load
+     * @return - loaded part of items with a analytics
+     * @throws ODataErrorException - in case of request failure
      */
-    Items getAnalytics(String type, String object, String like, int... skip) {
+    Items getAnalytics(String typeKey, String objectKey, String like, int... skip) {
         Items items = new Items();
         try {
-            for (ClientEntity entity: getAllAnalytics(type, object, like, skip))
-                items.add(parseAnalytic(entity, false, false));
+            for (ClientEntity entity: getAllAnalytics(typeKey, objectKey, like, skip))
+                items.add(parseAnalytic(entity));
         }
-        catch (ODataRuntimeException e) {
-            if (sayErrorMessage(e)) {
-                e.printStackTrace();
-                throw new RuntimeException("AuditOData.getAnalytics() Error on requesting of items." + e.getMessage());
-            }
+        catch (ODataErrorException e) {
+            throw new ODataErrorException(e, "Error requesting analytics");
         }
         return items;
     }
 
+    //EVERYTHING FOR AUDIT INDICATOR STANDARDS
     /**
-     * Извлечение элемента справочника
-     * @param table - имя сущности
-     * @param key - guid пункта
-     * @return - пункт справочника
+     * Get a all standards of indicators of any object and type of audit from the 1C database
+     * @param typeKey - audit type giud
+     * @param objectKey - audit object giud
+     * @return list of client entity with standards of indicators
+     * @throws HttpClientException - in case of connection failure
+     * @throws ODataRuntimeException - in case of requesting failure
      */
-    Items.Item getItem(Set table, String key) {
-        Items.Item item = new Items.Item();
-        try {
-            item = parseItem(getShortItem(table, key), table.hierarchy, false, false);
-        }
-        catch (ODataRuntimeException e) {
-            if (sayErrorMessage(e)) {
-                e.printStackTrace();
-                throw new RuntimeException("Error on requesting of item." + e.getMessage());
-            }
-        }
-        return item;
-    }
-
-    /**
-     * Копирование пункта справочника в эту же или другую папку
-     * @param table - имя сущности
-     * @param key - guid пункта
-     * @param pater - guid нового родителя
-     * @return - копию пункта
-     */
-    Items.Item copyItem(Set table, String key, String pater) {
-        final ODataEntityCreateResponse<ClientEntity> response;
-        try {
-            final ClientEntity entity = getFullEntity(table, key);
-            //Удаляем свойство с идентификатором - 1С присвоит новый
-            entity.getProperties().remove(entity.getProperty(COMMON_KEY));
-            //Меняем родителя
-            entity.getProperties().add(client.getObjectFactory().newPrimitiveProperty(COMMON_PARENT,
-                    client.getObjectFactory().newPrimitiveValueBuilder().buildString(pater)));
-            //Отметка на удаление должна быть снята
-            entity.getProperties().add(client.getObjectFactory().newPrimitiveProperty(COMMON_DELETED,
-                    client.getObjectFactory().newPrimitiveValueBuilder().buildBoolean(false)));
-            //Предопределенность должна быть снята
-            entity.getProperties().add(client.getObjectFactory().newPrimitiveProperty(COMMON_PREDEFINED,
-                    client.getObjectFactory().newPrimitiveValueBuilder().buildBoolean(false)));
-            entity.getProperties().add(client.getObjectFactory().newPrimitiveProperty(COMMON_PRENAMED,
-                    client.getObjectFactory().newPrimitiveValueBuilder().buildString("")));
-            final URI entityURI = client.newURIBuilder(serviceRootOData)
-                    .appendEntitySetSegment(table.name)
-                    .build();
-            response = client.getCUDRequestFactory().getEntityCreateRequest(entityURI, entity).execute();
-        } catch (ODataRuntimeException e) {
-            if (sayErrorMessage(e)) {
-                e.printStackTrace();
-                throw new RuntimeException("AuditOData.copyItem('"+table+"', guid'"+key+"', guid'"+pater+
-                        "') Error on copy of item. "+e.getMessage());
-            }
-            return new Items.Item();
-        }
-        return parseItem(response.getBody(), table.hierarchy,false, false); //Новый пункт будет в списке свернут и не отмечен
-    }
-
-    /**
-     * Перемещение пункта справочника в эту же или другую папку - изменение родителя
-     * Контроль зацикливания ссылок осуществляется в ReferenceChoice!!!
-     * @param table - имя сущности
-     * @param key - guid пункта
-     * @param pater - guid нового родителя
-     * @return - измененный пукнт / null, если была попытка переместить папку, когда not_folders == true
-     */
-    Items.Item moveItem(Set table, String key, String pater) {
-        if (table.hierarchy==NOT_HIERARCHY) { //Если набор не является иерархией!!!
-            throw new RuntimeException("AuditOData.moveItem('"+table+"', guid'"+key+"', guid'"+pater+"') Entity set '"+table+"' is not the hierarchy.");
-        }
-        final URI entityURI = client.newURIBuilder(serviceRootOData)
-                .appendEntitySetSegment(table.name)
-                .appendKeySegment("guid'"+key+"'")
-                .build();
-        final ClientEntity entity = client.getObjectFactory().newEntity(null);
-        //Изменяем родителя
-        entity.getProperties().add(client.getObjectFactory().newPrimitiveProperty(COMMON_PARENT,
-                client.getObjectFactory().newPrimitiveValueBuilder().buildString(pater)));
-        ODataEntityUpdateResponse<ClientEntity> response;
-        try {
-            response = client.getCUDRequestFactory().getEntityUpdateRequest(entityURI, UpdateType.PATCH, entity).execute();
-        } catch (ODataRuntimeException e) {
-            if (sayErrorMessage(e)) {
-                e.printStackTrace();
-                throw new RuntimeException("AuditOData.moveItem('"+table+"', guid'"+key+"', guid'"+pater+
-                        "') Error on move of item. "+e.getMessage());
-            }
-            return null;
-        }
-        return parseItem(response.getBody(), table.hierarchy, true, false); //Помечен в списке, свернут
-    }
-
-    /**
-     * Изменение отметки на удаление у пункта справочнка
-     * @param table - имя сущности
-     * @param key - guid пункта справочника
-     * @param delete - значение пометки на удаление
-     * @return - измененный пункт
-     */
-    Items.Item deleteItem(Set table, String key, boolean delete) {
-        final URI entityURI = client.newURIBuilder(serviceRootOData)
-                .appendEntitySetSegment(table.name)
-                .appendKeySegment("guid'"+key+"'")
-                .build();
-        final ClientEntity entity = client.getObjectFactory().newEntity(null);
-        //Устанавливаем пометку на удаление
-        entity.getProperties().add(client.getObjectFactory().newPrimitiveProperty(COMMON_DELETED,
-                client.getObjectFactory().newPrimitiveValueBuilder().buildBoolean(delete)));
-        ODataEntityUpdateResponse<ClientEntity> response;
-        try {
-            response = client.getCUDRequestFactory().getEntityUpdateRequest(entityURI, UpdateType.PATCH, entity).execute();
-        } catch (ODataRuntimeException e) {
-            if (sayErrorMessage(e)) {
-                e.printStackTrace();
-                throw new RuntimeException("AuditOData.deleteItem('"+table+"', guid'"+key+"', "+delete+
-                        ") Error on delete of item ."+e.getMessage());
-            }
-            return null;
-        }
-        return parseItem(response.getBody(), table.hierarchy, true, false); //Помечен в списке, свернут
-    }
-
-    /**
-     * Изменение пункта справочника (только наименование). Подходит для изменения наименования группы
-     * @param table - имя сущности
-     * @param item - объект пункт справочника, с новым наименованием
-     * @return - измененный пункт
-     */
-    Items.Item updateItem(Set table, Items.Item item) {
-        final URI entityURI = client.newURIBuilder(serviceRootOData)
-                .appendEntitySetSegment(table.name)
-                .appendKeySegment("guid'"+item.id+"'")
-                .build();
-        final ClientEntity entity = client.getObjectFactory().newEntity(null);
-        //новое наименование
-        entity.getProperties().add(client.getObjectFactory().newPrimitiveProperty(COMMON_NAME,
-                client.getObjectFactory().newPrimitiveValueBuilder().buildString(item.name)));
-        ODataEntityUpdateResponse<ClientEntity> response;
-        try {
-            response = client.getCUDRequestFactory().getEntityUpdateRequest(entityURI, UpdateType.PATCH, entity).execute();
-        } catch (ODataRuntimeException e) {
-            if (sayErrorMessage(e)) {
-                e.printStackTrace();
-                throw new RuntimeException("AuditOData.updateItem('"+table+"', '"+item.toString()+
-                        "') Error on update of item. "+e.getMessage());
-            }
-            return null;
-        }
-        return parseItem(response.getBody(), table.hierarchy, true, false); //Помечен в списке, свернут
-    }
-
-    /**
-     * Создание пункта справочника (только наименование и родитель)
-     * Подходит для создания группы
-     * @param table - имя сущности
-     * @param pater - guid нового родителя
-     * @param name - наименование
-     * @param isFolder - признак группы
-     * @return - созданный пункт
-     */
-    Items.Item createItem(Set table, String pater, String name, boolean isFolder) {
-        final URI entityURI = client.newURIBuilder(serviceRootOData)
-                .appendEntitySetSegment(table.name)
-                .build();
-        final ClientEntity entity = client.getObjectFactory().newEntity(null);
-        entity.getProperties().add(client.getObjectFactory().newPrimitiveProperty(COMMON_NAME,
-                client.getObjectFactory().newPrimitiveValueBuilder().buildString(name)));
-        //Устанавливаем признак группы
-        switch (table.hierarchy) {
-            case FOLDER_HIERARCHY:
-                entity.getProperties().add(client.getObjectFactory().newPrimitiveProperty(COMMON_FOLDER,
-                        client.getObjectFactory().newPrimitiveValueBuilder().buildBoolean(isFolder)));
-                break;
-            case ELEMENT_HIERARCHY:
-                entity.getProperties().add(client.getObjectFactory().newPrimitiveProperty(COMMON_GROUP,
-                        client.getObjectFactory().newPrimitiveValueBuilder().buildBoolean(isFolder)));
-                break;
-            case NOT_HIERARCHY: default:
-                if (isFolder)
-                    throw new RuntimeException("AuditOData.createItem('"+table+"', '"+pater+"', '"+name+
-                            "', "+isFolder+"') Error on create of item group. The '"+table+"' set do not have hierarchy.");
-        }
-        //Родитель
-        entity.getProperties().add(client.getObjectFactory().newPrimitiveProperty(COMMON_PARENT,
-                client.getObjectFactory().newPrimitiveValueBuilder().buildString(pater)));
-        //Новое наименование
-        entity.getProperties().add(client.getObjectFactory().newPrimitiveProperty(COMMON_NAME,
-                client.getObjectFactory().newPrimitiveValueBuilder().buildString(name)));
-        ODataEntityCreateResponse<ClientEntity> response;
-        try {
-            response = client.getCUDRequestFactory().getEntityCreateRequest(entityURI, entity).execute();
-        } catch (ODataRuntimeException e) {
-            if (sayErrorMessage(e)) {
-                e.printStackTrace();
-                throw new RuntimeException("AuditOData.createItem('"+table+"', '"+pater+"', '"+name+
-                        "') Error on create of item group ."+e.getMessage());
-            }
-            return null;
-        }
-        return parseItem(response.getBody(), table.hierarchy, false, false); //Не помечен в списке, свернут
-    }
-
-    //ВСЕ ДЛЯ НОРМАТИВОВ ПОКАЗАТЕЛЕЙ АУДИТА
-    //Возвращает список entity с нормативными значениями
-    private List<ClientEntity> getAllIndicatorStandard(String type, String object) {
+    private List<ClientEntity> getAllIndicatorStandard(String typeKey, String objectKey)
+            throws HttpClientException, ODataRuntimeException {
         final URI entitySetURI = client.newURIBuilder(serviceRootOData)
                 .appendEntitySetSegment(Set.INDICATOR_STANDARD.name)
-                .filter(INDICATOR_STANDARD_TYPE+" eq guid'"+type+"' and "+INDICATOR_STANDARD_OBJECT+" eq guid'"+object+"'")
+                .filter(INDICATOR_STANDARD_TYPE+" eq guid'"+typeKey+"' and "+INDICATOR_STANDARD_OBJECT+
+                        " eq guid'"+objectKey+"'")
                 .build();
-        final ODataRetrieveResponse<ClientEntitySet> entitySet = client.getRetrieveRequestFactory().getEntitySetRequest(entitySetURI).execute();
+        final ODataRetrieveResponse<ClientEntitySet> entitySet =
+                client.getRetrieveRequestFactory().getEntitySetRequest(entitySetURI).execute();
         return entitySet.getBody().getEntities();
     }
 
-    //Возвращает нормативы показателя
+    /**
+     * Parse a standard of indicator
+     * @param entity - client entity
+     * @return - standard of indicator
+     */
     private Tasks.Task.IndicatorRow parseIndicatorStandard(ClientEntity entity) {
         final Tasks.Task.IndicatorRow row = new Tasks.Task(). new IndicatorRow();
         if (entity != null) {
@@ -1663,29 +1813,31 @@ public class AuditOData {
     }
 
     /**
-     * Получить нормативы показателей вида аудита по объекту
-     * @param type - guid вида аудита
-     * @param object - guid объекта аудита
-     * @return - список нормативов показателей
+     * Get a all standards of indicators of any object and type of audit from the 1C database
+     * @param typeKey - audit type giud
+     * @param objectKey - audit object giud
+     * @return - standarts of indicators
+     * @throws ODataErrorException - in case of request failure
      */
-    ArrayList<Tasks.Task.IndicatorRow> getStandardIndicatorRows(String type, String object) {
+    ArrayList<Tasks.Task.IndicatorRow> getStandardIndicatorRows(String typeKey, String objectKey)
+            throws ODataErrorException {
         final ArrayList<Tasks.Task.IndicatorRow> indicators = new ArrayList<>();
         try {
-            for (ClientEntity entity : getAllIndicatorStandard(type != null? type: EMPTY_KEY,
-                    object != null? object: EMPTY_KEY)) {
+            for (ClientEntity entity : getAllIndicatorStandard(typeKey != null? typeKey: EMPTY_KEY,
+                    objectKey != null? objectKey: EMPTY_KEY)) {
                 indicators.add(parseIndicatorStandard(entity));
             }
         }
-        catch(ODataRuntimeException e) {
-                if (sayErrorMessage(e)) {
-                    e.printStackTrace();
-                    throw new RuntimeException("AuditOData.getTaskIndicators() Error on requesting of indicator standard. " + e.getMessage());
-                }
-            }
+        catch (HttpClientException e) {
+            throw new ODataErrorException(e, CONNECTION_ERROR);
+        }
+        catch (ODataRuntimeException e) {
+            throw new ODataErrorException(e, "Error requesting standards of indicators");
+        }
         return indicators;
     }
 
-    //ВСЕ ДЛЯ ТАБЛИЧНОЙ ЧАСТИ ЗАДАНИЯ "ПОКАЗАТЕЛИ"
+    //EVERYTHING FOR INDICATORS OF TASK
 //    //Возвращает список entity показателей задания
 //    private List<ClientEntity> getAllTaskIndicators(String task) {
 //        final URI entitySetURI = client.newURIBuilder(serviceRootOData)
@@ -1761,7 +1913,7 @@ public class AuditOData {
 //        return rows;
 //    }
 
-    //ВСЕ ДЛЯ СПРАВОЧНИКА ПОКАЗАТЕЛЕЙ АУДИТА
+    //EVERYTHING FOR AUDIT INDICATORS
 //    //Возвращает показатель аудита по entity
 //    private Indicators.Indicator parseFullIndicator(ClientEntity entity) {
 //        final Indicators.Indicator indicator = new Indicators(). new Indicator();;
@@ -1770,7 +1922,7 @@ public class AuditOData {
 //                indicator.id = getKey(entity.getProperty(COMMON_KEY).getPrimitiveValue().toString());
 //                indicator.code = entity.getProperty(COMMON_CODE).getPrimitiveValue().toString();
 //                indicator.id = entity.getProperty(COMMON_NAME).getPrimitiveValue().toString();
-//                indicator.pater = getKey(entity.getProperty(COMMON_PARENT).getPrimitiveValue().toString());
+//                indicator.parent = getKey(entity.getProperty(COMMON_PARENT).getPrimitiveValue().toString());
 //                indicator.owner = getKey(entity.getProperty(COMMON_OWNER).getPrimitiveValue().toString());
 //                indicator.folder = (boolean) entity.getProperty(COMMON_FOLDER).getPrimitiveValue().toValue();
 //                indicator.desc = entity.getProperty(COMMON_COMMENT).getPrimitiveValue().toString();
@@ -1797,23 +1949,21 @@ public class AuditOData {
 //        return indicator;
 //    }
 
-    //Возвращает строку таблицы показателей
-    private Tasks.Task.IndicatorRow parseIndicatorRow(ClientEntity entity) {
+    /**
+     * Parse a indicators row of audit task from a client entity
+     * @param entity - client entity with indicators row
+     * @return - indicators row of audit task
+     * @throws ODataRuntimeException - in case of requesting failure
+     */
+    private Tasks.Task.IndicatorRow parseIndicatorRow(ClientEntity entity)
+            throws ODataRuntimeException {
         final Tasks.Task.IndicatorRow row = new Tasks.Task().new IndicatorRow();
         if (entity != null) {
-            try {
-                row.indicator = getKey(entity.getProperty(COMMON_KEY).getPrimitiveValue().toString());
-                row.goal = getValue(entity, COMMON_GOAL);
-                row.minimum = getValue(entity, COMMON_MINIMUM);
-                row.maximum = getValue(entity, COMMON_MAXIMUM);
-                row.error = Float.valueOf(entity.getProperty(COMMON_ERROR).getPrimitiveValue().toString());
-            }
-            catch (ODataRuntimeException e) {
-                if (sayErrorMessage(e)) {
-                    e.printStackTrace();
-                    throw new RuntimeException("AuditOData.parseIndicatorRow() Error on parsing of indicator ." + e.getMessage());
-                }
-            }
+            row.indicator = getKey(entity.getProperty(COMMON_KEY).getPrimitiveValue().toString());
+            row.goal = getValue(entity, COMMON_GOAL);
+            row.minimum = getValue(entity, COMMON_MINIMUM);
+            row.maximum = getValue(entity, COMMON_MAXIMUM);
+            row.error = Float.valueOf(entity.getProperty(COMMON_ERROR).getPrimitiveValue().toString());
         }
         return row;
     }
@@ -1824,7 +1974,7 @@ public class AuditOData {
 //        if (entity != null) {
 //            indicator.id = getKey(entity.getProperty(COMMON_KEY).getPrimitiveValue().toString());
 //            indicator.id = entity.getProperty(COMMON_NAME).getPrimitiveValue().toString();
-//            indicator.pater = getKey(entity.getProperty(COMMON_PARENT).getPrimitiveValue().toString());
+//            indicator.parent = getKey(entity.getProperty(COMMON_PARENT).getPrimitiveValue().toString());
 //            indicator.folder = (boolean) entity.getProperty(COMMON_FOLDER).getPrimitiveValue().toValue();
 //            if (!indicator.folder) {
 //                indicator.desc = entity.getProperty(COMMON_COMMENT).getPrimitiveValue().toString();
@@ -1838,11 +1988,13 @@ public class AuditOData {
 //    }
 
     /**
-     * Распаковать показатель аудита
-     * @param entity - ентити
-     * @return - показатель аудита
+     * Parse a audit indicators from a client entity
+     * @param entity - client entity with indicator
+     * @return - audit indicator
+     * @throws ODataErrorException - in case of request failure
      */
-    private IndList.Ind parseInd(ClientEntity entity) {
+    private IndList.Ind parseInd(ClientEntity entity)
+            throws ODataRuntimeException {
         final IndList.Ind indicator = new IndList.Ind();
         if (entity != null) {
             indicator.id = getKey(entity.getProperty(COMMON_KEY).getPrimitiveValue().toString());
@@ -1885,61 +2037,57 @@ public class AuditOData {
 //    }
 
     //Возвращает список entity с показателями аудита
-    private List<ClientEntity> getAllIndicators(@NonNull String type) {
-        final URI entitySetURI = client.newURIBuilder(serviceRootOData)
-                .appendEntitySetSegment(Set.INDICATOR.name)
-                .filter(COMMON_OWNER+" eq guid'"+type+"' and "+
-                        COMMON_DELETED+" eq false and "+
-                        COMMON_FOLDER+" eq false")
-                .select(COMMON_OWNER, COMMON_DELETED, COMMON_FOLDER,
-                        COMMON_KEY, INDICATOR_TYPE,
-                        COMMON_GOAL, COMMON_GOAL+_TYPE,
-                        COMMON_MINIMUM, COMMON_MINIMUM+_TYPE,
-                        COMMON_MAXIMUM, COMMON_MAXIMUM+_TYPE,
-                        COMMON_ERROR, COMMON_ORDER)
-                .orderBy(COMMON_ORDER+ORDER_ASC)
-                .build();
-        final ODataRetrieveResponse<ClientEntitySet> entitySet = client.getRetrieveRequestFactory().getEntitySetRequest(entitySetURI).execute();
-        return entitySet.getBody().getEntities();
-    }
+//    private List<ClientEntity> getAllIndicators(@NonNull String type) {
+//        final URI entitySetURI = client.newURIBuilder(serviceRootOData)
+//                .appendEntitySetSegment(Set.INDICATOR.name)
+//                .filter(COMMON_OWNER+" eq guid'"+type+"' and "+
+//                        COMMON_DELETED+" eq false and "+
+//                        COMMON_FOLDER+" eq false")
+//                .select(COMMON_OWNER, COMMON_DELETED, COMMON_FOLDER,
+//                        COMMON_KEY, INDICATOR_TYPE,
+//                        COMMON_GOAL, COMMON_GOAL+_TYPE,
+//                        COMMON_MINIMUM, COMMON_MINIMUM+_TYPE,
+//                        COMMON_MAXIMUM, COMMON_MAXIMUM+_TYPE,
+//                        COMMON_ERROR, COMMON_ORDER)
+//                .orderBy(COMMON_ORDER+ORDER_ASC)
+//                .build();
+//        final ODataRetrieveResponse<ClientEntitySet> entitySet = client.getRetrieveRequestFactory().
+//                getEntitySetRequest(entitySetURI).execute();
+//        return entitySet.getBody().getEntities();
+//    }
 
     /**
-     * Получить все показатели по виду аудита
-     * @param type - guid вида аудита
-     * @param onlyElements - признак, только элементы
-     * @param withoutDeleted - без удаленных элементов
-     * @return - список ентити
+     * Get all indicators for any type of audit from 1C database
+     * @param typeKey - audit type guid
+     * @param onlyElements - flag for selecting only elements without groups
+     * @param withoutDeleted - flag for selecting not deleted items
+     * @return - list of client entity
+     * @throws HttpClientException - in case of connection failure
+     * @throws ODataRuntimeException - in case of requesting failure
      */
-    private List<ClientEntity> getAllIndicators(@NonNull String type, boolean onlyElements, boolean withoutDeleted ) {
+    private List<ClientEntity> getAllIndicators(@NonNull String typeKey, boolean onlyElements,
+                                                boolean withoutDeleted )
+            throws HttpClientException, ODataRuntimeException {
         final StringBuilder filter = new StringBuilder();
-        filter.append(COMMON_OWNER).append(" eq guid'").append(type).append("'");
+        filter.append(COMMON_OWNER).append(" eq guid'").append(typeKey).append("'");
         if (onlyElements) filter.append(" and ").append(COMMON_FOLDER).append(" eq false");
         if (withoutDeleted) filter.append(" and ").append(COMMON_DELETED).append(" eq false");
         final URI entitySetURI = client.newURIBuilder(serviceRootOData)
                 .appendEntitySetSegment(Set.INDICATOR.name)
                 .filter(filter.toString())
-//                .select(COMMON_OWNER, COMMON_FOLDER,
-//                        COMMON_KEY, COMMON_NAME,
-//                        COMMON_PARENT, COMMON_COMMENT,
-//                        INDICATOR_TYPE, INDICATOR_CRITERION,
-//                        INDICATOR_UNIT, INDICATOR_SUBJECT,
-//                        COMMON_GOAL, COMMON_GOAL+_TYPE,
-//                        COMMON_MAXIMUM, COMMON_MAXIMUM+_TYPE,
-//                        COMMON_MINIMUM, COMMON_MINIMUM+_TYPE,
-//                        COMMON_ERROR, COMMON_ERROR+_TYPE,
-//                        COMMON_ORDER)
                 .orderBy(COMMON_ORDER+ORDER_ASC)
                 .build();
-        final ODataRetrieveResponse<ClientEntitySet> entitySet = client.getRetrieveRequestFactory().getEntitySetRequest(entitySetURI).execute();
+        final ODataRetrieveResponse<ClientEntitySet> entitySet = client.getRetrieveRequestFactory().
+                getEntitySetRequest(entitySetURI).execute();
         return entitySet.getBody().getEntities();
     }
 
 //    //Возвращает список entity с показателями аудита
-//    private List<ClientEntity> getAllIndicators(String type, String pater, String subject) {
+//    private List<ClientEntity> getAllIndicators(String type, String parent, String subject) {
 //        final StringBuilder filter = new StringBuilder();
 //        filter.append(COMMON_OWNER).append(" eq guid'").append(type).append("'");
-//        if (pater != null)
-//            filter.append(" and ").append(COMMON_PARENT).append(" eq guid'").append(pater).append("'");
+//        if (parent != null)
+//            filter.append(" and ").append(COMMON_PARENT).append(" eq guid'").append(parent).append("'");
 //        if (subject != null) {
 //            filter.append(" and ").append(INDICATOR_SUBJECT).append(" eq guid'").append(subject).append("'");
 //            filter.append(" and ").append(COMMON_FOLDER).append(" eq false");
@@ -1954,59 +2102,60 @@ public class AuditOData {
 //    }
 
     /**
-     * Получить показатели вида аудита
-     * @param type - guid вида аудита
-     * @return - список показателей аудита
+     * Get all indicators for any type of audit from 1C database
+     * @param typeKey - audit type guid
+     * @return - list of indicators rows for the audit task
+     * @throws ODataErrorException - in case of requesting failure
      */
-    ArrayList<Tasks.Task.IndicatorRow> getIndicatorRows(String type) {
+    ArrayList<Tasks.Task.IndicatorRow> getIndicatorRows(String typeKey) throws ODataErrorException {
         final ArrayList<Tasks.Task.IndicatorRow> indicators = new ArrayList<>();
         try {
-            for (ClientEntity entity: getAllIndicators(type != null? type: EMPTY_KEY,
+            for (ClientEntity entity: getAllIndicators(typeKey != null? typeKey: EMPTY_KEY,
                     true, true))
                 indicators.add(parseIndicatorRow(entity));
         }
-        catch(ODataRuntimeException e) {
-            if (sayErrorMessage(e)) {
-                e.printStackTrace();
-                throw new RuntimeException("AuditOData.getIndicatorRows(guid'"+type+
-                        "') Error on requesting of indicators. "+e.getMessage());
-            }
+        catch (HttpClientException e) {
+            throw new ODataErrorException(e, CONNECTION_ERROR);
+        }
+        catch (ODataRuntimeException e) {
+            throw new ODataErrorException(e, "Error requesting indicators");
         }
         return indicators;
     }
 
     /**
-     * Добавить все показатели в дерево показателей по виду аудита
-     * @param indList - дерево показателей
-     * @param type - guid вида аудита
-     * @param onlyElements - признак загрузки только элементов
+     * Add indicators to the list for any type of audit from the 1C database
+     * @param indList - list of indicators for additions
+     * @param typeKey - audit type guid
+     * @param onlyElements - flag for selecting only elements without groups
+     * @throws ODataErrorException - in case of requesting failure
      */
-    void addInd(@NonNull IndList indList, @NonNull String type, boolean onlyElements) {
+    void addInd(@NonNull IndList indList, @NonNull String typeKey, boolean onlyElements)
+            throws ODataErrorException {
         try {
-            for (ClientEntity clientEntity: getAllIndicators(type, onlyElements, false))
+            for (ClientEntity clientEntity: getAllIndicators(typeKey, onlyElements, false))
                 indList.add(parseInd(clientEntity));
         }
-        catch(ODataRuntimeException e) {
-            if (sayErrorMessage(e)) {
-                e.printStackTrace();
-                throw new RuntimeException("AuditOData.addInd(..., guid'"+type+"', "+onlyElements+
-                        ") Error on requesting of indicators. "+e.getMessage());
-            }
+        catch (HttpClientException e) {
+            throw new ODataErrorException(e, CONNECTION_ERROR);
+        }
+        catch (ODataRuntimeException e) {
+            throw new ODataErrorException(e, "Error requesting indicators");
         }
     }
 
-    //ВСЕ ДЛЯ ПРЕДМЕТОВ
+    //EVERYTHING FOR A AUDIT SUBJECTS
 //    /**
 //     * Получить все предметы по виду аудита и родителю
 //     * @param type - guid вида аудита
-//     * @param pater- guid родителя предмета
+//     * @param parent- guid родителя предмета
 //     * @return - список ентити с предметами
 //     */
-//    private List<ClientEntity> getAllSubjects(@NonNull String type, @NonNull String pater) {
+//    private List<ClientEntity> getAllSubjects(@NonNull String type, @NonNull String parent) {
 //        final URI entitySetURI = client.newURIBuilder(serviceRootOData)
 //                .appendEntitySetSegment(Set.SUBJECT.id)
 //                .filter(COMMON_OWNER+" eq guid'"+type+"' and "+
-//                        COMMON_PARENT+" eq guid'"+pater+"'")
+//                        COMMON_PARENT+" eq guid'"+parent+"'")
 //                .orderBy(COMMON_ORDER+ORDER_ASC)
 //                .build();
 //        final ODataRetrieveResponse<ClientEntitySet> entitySet = client.getRetrieveRequestFactory().getEntitySetRequest(entitySetURI).execute();
@@ -2014,33 +2163,38 @@ public class AuditOData {
 //    }
 
     /**
-     * Получить все предметы по виду аудита
-     * @param type - guid вида аудита
-     * @return - список ентити с предметами
+     * Get all subjects for any type of audit from 1C database
+     * @param typeKey - audit type guid
+     * @return - list of clients entity with audit subjects
+     * @throws HttpClientException - in case of connection failure
+     * @throws ODataRuntimeException - in case of requesting failure
      */
-    private List<ClientEntity> getAllSubjects(@NonNull String type) {
+    private List<ClientEntity> getAllSubjects(@NonNull String typeKey)
+            throws HttpClientException, ODataRuntimeException {
         final URI entitySetURI = client.newURIBuilder(serviceRootOData)
                 .appendEntitySetSegment(Set.SUBJECT.name)
-                .filter(COMMON_OWNER+" eq guid'"+type+"'")
+                .filter(COMMON_OWNER+" eq guid'"+typeKey+"'")
                 .orderBy(COMMON_ORDER+ORDER_ASC)
                 .build();
-        final ODataRetrieveResponse<ClientEntitySet> entitySet = client.getRetrieveRequestFactory().getEntitySetRequest(entitySetURI).execute();
+        final ODataRetrieveResponse<ClientEntitySet> entitySet = client.getRetrieveRequestFactory().
+                getEntitySetRequest(entitySetURI).execute();
         return entitySet.getBody().getEntities();
     }
 
     /**
-     * Распковать предмет аудита
-     * @param entity - ответ на запрос
-     * @return - предмет аудита
+     * Parse a subject from client entity
+     * @param entity - client entity with audit subject
+     * @return - audit subject for list of indicators.
+     * This is done to show audit indicators by subject
+     * @throws ODataRuntimeException - in case of requesting failure
      */
-    private IndList.Ind parseSubject(ClientEntity entity) {
+    private IndList.Ind parseSubject(ClientEntity entity) throws ODataRuntimeException {
         final IndList.Ind subject = new IndList.Ind();
         if (entity != null) {
             subject.id = getKey(entity.getProperty(COMMON_KEY).getPrimitiveValue().toString());
             subject.name = entity.getProperty(COMMON_NAME).getPrimitiveValue().toString();
             subject.pater = getKey(entity.getProperty(COMMON_PARENT).getPrimitiveValue().toString());
-            subject.folder = true; //Все будет папками
-            //Заполним, чтобы не пустовало и не возникала ошибка при упаковке/распаковке
+            subject.folder = true; //All subjects must be groups for audit indicators.
             subject.type = Indicators.Types.IS_BOOLEAN;
             subject.criterion = Indicators.Criteria.EQUALLY;
         }
@@ -2048,31 +2202,35 @@ public class AuditOData {
     }
 
     /**
-     * Добавить предметы в виде папок в дерево показателей
-     * @param indList - дерево показателей
-     * @param type - guid вида аудита
+     * Add subjects as indicators groups to the list for any type of audit from 1C database.
+     * This is done to show audit indicators by subject
+     * @param indList - list of indicators for addition
+     * @param typeKey - audit type guid
+     * @throws ODataErrorException - in case of requesting failure
      */
-    void addSubjects(@NonNull IndList indList, @NonNull String type) {
+    void addSubjects(@NonNull IndList indList, @NonNull String typeKey) throws ODataErrorException {
         try {
-            for (ClientEntity clientEntity: getAllSubjects(type))
+            for (ClientEntity clientEntity: getAllSubjects(typeKey))
                 indList.add(parseSubject(clientEntity));
         }
-        catch(ODataRuntimeException e) {
-            if (sayErrorMessage(e)) {
-                e.printStackTrace();
-                throw new RuntimeException("AuditOData.addSubjects( ..., guid'"+type+"') Error on requesting of subjects. "+e.getMessage());
-            }
+        catch (HttpClientException e) {
+            throw new ODataErrorException(e, CONNECTION_ERROR);
+        }
+        catch (ODataRuntimeException e) {
+            throw new ODataErrorException(e, "Error requesting subjects");
         }
     }
 
-    //ВСЕ ДЛЯ СПИСКА МЕДИАФАЙЛОВ
-
+    //EVERYTHING FOR A LIST OF MEDIA FILES
     /**
-     * Получить список ентити с медиафайлами задания
-     * @param task_key - guid задания
-     * @return - список ентити
+     * Get a list of client entities this task
+     * @param task_key - task guid
+     * @return - list of client entities
+     * @throws HttpClientException - in case of connection error
+     * @throws ODataRuntimeException - in case of request error
      */
-    private List<ClientEntity> getAllMediaFiles(@NonNull String task_key) {
+    private List<ClientEntity> getAllMediaFiles(@NonNull String task_key)
+            throws HttpClientException, ODataRuntimeException {
         String filter = MEDIA_TASK_KEY+" eq guid'"+task_key+"'";
         final URIBuilder uriBuilder = client.newURIBuilder(serviceRootOData);
         uriBuilder.appendEntitySetSegment(Set.MEDIA_FILES.name)
@@ -2091,11 +2249,14 @@ public class AuditOData {
     }
 
     /**
-     * Создание медиафайла по ентити
-     * @param entity - ентити
-     * @return - медиафайл
+     * Parse a media file by a client entity
+     * @param entity - client entity with media file
+     * @return - media file
+     * @throws HttpClientException - in case of connection failure
+     * @throws ODataErrorException - in case of request failure
      */
-    private MediaFiles.MediaFile parseMediaFile(ClientEntity entity) {
+    private MediaFiles.MediaFile parseMediaFile(ClientEntity entity)
+            throws HttpClientException, ODataRuntimeException {
         MediaFiles.MediaFile mediaFile = null;
         if (entity!=null) {
             mediaFile = new MediaFiles.MediaFile();
@@ -2126,20 +2287,23 @@ public class AuditOData {
     }
 
     /**
-     * Пополнить список медиафайлов задания
-     * @param mediaFiles - список медиафайлов
-     * @param task_key - guid задания
+     * Add media files list of task
+     * @param mediaFiles - media files list
+     * @param task_key - task guid
+     * @throws HttpClientException - in case of connection error
+     * @throws ODataErrorException - in case of request error
      */
-    private void getMediaFiles(@NonNull MediaFiles mediaFiles, @NonNull String task_key) {
+    private void getMediaFiles(@NonNull MediaFiles mediaFiles, @NonNull String task_key)
+            throws HttpClientException, ODataErrorException {
         try {
             for (ClientEntity clientEntity: getAllMediaFiles(task_key))
                 mediaFiles.add(parseMediaFile(clientEntity));
         }
+        catch (HttpClientException e) {
+            throw new ODataErrorException(e, CONNECTION_ERROR);
+        }
         catch (ODataRuntimeException e) {
-            if (sayErrorMessage(e)) {
-                e.printStackTrace();
-                throw new RuntimeException("Error on requesting of media files." + e.getMessage());
-            }
+            throw new ODataErrorException(e, "Error requesting media files list");
         }
     }
 

@@ -20,7 +20,7 @@ class AType {
     String id; //Идентификатор
     String name; //Наименование
 //    String code; //Код в 1С
-//    String pater; //Родитель
+//    String parent; //Родитель
 //    boolean folder; //Папка
 //    boolean deleted; //Пометка на удаление
 //    boolean predefined; //Предопределенный

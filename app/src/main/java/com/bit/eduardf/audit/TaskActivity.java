@@ -1,6 +1,7 @@
 package com.bit.eduardf.audit;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -619,7 +620,7 @@ public class TaskActivity extends AppCompatActivity implements
             final File file = new File(getExternalFilesDir(dirType), filePrefix+fileSuffix);
             Uri photoURI;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                photoURI = FileProvider.getUriForFile(this, "com.example.eduardf.audit.fileprovider", file);
+                photoURI = FileProvider.getUriForFile(this, getPackageName()+".fileprovider", file);
                 takePictureIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
             } else {
                 photoURI = Uri.fromFile(file);
@@ -808,10 +809,12 @@ public class TaskActivity extends AppCompatActivity implements
 
     //Асинхронный загрузчик задания
     private static class LoadTask extends AsyncTaskLoader<Tasks.Task> {
+        final Activity activity;
         final AuditOData oData;
         final String key;
         private LoadTask(@NonNull Context context, AuditOData oData, String key) {
             super(context);
+            this.activity = (Activity) context;
             this.oData = oData;
             this.key = key;
         }
@@ -826,7 +829,14 @@ public class TaskActivity extends AppCompatActivity implements
         @Nullable
         @Override
         public Tasks.Task loadInBackground() {
-            return oData.getTask(key);
+            Tasks.Task task = null;
+            try {
+                task = oData.getTask(key);
+            }
+            catch (ODataErrorException e) {
+                e.snackbarShow(activity, R.id.toolbar);
+            }
+            return task;
         }
     }
 

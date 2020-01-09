@@ -20,7 +20,7 @@ class Items extends ArrayList<Items.Item> {
     //Пункт списка - элемент справочника
     static class Item {
         String id; //Идентификатор
-        String pater; //Родитель или 0, если корень
+        String parent; //Родитель или 0, если корень
         boolean folder; //Признак группы
         String name; //Наименование
         boolean deleted; //Пометка на удаление
