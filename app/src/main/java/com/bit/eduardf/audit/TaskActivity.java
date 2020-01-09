@@ -403,6 +403,8 @@ public class TaskActivity extends AppCompatActivity implements
         tabSpec.setIndicator(getString(R.string.tab_ind));
         tabSpec.setContent(R.id.tab3);
         tabHost.addTab(tabSpec);
+        //Make the analytics tab invisible by default until the audit type is loaded
+        visibilityAnalytics(View.GONE);
         return tabHost;
     }
 
