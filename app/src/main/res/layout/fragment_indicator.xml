@@ -9,7 +9,6 @@
 
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal">
@@ -27,6 +26,7 @@
             android:layout_marginEnd="@dimen/field_horizontal_margin"
             android:layout_marginStart="@dimen/field_horizontal_margin"
             android:layout_marginTop="@dimen/field_vertical_margin"
+            android:baselineAligned="false"
             android:orientation="horizontal">
 
             <LinearLayout
@@ -42,6 +42,7 @@
                     android:layout_marginEnd="@dimen/field_vertical_margin"
                     android:orientation="horizontal"
                     android:paddingStart="@dimen/field_vertical_margin"
+                    android:paddingEnd="0dp"
                     android:paddingTop="@dimen/field_vertical_margin"
                     android:paddingBottom="@dimen/field_vertical_margin">
 
@@ -57,6 +58,7 @@
                         android:id="@+id/folder"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:contentDescription="@string/item_open"
                         app:srcCompat="@drawable/ic_baseline_navigate_next_24px" />
 
                     <TextView
@@ -74,7 +76,6 @@
                         android:layout_height="wrap_content"
                         android:layout_gravity="center_vertical"
                         android:background="@color/colorBackgroundGrey"
-                        android:textAlignment="viewEnd"
                         android:textSize="18sp" />
 
                 </LinearLayout>
@@ -83,7 +84,7 @@
                     android:id="@+id/checkBox"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:gravity="left"
+                    android:gravity="start"
                     android:layoutDirection="rtl"
                     android:padding="@dimen/field_vertical_margin"
                     android:textAppearance="?attr/textAppearanceListItem" />
@@ -97,7 +98,28 @@
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:layout_marginEnd="@dimen/field_horizontal_margin"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:id="@+id/achived"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="@dimen/field_vertical_margin"
+                            android:layout_marginEnd="@dimen/field_vertical_margin"
+                            android:contentDescription="@string/txt_crit"
+                            app:srcCompat="@drawable/ic_black_thumb_up_alt_24px" />
+
+                        <TextView
+                            android:id="@+id/desc"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1" />
+
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
                         android:orientation="horizontal">
 
                         <ImageButton
@@ -110,52 +132,19 @@
                             android:padding="10dp"
                             android:src="@drawable/ic_black_camera_24px" />
 
-                        <LinearLayout
+                        <android.support.design.widget.TextInputLayout
+                            android:id="@+id/comment_layout"
                             android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical">
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:hint="@string/txt_cmt">
 
-                            <LinearLayout
+                            <android.support.design.widget.TextInputEditText
+                                android:id="@+id/comment"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:orientation="horizontal">
-
-                                <ImageView
-                                    android:id="@+id/achived"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginRight="@dimen/field_vertical_margin"
-                                    app:srcCompat="@drawable/ic_black_thumb_up_alt_24px" />
-
-                                <TextView
-                                    android:id="@+id/criterion"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:layout_weight="1" />
-                            </LinearLayout>
-
-                            <TextView
-                                android:id="@+id/desc"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1" />
-
-                            <android.support.design.widget.TextInputLayout
-                                android:id="@+id/comment_layout"
-                                android:layout_width="match_parent"
-                                android:layout_height="match_parent"
-                                android:layout_weight="1"
-                                android:hint="@string/txt_cmt">
-
-                                <android.support.design.widget.TextInputEditText
-                                    android:id="@+id/comment"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:editable="false" />
-                            </android.support.design.widget.TextInputLayout>
-
-                        </LinearLayout>
+                                android:editable="false" />
+                        </android.support.design.widget.TextInputLayout>
 
                     </LinearLayout>
 

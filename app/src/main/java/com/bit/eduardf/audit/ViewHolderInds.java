@@ -30,7 +30,7 @@ public class ViewHolderInds extends RecyclerView.ViewHolder {
     public final CheckBox checkBox; // Чекбокс для типа значения boolean
     final LinearLayout expandLayout; //лайаут от условия до комментария
     public final ImageView achived; //Цель достигнута
-    public final TextView criterion; // условие
+//    public final TextView criterion; // условие
     public final TextView desc; // описание
     public final ImageButton camera; //Фотография
 //    final TextInputLayout commentLayout; // контейнер пункта
@@ -51,7 +51,7 @@ public class ViewHolderInds extends RecyclerView.ViewHolder {
         checkBox = view.findViewById(R.id.checkBox);
         expandLayout = view.findViewById(R.id.expand_layout);
         achived = view.findViewById(R.id.achived);
-        criterion = view.findViewById(R.id.criterion);
+//        criterion = view.findViewById(R.id.criterion);
         desc = view.findViewById(R.id.desc);
         camera = view.findViewById(R.id.camera);
 //        commentLayout = view.findViewById(R.id.comment_layout);

@@ -249,7 +249,7 @@ class IndicatorsAdapter extends RecyclerView.Adapter<ViewHolderInds> {
                 else  //Цель не достигнута
                     holder.achived.setImageResource(R.drawable.ic_black_thumb_down_alt_24px); //Палец вниз
                 //Критерий, описание, предмет, комментарий
-                holder.criterion.setText(holder.item.not_involved? "Показатель не участвует в определении результатов" : holder.item.russianCriterion());
+//                holder.criterion.setText(holder.item.not_involved? "Показатель не участвует в определении результатов" : holder.item.russianCriterion());
                 if (holder.item.desc.isEmpty()) holder.desc.setVisibility(View.GONE);
                 else {
                     holder.desc.setVisibility(View.VISIBLE);
