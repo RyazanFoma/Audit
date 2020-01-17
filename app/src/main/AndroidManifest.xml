@@ -51,7 +51,7 @@
             android:label="@string/title_activity_task_list"
             android:theme="@style/AppTheme.NoActionBar" />
         <activity
-            android:name="com.bit.eduardf.audit.SettingsAudit"
+            android:name="com.bit.eduardf.audit.SettingAudit"
             android:label="@string/title_activity_settings_audit"
             android:parentActivityName="com.bit.eduardf.audit.MainActivity"
             android:theme="@style/AppTheme.WithActionBar">

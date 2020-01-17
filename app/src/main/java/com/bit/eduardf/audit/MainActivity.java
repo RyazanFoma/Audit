@@ -153,7 +153,7 @@ public class MainActivity extends AppCompatActivity implements
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
-            startActivity(new Intent(this, SettingsAudit.class));
+            startActivity(new Intent(this, SettingAudit.class));
             return true;
         }
 
@@ -173,7 +173,6 @@ public class MainActivity extends AppCompatActivity implements
         super.onSaveInstanceState(outState);
 
         if (loaded) {
-//            outState.putParcelable(ARG_USER, user.onSaveInstanceState());
             final Parcelable[] parcelables = new Parcelable[users.size()];
             int i = 0;
             for (Map<String, Object> u: users) {

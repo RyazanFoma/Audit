@@ -41,7 +41,7 @@ class Tasks extends ArrayList<Tasks.Task> {
         boolean posted; //Проведен
         boolean checked; //Отмечен в списке
         boolean expand; //Карточка в списке развернута
-        boolean full; //Карточка в списке занимает все колонки
+        boolean group; //Карточка в списке занимает все колонки
         ArrayList<String> analytics; //Аналитика списком
         ArrayList<IndicatorRow> indicators; //Покаказели задания
         MediaFiles mediaFiles; //Медиафайлы
@@ -51,6 +51,17 @@ class Tasks extends ArrayList<Tasks.Task> {
             analytics = new ArrayList<>();
             indicators = new ArrayList<>();
             mediaFiles = new MediaFiles();
+        }
+
+        //Конструктор разделителя заданий на группы
+        Task(Date date, Status status) {
+            analytics = new ArrayList<>();
+            indicators = new ArrayList<>();
+            mediaFiles = new MediaFiles();
+            group = true;
+// this is filling in for success a сom.bit.eduardf.audit.ParcelableTask.writeToParcel
+            this.date = date;
+            this.status = status;
         }
 
         //Идентификаторы статуса задания из 1С
@@ -240,7 +251,7 @@ class Tasks extends ArrayList<Tasks.Task> {
         }
     }
 
-        //возвращает количество отмеченных заданий
+    //возвращает количество отмеченных заданий
     int checkedCount() {
         int checked = 0;
         for(Task task: this) if (task.checked) checked++;
@@ -252,6 +263,12 @@ class Tasks extends ArrayList<Tasks.Task> {
         ArrayList<String> checked = new ArrayList<>();
         for(Task task: this) if (task.checked) checked.add(task.id);
         return checked;
+    }
+
+    public int getCount() {
+        int i = 0;
+        for (Task task: this) if (!task.group) ++i;
+        return i;
     }
 
     //Отмечает задания по списку
@@ -275,7 +292,11 @@ class Tasks extends ArrayList<Tasks.Task> {
 
     //Помечает/отменяет все задания
     void setCheckedAll(boolean checked) {
-        for(Task task: this) task.checked=checked;
+        for(Task task: this) {
+            if (!task.group) {
+                task.checked=checked;
+            }
+        }
     }
 }
 //Фома2018

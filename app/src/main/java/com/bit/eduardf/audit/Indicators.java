@@ -84,7 +84,7 @@ class Indicators extends ArrayList<Indicators.Indicator> {
                     return LESS;
                 case "МеньшеИлиРавно":
                     return LESS_OR_EQUEL;
-                case "ВДиапозоне":
+                case "ВДиапазоне":
                     return IN_RANGE;
                 case "ВПределахПогрешности":
                     return IN_ERROR;

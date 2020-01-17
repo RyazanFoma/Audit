@@ -34,6 +34,7 @@ import android.view.View;
 import android.widget.CheckBox;
 
 import java.util.ArrayList;
+import java.util.Date;
 
 import static android.support.v7.widget.RecyclerView.SCROLL_STATE_IDLE;
 import static com.bit.eduardf.audit.TaskListAdapter.CHECKED_STATUS_ALL;
@@ -459,7 +460,8 @@ public class TaskListActivity extends AppCompatActivity
                     menu.setGroupVisible(R.id.is_checked, true);
                     menu.setGroupVisible(R.id.mark, true);
 
-                    menu.setGroupEnabled(R.id.is_checked,checkedStatus != CHECKED_STATUS_NULL); //Доступность группы: Изменить, Копировать, Переместить, Удалить
+                    //Доступность группы: Изменить, Копировать, Переместить, Удалить
+                    menu.setGroupEnabled(R.id.is_checked,checkedStatus != CHECKED_STATUS_NULL);
 
                     Drawable ic_copy = getResources().getDrawable(R.drawable.ic_white_file_copy_24px);
                     Drawable ic_move = getResources().getDrawable(R.drawable.ic_white_library_books_24px);
@@ -706,17 +708,22 @@ public class TaskListActivity extends AppCompatActivity
         public Tasks loadInBackground() {
             final Tasks tasks = new Tasks();
             try {
-                tasks.addAll(oData.getTasks(auditor, status, like));
-                if (full && !tasks.isEmpty()) {
-                    long date = tasks.get(0).date.getTime()/MILLISEC_PER_DAY;
-                    for (Tasks.Task task: tasks) {
-                        final long next = task.date.getTime()/MILLISEC_PER_DAY;
-                        if (date != next) {
-                            //Первое задание в группировке по датам занимает все колонки в списке
-                            task.full = true;
-                            date = next;
+                if (full) {
+                    final Tasks source = oData.getTasks(auditor, status, like);
+                    long prev = 0;
+                    if (!source.isEmpty()) {
+                        for (Tasks.Task task: source) {
+                            final long next = task.date.getTime()/MILLISEC_PER_DAY;
+                            if (prev != next) {
+                                tasks.add(new Tasks.Task(task.date, status));
+                                prev = next;
+                            }
+                            tasks.add(task);
                         }
                     }
+                }
+                else {
+                    tasks.addAll(oData.getTasks(auditor, status, like));
                 }
             }
             catch (ODataErrorException e) {

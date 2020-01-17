@@ -60,6 +60,7 @@ class ParcelableTask implements Parcelable {
         dest.writeString(task.comment);
         dest.writeInt(task.checked? 1: 0);
         dest.writeInt(task.expand? 1: 0);
+        dest.writeInt(task.group ? 1: 0);
     }
 
     //Извлекает объект из парсел
@@ -89,6 +90,7 @@ class ParcelableTask implements Parcelable {
         task.comment = in.readString();
         task.checked = (in.readInt() == 1);
         task.expand = (in.readInt() == 1);
+        task.group = (in.readInt() == 1);
     }
 }
 //Фома2018

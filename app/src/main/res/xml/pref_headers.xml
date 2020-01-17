@@ -11,17 +11,17 @@
     <!-- These settings headers are only used on tablets. -->
 
     <header
-        android:fragment="com.bit.eduardf.audit.SettingsAudit$GeneralPreferenceFragment"
+        android:fragment="com.bit.eduardf.audit.SettingAudit$GeneralPreferenceFragment"
         android:icon="@drawable/ic_black_phonelink_setup_24px"
         android:title="@string/pref_header_general" />
 
     <header
-        android:fragment="com.bit.eduardf.audit.SettingsAudit$TasksPreferenceFragment"
+        android:fragment="com.bit.eduardf.audit.SettingAudit$TasksPreferenceFragment"
         android:icon="@drawable/ic_black_table_chart_24px"
         android:title="@string/pref_header_tasks" />
 
     <header
-        android:fragment="com.bit.eduardf.audit.SettingsAudit$oDataPreferenceFragment"
+        android:fragment="com.bit.eduardf.audit.SettingAudit$oDataPreferenceFragment"
         android:icon="@drawable/ic_black_odata_24px"
         android:title="@string/pref_header_odata" />
 

@@ -76,6 +76,8 @@ public class TaskActivity extends AppCompatActivity implements
     private static GetAuditor getAuditor;
     private MediaFiles.MediaFile mediaFile; //Текущий медиафайл
 
+    private boolean saveAndClose; //Признак сохранить и закрыть
+
     //Режимы открытия формы
     private final static int CREATE_MODE = 0; //создание нового задания аудита
     private final static int EDIT_MODE = 1; //редактирвоание существующего задания аудита
@@ -93,6 +95,7 @@ public class TaskActivity extends AppCompatActivity implements
     private final static String ARG_TAG = "tag"; //Текущая закладка
     private final static String ARG_FILLED = "filled"; //Признаки заполнения закладок
     private final static String ARG_MEDIA = "media"; //текущий медиафайл
+    private static final String ARG_COMMENT = "comment";
 
     private final static int RC_CAMERA = 1; //Код возврата для камеры
     private final static int RC_GALLERY = 2; //Код возврата для галлереи
@@ -273,6 +276,7 @@ public class TaskActivity extends AppCompatActivity implements
         intent.putExtra(ARG_STATUS, task.status.number);
         intent.putExtra(ARG_TYPE, task.type_name);
         intent.putExtra(ARG_OBJECT, task.object_name);
+        intent.putExtra(ARG_COMMENT, task.comment);
         instanceOf(context);
         return intent;
     }
@@ -346,7 +350,7 @@ public class TaskActivity extends AppCompatActivity implements
                     task.status = Tasks.Task.Status.toValue(intent.getIntExtra(ARG_STATUS, Tasks.Task.Status.APPROVED.number));
                     task.type_name = intent.getStringExtra(ARG_TYPE);
                     task.object_name = intent.getStringExtra(ARG_OBJECT);
-                    task.comment = "";
+                    task.comment = intent.getStringExtra(ARG_COMMENT);;
                     fillViews(Tags.HEAD); //Заполняем общие поля
                     //Запускаем загрузчик для чтения данных.
                     startLoader(intent.getExtras());
@@ -413,7 +417,7 @@ public class TaskActivity extends AppCompatActivity implements
         final FloatingActionButton fab = findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View view) { saveTask(); }
+            public void onClick(View view) { saveTask(true); }
         });
     }
 
@@ -581,7 +585,7 @@ public class TaskActivity extends AppCompatActivity implements
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.save:
-                saveTask();
+                saveTask(false);
                 return true;
         }
         return super.onOptionsItemSelected(item);
@@ -592,6 +596,7 @@ public class TaskActivity extends AppCompatActivity implements
     public void onScrollUpListener(int visibility) {
         findViewById(R.id.head).setVisibility(visibility);
         findViewById(android.R.id.tabs).setVisibility(visibility);
+        findViewById(R.id.fab).setVisibility(visibility);
     }
 
     /**
@@ -709,7 +714,8 @@ public class TaskActivity extends AppCompatActivity implements
     /**
      * Сохраняет задание
      */
-    private void saveTask() {
+    private void saveTask(boolean saveAndClose) {
+        this.saveAndClose = saveAndClose;
         //НУЖНО ДОБАВИТЬ ПРОВЕРКУ ЗАПОЛНЕНИЯ ОБЯЗАТЕЛЬНЫХ ПОЛЕЙ!!!
         task.date = dateTime.getDate();
         if (filledTag[Tags.COMMON.index]) {
@@ -737,10 +743,15 @@ public class TaskActivity extends AppCompatActivity implements
      */
     @Override
     public void onSaveTaskPostExecute(int status) {
-        Intent intent = new Intent();
-        intent.putExtra(ARG_STATUS, status);
-        setResult(RESULT_OK, intent);
-        finish(); //Закрываем активность
+        if (saveAndClose) {
+            Intent intent = new Intent();
+            intent.putExtra(ARG_STATUS, status);
+            setResult(RESULT_OK, intent);
+            finish(); //Закрываем активность
+        }
+        else {
+            findViewById(R.id.progressBar).setVisibility(View.INVISIBLE);
+        }
     }
 
     /**

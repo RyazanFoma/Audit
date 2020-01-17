@@ -167,7 +167,7 @@
 
     <string name="pref_key_tasks_group_by_date">tasks_group_by_date</string>
     <string name="pref_title_tasks_group_by_date">Группировать задания по датам</string>
-    <string name="pref_description_tasks_group_by_date">Первое задание в группе будет занимать все колонки списка</string>
+    <string name="pref_description_tasks_group_by_date">Задания с одинаковой датой будут отделены от других разделителем</string>
 
     <string name="pref_title_task_settings">Настройки документа</string>
 
