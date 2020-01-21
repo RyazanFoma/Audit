@@ -31,7 +31,7 @@
         <fragment
             android:id="@+id/fragment_date"
             android:name="com.bit.eduardf.audit.DateTime"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="@dimen/field_horizontal_margin"
             android:layout_marginTop="@dimen/field_vertical_margin"

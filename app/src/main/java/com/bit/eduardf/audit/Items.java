@@ -27,6 +27,7 @@ class Items extends ArrayList<Items.Item> {
         boolean predefined; //Предопределенный элемент
         String prenamed; //Предопределенное наименование
         boolean checked; //Отмеченные пункт
+        boolean selected; //Выбранные ранее пункт
         boolean expand; //Развернутый пункт
     }
 
@@ -66,7 +67,7 @@ class Items extends ArrayList<Items.Item> {
     //Помечает/отменяет все задания
     void setCheckedAll(boolean checked, boolean only_child) {
         if (only_child) {
-            for(Item item: this) if (!item.folder) item.checked=checked;
+            for(Item item: this) if (!(item.folder || item.selected)) item.checked=checked;
         }
         else {
             for(Item item: this) item.checked=checked;
@@ -79,12 +80,12 @@ class Items extends ArrayList<Items.Item> {
         return null;
     }
 
-    //Возвращает позицию пункта по id, если не найден 0
-    int getPosition(String id) {
-        int i=0;
-        for(final Items.Item item: this) if (id.equals(item.id)) return i; else i++;
-        return 0;
-    }
+//    //Возвращает позицию пункта по id, если не найден 0
+//    int getPosition(String id) {
+//        int i=0;
+//        for(final Items.Item item: this) if (id.equals(item.id)) return i; else i++;
+//        return 0;
+//    }
 
     /**
      * Сохраняет содержимое списка

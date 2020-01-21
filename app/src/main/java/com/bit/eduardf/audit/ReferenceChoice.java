@@ -54,7 +54,7 @@ public class ReferenceChoice extends AppCompatActivity implements
     private int iRC = -1; //Сквозной код для идентификации результата выбора
     private AuditOData.Set sTable; //Имя таблицы
     private Bundle bArgs; //Агрументы для загрузчика списка
-    private ArrayList<String> ids; //Текущие выбранные элементы для подсветки
+    private ArrayList<String> selected; //Текущие выбранные элементы для подсветки
     private ArrayList<String> checkedIdsCopyMove; //Список отмеченных для копирования/переноса
     private String checkedFrom; //Папка, откуда перемещаем/копируем отмеченные
 
@@ -330,7 +330,7 @@ public class ReferenceChoice extends AppCompatActivity implements
             sOwner = intent.getStringExtra(ARG_OWNER);
             iModeChoice = intent.getIntExtra(ARG_MODE, MODE_SINGLE_CHOICE); //Режим выбора. По умолчанию - одиночный выбор
             iModeMenu = ACTION_BAR;
-            ids = intent.getStringArrayListExtra(ARG_ID); //Текущие выбранные элементы
+            selected = intent.getStringArrayListExtra(ARG_ID); //Текущие выбранные элементы
             Items.Item item = new Items.Item();
             item.id = AuditOData.EMPTY_KEY;
             item.name = getResources().getString(R.string.btn_top);
@@ -349,7 +349,7 @@ public class ReferenceChoice extends AppCompatActivity implements
             sOwner = savedInstanceState.getString(ARG_OWNER);
             iModeChoice = savedInstanceState.getInt(ARG_MODE);
             iModeMenu = savedInstanceState.getInt(ARG_MODE_MENU, ACTION_BAR); //Режим меню
-            ids = savedInstanceState.getStringArrayList(ARG_ID);
+            selected = savedInstanceState.getStringArrayList(ARG_ID);
             sLike = savedInstanceState.getString(ARG_LIKE, "");
             sPater = savedInstanceState.getString(ARG_PATER);
             if (savedInstanceState.containsKey(ARG_PARENTTYPES))
@@ -378,7 +378,7 @@ public class ReferenceChoice extends AppCompatActivity implements
 
         // настраиваем список
         RecyclerView recyclerView = findViewById(R.id.list);
-        recyclerAdapter = new ReferenceAdapter(this, oData, sTable, ids, myStack,
+        recyclerAdapter = new ReferenceAdapter(this, oData, sTable, myStack,
                 iModeChoice, iModeMenu);
         recyclerView.setAdapter(recyclerAdapter);
         recyclerView.setLayoutManager(mLayoutManager);
@@ -473,7 +473,7 @@ public class ReferenceChoice extends AppCompatActivity implements
         outState.putString(ARG_OBJECTKEY, bArgs.getString(ARG_OBJECTKEY));
         outState.putParcelable(ARG_STATE, mLayoutManager.onSaveInstanceState());
         outState.putInt(ARG_MODE_MENU, iModeMenu); //Режим меню
-        outState.putStringArrayList(ARG_ID, ids);
+        outState.putStringArrayList(ARG_ID, selected);
         recyclerAdapter.onSaveInstanceState(outState);
         myStack.onSaveInstanceState(outState, ARG_STACK);
         if (iModeMenu == ACTION_COPY | iModeMenu == ACTION_MOVE) {
@@ -494,7 +494,7 @@ public class ReferenceChoice extends AppCompatActivity implements
         //Если до поворота экрана было запущено контекстное меню, то открываем его опять
         if (iModeMenu !=ACTION_BAR && mActionMode == null)
             mActionMode = startSupportActionMode(mActionModeCallback);
-        ids = savedInstanceState.getStringArrayList(ARG_ID);
+        selected = savedInstanceState.getStringArrayList(ARG_ID);
         myStack.onRestoreInstanceState(savedInstanceState, ARG_STACK);
         myStack.addTextView((LinearLayout) findViewById(R.id.ancestors), this);
         if (iModeMenu == ACTION_COPY | iModeMenu == ACTION_MOVE) {
@@ -510,7 +510,7 @@ public class ReferenceChoice extends AppCompatActivity implements
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        ids = null;
+        selected = null;
         recyclerAdapter = null;
         mLayoutManager = null;
         mActionMode = null;
@@ -862,7 +862,9 @@ public class ReferenceChoice extends AppCompatActivity implements
     //вызывается при создании элемента
     @Override
     public void onCreateElementPositiveClick(String name) {
-        recyclerAdapter.addRow(name, false);
+        recyclerAdapter.addRow(name, false, bArgs.getString(ARG_TYPEKEY), bArgs.getString(ARG_OBJECTKEY));
+
+
     }
 
     //вызывается при удалении строк
@@ -900,7 +902,10 @@ public class ReferenceChoice extends AppCompatActivity implements
     public void onLoadFinished(@NonNull Loader<Items> loader, Items data) {
         currentPage.nextPage(data.size());
         myStack.addTextView((LinearLayout) findViewById(R.id.ancestors), this);
-        recyclerAdapter.loadList(data);
+        for(Items.Item item: data) {
+            item.selected = selected.contains(item.id);
+            recyclerAdapter.addItem(item);
+        }
         if (iModeMenu == ACTION_BAR) invalidateOptionsMenu();
         else mActionMode.invalidate();
         if (recyclerAdapter.isEmpty()) { //Если список пустой, то сделаем видимым навигационное меню с иконками + и (+)
@@ -915,7 +920,7 @@ public class ReferenceChoice extends AppCompatActivity implements
     @Override
     public void onLoaderReset(@NonNull Loader<Items> loader) {
         myStack.clip(-1);
-        recyclerAdapter.loadList(null);
+//        recyclerAdapter.loadList(null);
         findViewById(R.id.progressBar).setVisibility(View.INVISIBLE);
     }
 

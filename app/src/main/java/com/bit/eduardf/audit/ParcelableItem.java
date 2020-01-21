@@ -49,6 +49,7 @@ public class ParcelableItem implements Parcelable {
         dest.writeInt(item.predefined? 1: 0);
         dest.writeString(item.prenamed);
         dest.writeInt(item.checked ? 1: 0);
+        dest.writeInt(item.selected ? 1: 0);
         dest.writeInt(item.expand ? 1: 0);
     }
 
@@ -62,6 +63,7 @@ public class ParcelableItem implements Parcelable {
         item.predefined = (in.readInt() == 1);
         item.prenamed = in.readString();
         item.checked = (in.readInt() == 1);
+        item.selected = (in.readInt() == 1);
         item.deleted = (in.readInt() == 1);
     }
     

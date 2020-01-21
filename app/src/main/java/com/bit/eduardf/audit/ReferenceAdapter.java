@@ -2,6 +2,10 @@ package com.bit.eduardf.audit;
 
 import android.app.Activity;
 import android.content.Context;
+import android.graphics.Color;
+import android.graphics.ColorFilter;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffColorFilter;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -46,7 +50,6 @@ class ReferenceAdapter extends RecyclerView.Adapter<ViewHolderRefs> {
     private AuditOData.Set table; //Таблица
     private View.OnClickListener onClickListener; //Обработчик короткого нажатия
     private View.OnLongClickListener onLongClickListener; //Обработчик длинного нажатия
-    private ArrayList<String> ids; //Текущие выбранные элементы для подсветки
     private Stack stack; //Стек предков
     private int modeChoice; //Режим выбора
     private int modeMenu; //Режим меню
@@ -63,13 +66,12 @@ class ReferenceAdapter extends RecyclerView.Adapter<ViewHolderRefs> {
      * @param context - контекст активности
      * @param oData - доступ в 1С
      * @param table - таблица 1С
-     * @param ids - список guid выбранных ранее пунктов
      * @param stack - стек предков
      * @param modeChoice - режим выбора: одиночный / множественный
-     * @param modeMenu - режим меню: обычное для выбора, контектное для редактирования, копирование/перемещение
+     * @param modeMenu - режим меню: обычное для выбора, контекстное для редактирования, копирование/перемещение
      */
     ReferenceAdapter(Context context, AuditOData oData, AuditOData.Set table,
-                     ArrayList<String> ids, Stack stack, int modeChoice, int modeMenu) {
+                     Stack stack, int modeChoice, int modeMenu) {
 
         if (context instanceof View.OnClickListener && context instanceof View.OnLongClickListener) {
             this.onClickListener = (View.OnClickListener) context;
@@ -82,7 +84,6 @@ class ReferenceAdapter extends RecyclerView.Adapter<ViewHolderRefs> {
         this.activity = (Activity) context;
         this.oData = oData;
         this.table = table;
-        this.ids = ids;
         this.stack = stack;
         this.modeChoice = modeChoice;
         this.modeMenu = modeMenu;
@@ -135,6 +136,7 @@ class ReferenceAdapter extends RecyclerView.Adapter<ViewHolderRefs> {
     }
 
     /**
+     * Подсчет отмеченных пунктов
      * @return - количество пунктов списка
      */
     int checkedCount() {
@@ -166,13 +168,13 @@ class ReferenceAdapter extends RecyclerView.Adapter<ViewHolderRefs> {
     }
 
     /**
-     * Добавляет в список новые пункты
-     * @param data - новые пункты
+     * Добавляет пукнт в список
+     * @param item - пункт
      */
-    void loadList(Items data) {
+    void addItem(Items.Item item) {
         final int start = items.size();
-        if (data!=null) items.addAll(data);
-        notifyItemRangeInserted(start, data.size());
+        items.add(item);
+        notifyItemInserted(start);
     }
 
     /**
@@ -199,7 +201,7 @@ class ReferenceAdapter extends RecyclerView.Adapter<ViewHolderRefs> {
         //Подсчитываем количество отмеченных и всех
         if (only_child) {
             for(Items.Item item: items) {
-                if (!item.folder) {
+                if (!(item.folder || item.selected)) {
                     count++;
                     if (item.checked) checked++;
                 }
@@ -211,8 +213,8 @@ class ReferenceAdapter extends RecyclerView.Adapter<ViewHolderRefs> {
         }
         //Сравниваем результат
         if (checked==0 || count==0) checkedStatus = CHECKED_STATUS_NULL;
-        else if (checked==1) checkedStatus = CHECKED_STATUS_ONE;
         else if (checked==count) checkedStatus = CHECKED_STATUS_ALL;
+        else if (checked==1) checkedStatus = CHECKED_STATUS_ONE;
         else checkedStatus = CHECKED_STATUS_SOME;
     }
 
@@ -357,7 +359,12 @@ class ReferenceAdapter extends RecyclerView.Adapter<ViewHolderRefs> {
             ((ProgressBar) activity.findViewById(R.id.progressBar)).setVisibility(View.VISIBLE);
         }
         protected Items.Item doInBackground(String... name) {
-            return oData.createItem(table, name[0], name[1], isGroup);
+            Items.Item item = oData.createItem(table, name[0], name[1], isGroup);
+            //In the case of manual communication mode type, object and analytics, create a record
+            if (name.length > 3 && name[2] != null && name[3] != null ) {
+                oData.createAnalytic(name[2], name[3], item.id);
+            }
+            return item;
         }
         protected void onPostExecute(Items.Item item) {
             items.add(item);
@@ -370,9 +377,13 @@ class ReferenceAdapter extends RecyclerView.Adapter<ViewHolderRefs> {
      * Добавляет новый элемент/группу
      * @param name - наименование
      * @param isFolder - признак группы
+     * @param handLink - массив с guid вида и объекта акдита для ручных связей аналитик
      */
-    void addRow(String name, boolean isFolder) {
-        new createRowAsyncTask(isFolder).execute(stack.peek().id, name);
+    void addRow(String name, boolean isFolder, String... handLink) {
+        if (handLink.length > 1)
+            new createRowAsyncTask(isFolder).execute(stack.peek().id, name, handLink[0], handLink[1]);
+        else
+            new createRowAsyncTask(isFolder).execute(stack.peek().id, name);
     }
 
     /**
@@ -452,7 +463,7 @@ class ReferenceAdapter extends RecyclerView.Adapter<ViewHolderRefs> {
         holder.itemView.setTag(holder.item); // в теге храним пункт
 
         // Раскрашиваем карточки разными цветами
-        if (!ids.contains(holder.item.id)) { //Пункта нет в списке выбранных элементов
+        if (!holder.item.selected) { //Пункта ранее не выбирался
             if (holder.item.deleted) //Помеченные на удаление - серым
                 holder.cardView.setBackgroundResource(R.color.colorBackgroundGrey);
             else if (holder.item.predefined) //Предопределенные - желтым
@@ -491,11 +502,20 @@ class ReferenceAdapter extends RecyclerView.Adapter<ViewHolderRefs> {
                             holder.checkedView.setTag(null);
                             holder.checkedView.setOnClickListener(null);
                         }
+                        else if (holder.item.selected) {
+                            holder.itemView.setOnClickListener(null); //Только чек-бокс
+                            holder.forwardView.setVisibility(View.GONE);
+                            holder.checkedView.setVisibility(View.VISIBLE);
+                            holder.checkedView.setEnabled(false);
+                            holder.checkedView.setChecked(true);
+                            holder.checkedView.setOnClickListener(null);
+                        }
                         else {
                             holder.itemView.setOnClickListener(null); //Только чек-бокс
                             holder.forwardView.setVisibility(View.GONE);
                             holder.checkedView.setVisibility(View.VISIBLE);
                             holder.checkedView.setChecked(holder.item.checked);
+                            holder.checkedView.setEnabled(true);
                             holder.checkedView.setTag(holder.item);
                             holder.checkedView.setOnClickListener(onClickListener);
                         }

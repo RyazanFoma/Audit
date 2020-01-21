@@ -1598,17 +1598,18 @@ public class AuditOData {
                 .appendEntitySetSegment(table.name)
                 .build();
         final ClientEntity entity = client.getObjectFactory().newEntity(null);
+        final List<ClientProperty> propertys = entity.getProperties();
         //Наименование
-        entity.getProperties().add(client.getObjectFactory().newPrimitiveProperty(COMMON_NAME,
+        propertys.add(client.getObjectFactory().newPrimitiveProperty(COMMON_NAME,
                 client.getObjectFactory().newPrimitiveValueBuilder().buildString(name)));
         //Устанавливаем признак группы
         switch (table.hierarchy) {
             case FOLDER_HIERARCHY:
-                entity.getProperties().add(client.getObjectFactory().newPrimitiveProperty(COMMON_FOLDER,
+                propertys.add(client.getObjectFactory().newPrimitiveProperty(COMMON_FOLDER,
                         client.getObjectFactory().newPrimitiveValueBuilder().buildBoolean(isGroup)));
                 break;
             case ELEMENT_HIERARCHY:
-                entity.getProperties().add(client.getObjectFactory().newPrimitiveProperty(COMMON_GROUP,
+                propertys.add(client.getObjectFactory().newPrimitiveProperty(COMMON_GROUP,
                         client.getObjectFactory().newPrimitiveValueBuilder().buildBoolean(isGroup)));
                 break;
             case NOT_HIERARCHY: default:
@@ -1617,7 +1618,7 @@ public class AuditOData {
                 }
         }
         //Родитель
-        entity.getProperties().add(client.getObjectFactory().newPrimitiveProperty(COMMON_PARENT,
+        propertys.add(client.getObjectFactory().newPrimitiveProperty(COMMON_PARENT,
                 client.getObjectFactory().newPrimitiveValueBuilder().buildString(parent)));
         ODataEntityCreateResponse<ClientEntity> response;
         try {
@@ -1772,6 +1773,39 @@ public class AuditOData {
             throw new ODataErrorException(e, "Error requesting analytics");
         }
         return items;
+    }
+
+    /**
+     * Create a new analytical link in the 1C database table
+     * @param typeKey - audit type giud
+     * @param objectKey - audit object giud
+     * @param analyticKey - object analytic giud
+     * @throws RuntimeException - in case of data or request failure
+     */
+    void createAnalytic(String typeKey, String objectKey, String analyticKey)
+            throws RuntimeException {
+        final URI entityURI = client.newURIBuilder(serviceRootOData)
+                .appendEntitySetSegment(Set.ANALYTIC_CORR.name)
+                .build();
+        final ClientEntity entity = client.getObjectFactory().newEntity(null);
+        final List<ClientProperty> propertys = entity.getProperties();
+        propertys.add(client.getObjectFactory().newPrimitiveProperty(CORR_TYPE_KEY,
+                client.getObjectFactory().newPrimitiveValueBuilder().buildString(typeKey)));
+        propertys.add(client.getObjectFactory().newPrimitiveProperty(CORR_OBJECT_KEY,
+                client.getObjectFactory().newPrimitiveValueBuilder().buildString(objectKey)));
+        propertys.add(client.getObjectFactory().newPrimitiveProperty(CORR_ANALYTIC_KEY,
+                client.getObjectFactory().newPrimitiveValueBuilder().buildString(analyticKey)));
+
+        ODataEntityCreateResponse<ClientEntity> response;
+        try {
+            response = client.getCUDRequestFactory().getEntityCreateRequest(entityURI, entity).execute();
+        }
+        catch (HttpClientException e) {
+            throw new ODataErrorException(e, CONNECTION_ERROR);
+        }
+        catch (ODataRuntimeException e) {
+            throw new ODataErrorException(e, "Error creating analytic link");
+        }
     }
 
     //EVERYTHING FOR AUDIT INDICATOR STANDARDS
