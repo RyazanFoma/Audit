@@ -47,7 +47,9 @@ import static com.bit.eduardf.audit.ParcelableUser.USER_TYPE;
  *
  */
 
-//Главная активность - аутентификация пользователя и установка параметров приложения
+/**
+ * User authorization and login
+ */
 public class MainActivity extends AppCompatActivity implements
         View.OnClickListener,
         Spinner.OnItemSelectedListener {
@@ -119,8 +121,8 @@ public class MainActivity extends AppCompatActivity implements
     };
 
     /**
-     * Get the auditors list
-     * @return auditors list
+     * Observable for get the auditors list
+     * @return single observable
      */
     public Single<List<Map<String, Object>>> getData() {
         return Single.create(new SingleOnSubscribe<List<Map<String, Object>>>() {
@@ -142,20 +144,30 @@ public class MainActivity extends AppCompatActivity implements
         });
     }
 
+    /**
+     * Start loading user list
+     * @param context - activity contecxt
+     */
     private void startLoader(Context context) {
         oData = new AuditOData(context);
         progressBar.setVisibility(View.VISIBLE);
-//        setMessage(getString(R.string.progress_msq));
         disposable = getData().subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(onSuccess, onError);
     }
 
+    /**
+     * Stop loading user list
+     */
     private void stopLoader() {
         if (disposable!= null && disposable.isDisposed()) disposable.dispose();
         oData = null;
     }
 
+    /**
+     * Initialize all fields
+     * @param savedInstanceState - storage place
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -186,6 +198,9 @@ public class MainActivity extends AppCompatActivity implements
         password = findViewById(R.id.password);
     }
 
+    /**
+     * Load the users list
+     */
     @Override
     protected void onResume() {
         super.onResume();
@@ -198,6 +213,20 @@ public class MainActivity extends AppCompatActivity implements
         notifyFields();
     }
 
+    /**
+     * Stop load the users list
+     */
+    protected void onDestroy() {
+        super.onDestroy();
+        stopLoader();
+        usersAdapter = null;
+    }
+
+    /**
+     * Create menu
+     * @param menu - menu
+     * @return true
+     */
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
@@ -205,6 +234,11 @@ public class MainActivity extends AppCompatActivity implements
         return true;
     }
 
+    /**
+     * Callback for selecting setting
+     * @param item - setting item
+     * @return true
+     */
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
@@ -216,14 +250,10 @@ public class MainActivity extends AppCompatActivity implements
         return super.onOptionsItemSelected(item);
     }
 
-    //Закрывает базу при закрытии активити
-    protected void onDestroy() {
-        super.onDestroy();
-        stopLoader();
-        usersAdapter = null;
-    }
-
-    //Сохраняет текущее значение пароля перед поворотом экрана
+    /**
+     * Save the users list and list position
+     * @param outState - storage place
+     */
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
@@ -239,7 +269,10 @@ public class MainActivity extends AppCompatActivity implements
         }
     }
 
-    //Восстанавливает значение пароля после поворота экрана
+    /**
+     * Restore the users list and list position
+     * @param savedInstanceState - storage place
+     */
     @Override
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
@@ -254,7 +287,10 @@ public class MainActivity extends AppCompatActivity implements
         }
     }
 
-    //Обработчик кнопки Вперед
+    /**
+     * Callback the enter button
+     * @param v - enter button
+     */
     @Override
     public void onClick(View v) {
         //Нажата именно Вперед?
@@ -291,7 +327,12 @@ public class MainActivity extends AppCompatActivity implements
         }
     }
 
-    //Сравнивает пароли
+    /**
+     * Compare password hash with password entry
+     * @param passwordText - hash password
+     * @param inputText - password entry
+     * @return - comparison result
+     */
     private boolean equalsPassword(String passwordText, String inputText) {
         char[] password = passwordText.toCharArray();
         char[] input = inputText.toCharArray();
@@ -302,7 +343,13 @@ public class MainActivity extends AppCompatActivity implements
         return true;
     }
 
-    //Очищает пароль после выбора пользователя
+    /**
+     * Clear password after user selection
+     * @param parent - parent
+     * @param view - view
+     * @param position - user position in list
+     * @param id - id
+     */
     @Override
     public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
         if (iPosition != position) {
