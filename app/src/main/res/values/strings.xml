@@ -21,6 +21,7 @@
     <string name="tab_right">Проведен</string>
 
     <string name="progress_msq">Идет загрузка…</string>
+    <string name="empty_list_msg">Список пуст…</string>
 
     <string name="tab_com">Общее</string>
     <string name="tab_obj">Объекты</string>

@@ -1,15 +1,9 @@
 package com.bit.eduardf.audit;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Parcelable;
 import android.preference.PreferenceManager;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.v4.app.LoaderManager;
-import android.support.v4.content.AsyncTaskLoader;
-import android.support.v4.content.Loader;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
@@ -25,17 +19,23 @@ import android.widget.ProgressBar;
 import android.widget.SimpleAdapter;
 import android.widget.Spinner;
 
-import java.lang.ref.WeakReference;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import io.reactivex.Single;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Consumer;
+import io.reactivex.SingleEmitter;
+import io.reactivex.SingleOnSubscribe;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.schedulers.Schedulers;
+
 import static com.bit.eduardf.audit.ParcelableUser.USER_ID;
 import static com.bit.eduardf.audit.ParcelableUser.USER_NAME;
+import static com.bit.eduardf.audit.ParcelableUser.USER_HASH;
 import static com.bit.eduardf.audit.ParcelableUser.USER_OBJECT;
 import static com.bit.eduardf.audit.ParcelableUser.USER_ORGANIZATION;
-import static com.bit.eduardf.audit.ParcelableUser.USER_PASSWORD;
 import static com.bit.eduardf.audit.ParcelableUser.USER_RESPONSIBLE;
 import static com.bit.eduardf.audit.ParcelableUser.USER_TYPE;
 
@@ -49,34 +49,111 @@ import static com.bit.eduardf.audit.ParcelableUser.USER_TYPE;
 
 //Главная активность - аутентификация пользователя и установка параметров приложения
 public class MainActivity extends AppCompatActivity implements
-        LoaderManager.LoaderCallbacks<List<Map<String, Object>>>,
         View.OnClickListener,
         Spinner.OnItemSelectedListener {
 
-//    private static final String ARG_USER = "user";
     private static final String PREF_LASTUSER = "lastuser";
     private static final String ARG_USERS = "users";
+    private static final String ARG_POSITION = "position";
 
     private AuditOData oData; //OData для доступа в 1С
     private SimpleAdapter usersAdapter; //Адаптер для списка пользователей
     private List<Map<String, Object>> users = new ArrayList<>(); //Список пользователей
     private SharedPreferences preferences;
+    private Disposable disposable;
 
     private Spinner user;
+    private EditText password;
     private ProgressBar progressBar;
     private FloatingActionButton enter;
     private String lastUser;
-    private boolean loaded = false;
-
     private int iPosition = 0;
 
-    private void startLoader() {
-        final Loader loader = getSupportLoaderManager().getLoader(0);
-        if (loader != null && !loader.isReset()) {
-            getSupportLoaderManager().restartLoader(0, null, this);
-        } else {
-            getSupportLoaderManager().initLoader(0, null, this);
+    /**
+     * Notification fields that the user list is empty or not
+     */
+    private void notifyFields() {
+        final boolean enabled = !users.isEmpty();
+        user.setEnabled(enabled);
+        password.setEnabled(enabled);
+        enter.setVisibility(enabled ? View.VISIBLE: View.INVISIBLE);
+    }
+
+    /**
+     * The success load callback of a users list
+     */
+    final Consumer<List<Map<String, Object>>> onSuccess = new Consumer<List<Map<String, Object>>> () {
+
+        @Override
+        public void accept(List<Map<String, Object>> data) {
+            users.clear();
+            users.addAll(data);
+            usersAdapter.notifyDataSetChanged();
+            if (lastUser != null) {
+                int i = 0;
+                for (Map<String, Object> objectMap: users) {
+                    if(lastUser.equals(objectMap.get(USER_ID).toString())) {
+                        user.setSelection(i);
+                        break;
+                    }
+                    i++;
+                }
+            }
+            progressBar.setVisibility(View.INVISIBLE);
+            notifyFields();
         }
+    };
+
+    /**
+     * The loader error callback
+     */
+    final Consumer<Throwable> onError = new Consumer<Throwable>() {
+        @Override
+        public void accept(Throwable e) {
+            ((ODataErrorException)e).snackbarShow(MainActivity.this, R.id.toolbar);
+            users.clear();
+            usersAdapter.notifyDataSetChanged();
+            progressBar.setVisibility(View.INVISIBLE);
+            notifyFields();
+        }
+    };
+
+    /**
+     * Get the auditors list
+     * @return auditors list
+     */
+    public Single<List<Map<String, Object>>> getData() {
+        return Single.create(new SingleOnSubscribe<List<Map<String, Object>>>() {
+            @Override
+            public void subscribe(SingleEmitter<List<Map<String, Object>>> emitter) throws ODataErrorException {
+                try {
+                    final List<Map<String, Object>> data = oData.getUsers();
+                    if (!data.isEmpty()) {
+                        emitter.onSuccess(data);
+                    }
+                    else {
+                        emitter.onError(new RuntimeException(getString(R.string.msg_is_empty)));
+                    }
+                }
+                catch (ODataErrorException e) {
+                    emitter.onError(e);
+                }
+            }
+        });
+    }
+
+    private void startLoader(Context context) {
+        oData = new AuditOData(context);
+        progressBar.setVisibility(View.VISIBLE);
+//        setMessage(getString(R.string.progress_msq));
+        disposable = getData().subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(onSuccess, onError);
+    }
+
+    private void stopLoader() {
+        if (disposable!= null && disposable.isDisposed()) disposable.dispose();
+        oData = null;
     }
 
     @Override
@@ -88,9 +165,7 @@ public class MainActivity extends AppCompatActivity implements
         final Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        //Кнопка Вперед
-        enter = findViewById(R.id.enter);
-        enter.setOnClickListener(this);
+        progressBar = findViewById(R.id.progressBar);
 
         //Готовим все для спиннера
         usersAdapter = new SimpleAdapter(this, users, android.R.layout.simple_spinner_item,
@@ -104,37 +179,23 @@ public class MainActivity extends AppCompatActivity implements
         user.setAdapter(usersAdapter);
         user.setOnItemSelectedListener(this);
 
-        //Неопределенный прогресс-бар движется во время загрузки (см. onCreateLoader, onLoadFinished, onLoaderReset)
-        progressBar = findViewById(R.id.progressBar);
+        //Кнопка Вперед
+        enter = findViewById(R.id.enter);
+        enter.setOnClickListener(this);
 
-        //Открываем клиента
-        oData = new AuditOData(this);
-
-        startLoader();
-    }
-
-    /**
-     * Для вывода служебного сообщения в спиннере на время загрузки и т.п.
-     * @param message - текст служебного сообщения
-     */
-    private void setMessage(String message) {
-        Map<String, Object> map = new HashMap<>();
-        map.put(USER_NAME, message);
-        users.add(map);
-        usersAdapter.notifyDataSetChanged();
+        password = findViewById(R.id.password);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-
-        if (loaded) {
-            user.setSelection(iPosition);
-            enter.setVisibility(View.VISIBLE);
+        if (users.isEmpty()) {
+            startLoader(this);
         }
         else {
-            startLoader();
+            user.setSelection(iPosition);
         }
+        notifyFields();
     }
 
     @Override
@@ -146,24 +207,19 @@ public class MainActivity extends AppCompatActivity implements
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
             startActivity(new Intent(this, SettingAudit.class));
+            users.clear();
             return true;
         }
-
         return super.onOptionsItemSelected(item);
     }
 
     //Закрывает базу при закрытии активити
     protected void onDestroy() {
         super.onDestroy();
-        oData = null;
+        stopLoader();
         usersAdapter = null;
     }
 
@@ -172,17 +228,15 @@ public class MainActivity extends AppCompatActivity implements
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
 
-        if (loaded) {
+        if (!users.isEmpty()) {
             final Parcelable[] parcelables = new Parcelable[users.size()];
             int i = 0;
             for (Map<String, Object> u: users) {
                 parcelables[i++] = new ParcelableUser(u);
             }
             outState.putParcelableArray(ARG_USERS, parcelables);
+            outState.putInt(ARG_POSITION, iPosition);
         }
-
-        outState.putInt("position", iPosition);
-        outState.putString("password", ((EditText) findViewById(R.id.password)).getText().toString());
     }
 
     //Восстанавливает значение пароля после поворота экрана
@@ -195,13 +249,9 @@ public class MainActivity extends AppCompatActivity implements
             for (Parcelable parcelable: parcelables) {
                 users.add(((ParcelableUser) parcelable).user);
             }
-//            user.onRestoreInstanceState(savedInstanceState.getParcelable(ARG_USER));
-            loaded = true;
             usersAdapter.notifyDataSetChanged();
+            iPosition = savedInstanceState.getInt(ARG_POSITION);
         }
-
-        iPosition = savedInstanceState.getInt("position");
-        ((EditText) findViewById(R.id.password)).setText(savedInstanceState.getString("password", ""));
     }
 
     //Обработчик кнопки Вперед
@@ -210,11 +260,10 @@ public class MainActivity extends AppCompatActivity implements
         //Нажата именно Вперед?
         if (v.getId()==R.id.enter) {
             //Текущие значения пароля
-            final String password = users.get(iPosition).get(USER_PASSWORD).toString();
+            final String hash = users.get(iPosition).get(USER_HASH).toString();
 
-            EditText input = findViewById(R.id.password);
             //Пароль верный?
-            if (equalsPassword(password, input.getText().toString())) {
+            if (equalsPassword(hash, password.getText().toString())) {
 //                final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
                 final String id = users.get(iPosition).get(USER_ID).toString();
                 final SharedPreferences.Editor editor = preferences.edit();
@@ -237,7 +286,7 @@ public class MainActivity extends AppCompatActivity implements
                 //Неверный пароль
                 Snackbar.make(v, R.string.msg_password, Snackbar.LENGTH_LONG)
                         .setAction("Action", null).show();
-                input.setText("");
+                password.setText("");
             }
         }
     }
@@ -268,82 +317,5 @@ public class MainActivity extends AppCompatActivity implements
 
     }
 
-    @NonNull
-    @Override
-    public Loader<List<Map<String, Object>>> onCreateLoader(int id, @Nullable Bundle args) {
-        progressBar.setVisibility(View.VISIBLE);
-        setMessage("Идет загрузка...");
-        return new MainActivity.MyLoader(this, oData);
-    }
-
-    @Override
-    public void onLoadFinished(@NonNull Loader<List<Map<String, Object>>> loader, List<Map<String, Object>> data) {
-        users.clear();
-        users.addAll(data);
-        if (users.isEmpty()) {
-            setMessage("Список пуст...");
-            usersAdapter.notifyDataSetChanged();
-        }
-        else {
-            loaded = true;
-            usersAdapter.notifyDataSetChanged();
-            if (lastUser != null) {
-                int i = 0;
-                for (Map<String, Object> objectMap: users) {
-                    if(lastUser.equals(objectMap.get(USER_ID).toString())) {
-                        user.setSelection(i);
-                        break;
-                    }
-                    i++;
-                }
-            }
-            enter.setVisibility(View.VISIBLE);
-        }
-        progressBar.setVisibility(View.INVISIBLE);
-    }
-
-    @Override
-    public void onLoaderReset(@NonNull Loader<List<Map<String, Object>>> loader) {
-        users.clear();
-        progressBar.setVisibility(View.INVISIBLE);
-    }
-
-    //Загрузчик списка пользователей
-    static class MyLoader extends AsyncTaskLoader<List<Map<String, Object>>> {
-
-        private final WeakReference<Activity> wrActivity;
-        private final AuditOData oData;
-
-        MyLoader(@NonNull Context context, @NonNull AuditOData oData) {
-            super(context);
-            wrActivity = new WeakReference<>((Activity)context);
-            this.oData = oData;
-        }
-
-        @Override
-        protected void onStartLoading() {
-            forceLoad();
-        }
-
-        @Override
-        protected void onStopLoading() {
-            cancelLoad();
-        }
-
-        @Override
-        public List<Map<String, Object>> loadInBackground() {
-            List<Map<String, Object>> usersMap = new ArrayList<>();
-            try {
-                usersMap.addAll(oData.getUsers());
-            }
-            catch (ODataErrorException e) {
-                final Activity activity = wrActivity.get();
-                if (activity != null) {
-                    e.snackbarShow(activity, R.id.toolbar);
-                }
-            }
-            return usersMap;
-        }
-    }
 }
 //Фома 2018

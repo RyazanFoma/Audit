@@ -109,6 +109,7 @@ class IndList extends HashMap<String, IndList.Ind> {
                         break;
                     }
                     case IS_DATE: {
+                        if (value == null) return;
                         final long a = ((Date) value).getTime();
                         final long b = ((Date) goal).getTime();
                         switch (criterion) {

@@ -1,6 +1,8 @@
 package com.bit.eduardf.audit;
 
 import android.annotation.SuppressLint;
+import android.content.Context;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.TextInputEditText;
@@ -13,6 +15,7 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.widget.TextView;
 
 import org.jetbrains.annotations.NotNull;
@@ -65,6 +68,10 @@ public class DialogIndicator extends DialogFragment {
      * Измользуется в {@link DialogIndicator#onDestroyView()}
      */
     private boolean afterRotate = false;
+    /**
+     * Описать
+     */
+    private boolean isGrandpaters;
 
     /**
      * Создание диалога для ввода числа
@@ -121,8 +128,7 @@ public class DialogIndicator extends DialogFragment {
         final Bundle args = new Bundle();
         args.putInt(ARG_POSITION, position); //Позиция показателя
         args.putString(ARG_TITLE, title); //Наименование показателя
-        if (date!=null)
-            args.putLong(ARG_DATE, date.getTime());
+        if (date!=null) args.putLong(ARG_DATE, date.getTime());
         f.setArguments(args);
         return f;
     }
@@ -162,8 +168,10 @@ public class DialogIndicator extends DialogFragment {
             number = args.getFloat(ARG_NUMBER, 0);
             comment = args.getString(ARG_COMMENT, "");
             unit = args.getString(ARG_UNIT, "");
-            date = new Date();
-            date.setTime(args.getLong(ARG_DATE, 0));
+            if (args.containsKey(ARG_DATE)) {
+                date = new Date();
+                date.setTime(args.getLong(ARG_DATE, 0));
+            }
         }
     }
 
@@ -348,7 +356,8 @@ public class DialogIndicator extends DialogFragment {
                     if (getActivity() != null) {
                         final DateTime dateTime = (DateTime) getActivity().
                                 getSupportFragmentManager().findFragmentById(R.id.fragment_date);
-                        outState.putLong(ARG_DATE, dateTime.getDate().getTime());
+                        final Date date = dateTime.getDate();
+                        if (date != null) outState.putLong(ARG_DATE, date.getTime());
                     }
                     break;
                 }
@@ -356,6 +365,39 @@ public class DialogIndicator extends DialogFragment {
         afterRotate = true; //Поворот начался
     }
 
+    /**
+     * Определяет размер экрана устройства
+     * @param context - текущая активность
+     * @return - true, если экран равен или больше или равен большому
+     */
+    private static boolean isLargeTablet(Context context) {
+        return (context.getResources().getConfiguration().screenLayout
+                & Configuration.SCREENLAYOUT_SIZE_MASK) >= Configuration.SCREENLAYOUT_SIZE_LARGE;
+    }
+
+    /**
+     * Вызывается при присоединении фрагмента
+     * @param context - контекст активности
+     */
+    @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+        isGrandpaters = isLargeTablet(context);
+    }
+
+    /**
+     * Вызывается перед открытием активности диалога
+     */
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (!isGrandpaters) {
+            ViewGroup.LayoutParams params = getDialog().getWindow().getAttributes();
+            params.width = ViewGroup.LayoutParams.MATCH_PARENT;
+            params.height = ViewGroup.LayoutParams.WRAP_CONTENT;
+            getDialog().getWindow().setAttributes((android.view.WindowManager.LayoutParams) params);
+        }
+    }
     /**
      * Удаление фрагмента, чтобы при последующем открытии не было ошибок вдувания
      */

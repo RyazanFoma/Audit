@@ -53,7 +53,7 @@ public class DateTime extends Fragment{
      */
     void setDate(Date date) {
         myDate = date;
-        if (!(date.getTime() == 0 || dateView == null || timeView == null)) {
+        if (!(date == null || dateView == null || timeView == null)) {
             dateView.setText(getDateInstance().format(date));
             timeView.setText(getTimeInstance().format(date));
         }

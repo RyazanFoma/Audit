@@ -41,7 +41,7 @@ import static com.bit.eduardf.audit.ParcelableUser.USER_ID;
 import static com.bit.eduardf.audit.ParcelableUser.USER_NAME;
 import static com.bit.eduardf.audit.ParcelableUser.USER_OBJECT;
 import static com.bit.eduardf.audit.ParcelableUser.USER_ORGANIZATION;
-import static com.bit.eduardf.audit.ParcelableUser.USER_PASSWORD;
+import static com.bit.eduardf.audit.ParcelableUser.USER_HASH;
 import static com.bit.eduardf.audit.ParcelableUser.USER_RESPONSIBLE;
 import static com.bit.eduardf.audit.ParcelableUser.USER_TYPE;
 
@@ -453,7 +453,7 @@ public class AuditOData {
                 Map<String, Object> user = new HashMap<>();
                 user.put(USER_ID, clientEntity.getProperty(COMMON_KEY).getValue());
                 user.put(USER_NAME, clientEntity.getProperty(COMMON_NAME).getValue());
-                user.put(USER_PASSWORD, clientEntity.getProperty(USERS_PASSWORD).getValue());
+                user.put(USER_HASH, clientEntity.getProperty(USERS_PASSWORD).getValue());
                 user.put(USER_TYPE, clientEntity.getProperty(USERS_TYPE).getValue());
                 user.put(USER_OBJECT, clientEntity.getProperty(USERS_OBJECT).getValue());
                 user.put(USER_ORGANIZATION, clientEntity.getProperty(USERS_ORGANIZATION).getValue());

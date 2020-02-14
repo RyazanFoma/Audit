@@ -7,11 +7,10 @@
   ~  */
   -->
 
-<android.support.constraint.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -20,18 +19,21 @@
 
         <TextView
             android:id="@+id/title"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_margin="@dimen/field_horizontal_margin"
+            android:layout_marginStart="@dimen/field_horizontal_margin"
+            android:layout_marginTop="@dimen/field_vertical_margin"
+            android:layout_marginEnd="@dimen/field_horizontal_margin"
+            android:layout_marginBottom="@dimen/field_vertical_margin"
             android:drawableStart="@drawable/ic_black_edit_24px"
             android:singleLine="true"
-            android:textSize="24sp"
+            android:textSize="18sp"
             android:textStyle="bold" />
 
         <fragment
             android:id="@+id/fragment_date"
             android:name="com.bit.eduardf.audit.DateTime"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginStart="@dimen/field_horizontal_margin"
             android:layout_marginTop="@dimen/field_vertical_margin"

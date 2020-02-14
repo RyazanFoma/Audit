@@ -18,7 +18,7 @@ public class ParcelableUser implements Parcelable {
 
     static final String USER_ID = "id";
     static final String USER_NAME = "name";
-    static final String USER_PASSWORD = "password";
+    static final String USER_HASH = "hash";
     static final String USER_TYPE = "type";
     static final String USER_ORGANIZATION = "organization";
     static final String USER_OBJECT = "object";
@@ -54,7 +54,7 @@ public class ParcelableUser implements Parcelable {
     public void writeToParcel(Parcel dest, int flag) {
         dest.writeString(user.get(USER_ID).toString());
         dest.writeString(user.get(USER_NAME).toString());
-        dest.writeString(user.get(USER_PASSWORD).toString());
+        dest.writeString(user.get(USER_HASH).toString());
         dest.writeString(user.get(USER_TYPE).toString());
         dest.writeString(user.get(USER_ORGANIZATION).toString());
         dest.writeString(user.get(USER_OBJECT).toString());
@@ -65,7 +65,7 @@ public class ParcelableUser implements Parcelable {
     private ParcelableUser(Parcel in) {
         user.put(USER_ID, in.readString());
         user.put(USER_NAME, in.readString());
-        user.put(USER_PASSWORD, in.readString());
+        user.put(USER_HASH, in.readString());
         user.put(USER_TYPE, in.readString());
         user.put(USER_ORGANIZATION, in.readString());
         user.put(USER_OBJECT, in.readString());
