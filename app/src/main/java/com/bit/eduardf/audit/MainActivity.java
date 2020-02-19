@@ -64,10 +64,13 @@ public class MainActivity extends AppCompatActivity implements
     private SharedPreferences preferences;
     private Disposable disposable;
 
+    //All fieds
     private Spinner user;
     private EditText password;
     private ProgressBar progressBar;
     private FloatingActionButton enter;
+
+    //Selected user guid and user position in list
     private String lastUser;
     private int iPosition = 0;
 
@@ -355,10 +358,13 @@ public class MainActivity extends AppCompatActivity implements
         if (iPosition != position) {
             iPosition = position;
             ((EditText) findViewById(R.id.password)).setText("");
-
         }
     }
 
+    /**
+     * not used
+     * @param parent - parent
+     */
     @Override
     public void onNothingSelected(AdapterView<?> parent) {
 
