@@ -1,5 +1,6 @@
 package com.bit.eduardf.audit;
 
+import android.content.Context;
 import android.os.AsyncTask;
 
 /*
@@ -13,28 +14,37 @@ import android.os.AsyncTask;
 /**
  * Сохранение индивидуальных настроек пользователя
  * Входные параметры:
- * [0] - quid аудитора,
- * [1] - quid вида аудита,
- * [2] - quid организации,
- * [3] - quid объекта,
- * [4] - quid ответственного
+ * [0] - user giud
+ * [1] - audit type giud
+ * [2] - organization giud
+ * [3] - object giud
+ * [4] - responsible giud
+ * [5] - DataVersion
  */
-class SaveUser extends AsyncTask<String, Void, Void> {
+class SaveUser extends AsyncTask<String, Void, String> {
 
     final private AuditOData oData;
+    private final OnSaveUserExecute onExecute;
 
     /**
      * Конструктор
      * @param oData - OData для доступа в 1С
      */
-    SaveUser(AuditOData oData) {
+    SaveUser(Context context, AuditOData oData) {
+        if (context instanceof SaveUser.OnSaveUserExecute) {
+            this.onExecute = (SaveUser.OnSaveUserExecute) context;
             this.oData = oData;
+        }
+        else
+            throw new RuntimeException(context.toString()+" must implement OnSaveUserExecute");
     }
-    protected Void doInBackground(String... guids) {
-        oData.saveUser(guids[0], guids[1], guids[2], guids[3], guids[4]);
-        return null;
+    protected String doInBackground(String... guids) {
+        return oData.saveUser(guids[0], guids[1], guids[2], guids[3], guids[4], guids[5]);
     }
-    protected void onPostExecute(Void v) {
+    protected void onPostExecute(String version) { onExecute.onSaveUserExecute(version); }
+
+    interface OnSaveUserExecute {
+        void onSaveUserExecute(String version);
     }
 }
 //Фома2018

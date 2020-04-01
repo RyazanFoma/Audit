@@ -34,7 +34,6 @@ import android.view.View;
 import android.widget.CheckBox;
 
 import java.util.ArrayList;
-import java.util.Date;
 
 import static android.support.v7.widget.RecyclerView.SCROLL_STATE_IDLE;
 import static com.bit.eduardf.audit.TaskListAdapter.CHECKED_STATUS_ALL;
@@ -62,6 +61,7 @@ public class TaskListActivity extends AppCompatActivity
     private AuditOData oData; //Объект OData для доступа к 1С:Аудитор
     private String auditorKey; //guid аудитора
     private String auditorName; //имя аудитора
+    private String auditorVersion; //DataVersion
     private Tasks.Task.Status mStatus; //Статус заданий текущей закладки
     private String sLike; //Строка отбора по наименованию объекта
     private boolean full; //Признак группировки заданий по датам
@@ -81,7 +81,8 @@ public class TaskListActivity extends AppCompatActivity
 
     //Аргументы для интент и поворота экрана
     private static final String ARG_AUDITOR_KEY = "author_key"; //Идентификатор аудитора
-    private static final String ARG_AUDITOR_NAME = "author_name"; //Идентификатор аудитора
+    private static final String ARG_AUDITOR_NAME = "author_name";
+    private static final String ARG_AUDITOR_VERSION = "author_version";
     private static final String ARG_STATUS = "status"; //Текущая закладка / статус задания
     private static final String ARG_LIKE = "like"; //Строка поиска
     private static final String ARG_FULL = "full"; //Группировка по датам
@@ -98,10 +99,12 @@ public class TaskListActivity extends AppCompatActivity
      * @param auditor_key - guid аудитора
      * @return - интент
      */
-    public static Intent intentActivity(Context context, String auditor_key, String auditor_name) {
+    public static Intent intentActivity(Context context, String auditor_key, String auditor_name,
+                                        String auditor_version) {
         Intent intent = new Intent(context, TaskListActivity.class);
         intent.putExtra(ARG_AUDITOR_KEY, auditor_key);
         intent.putExtra(ARG_AUDITOR_NAME, auditor_name);
+        intent.putExtra(ARG_AUDITOR_VERSION, auditor_version);
         return intent;
     }
 
@@ -170,6 +173,7 @@ public class TaskListActivity extends AppCompatActivity
             final Intent intent = getIntent();
             auditorKey = intent.getStringExtra(ARG_AUDITOR_KEY);
             auditorName = intent.getStringExtra(ARG_AUDITOR_NAME);
+            auditorVersion = intent.getStringExtra(ARG_AUDITOR_VERSION);
             final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
             full = preferences.getBoolean(getString(R.string.pref_key_tasks_group_by_date), false);
             final String value = preferences.getString(getString(R.string.pref_key_tasks_tab),
@@ -185,6 +189,7 @@ public class TaskListActivity extends AppCompatActivity
             mStatus = Tasks.Task.Status.toValue(savedInstanceState.getInt(ARG_STATUS, 0));
             auditorKey = savedInstanceState.getString(ARG_AUDITOR_KEY);
             auditorName = savedInstanceState.getString(ARG_AUDITOR_NAME);
+            auditorVersion = savedInstanceState.getString(ARG_AUDITOR_VERSION);
             sLike = savedInstanceState.getString(ARG_LIKE, "");
             full = savedInstanceState.getBoolean(ARG_FULL, false);
         }
@@ -304,6 +309,7 @@ public class TaskListActivity extends AppCompatActivity
         super.onSaveInstanceState(outState);
         outState.putString(ARG_AUDITOR_KEY, auditorKey);
         outState.putString(ARG_AUDITOR_NAME, auditorName);
+        outState.putString(ARG_AUDITOR_VERSION, auditorVersion);
         outState.putString(ARG_LIKE, sLike);
         outState.putBoolean(ARG_FULL, full);
         outState.putInt(ARG_STATUS, mStatus.number);
@@ -404,7 +410,7 @@ public class TaskListActivity extends AppCompatActivity
                         auditorKey, mStatus), 0);
                 return true;
             case R.id.setting:
-                startActivity(SettingTask.intentActivity(this, auditorKey));
+                startActivity(SettingTask.intentActivity(this, auditorKey, auditorVersion));
                 return true;
         }
         return super.onOptionsItemSelected(item);

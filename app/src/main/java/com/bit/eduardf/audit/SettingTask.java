@@ -22,13 +22,14 @@ import android.widget.LinearLayout;
 /**
  * Установка индивидуальных настроек пользователя
  */
-public class SettingTask extends AppCompatActivity{
+public class SettingTask extends AppCompatActivity implements SaveUser.OnSaveUserExecute{
 
     //Объект OData для доступа к 1С:Аудитор
     private AuditOData oData;
 
     //giud пользователя
     private String auditiorKey;
+    private String dataversion;
 
     //Поля для выбора настроек
     private Reference typeReference;
@@ -44,6 +45,48 @@ public class SettingTask extends AppCompatActivity{
 
     //Аргументы интент и поворота экрана
     private final static String ARG_AUDITOR = "auditor";
+    private final static String ARG_VERSION = "DataVersion";
+
+    //Callback of change reference key
+
+    private Reference.OnChangedReferenceKey onChangedReferenceKey = new Reference.OnChangedReferenceKey() {
+        @Override
+        public void onChangedKey(int id, String key, Object object) {
+            final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(SettingTask.this);
+            final SharedPreferences.Editor editor = preferences.edit();
+            switch (id) {
+                case R.id.type:
+                    if (key==null || !preferences.getString(SettingTask.DEFAULT_TYPE, AuditOData.EMPTY_KEY).equals(key)) {
+                        objectReference.setKey(null);
+                        objectReference.setEnabled(key!=null);
+                        editor.putString(SettingTask.DEFAULT_OBJECT, AuditOData.EMPTY_KEY);
+                    }
+                    if(object!=null) {
+                        objectReference.setParentTypes(((AType)object).objectTypes);
+                    }
+                    editor.putString(SettingTask.DEFAULT_TYPE, key);
+                    break;
+                case R.id.organization:
+                    editor.putString(SettingTask.DEFAULT_ORGANIZATION, key);
+                    break;
+                case R.id.object:
+                    editor.putString(SettingTask.DEFAULT_OBJECT, key);
+                    break;
+                case R.id.responsible:
+                    editor.putString(SettingTask.DEFAULT_RESPONSIBLE, key);
+                    break;
+                default:
+                    throw new RuntimeException("Invalid id of Reference.onReferenceSelectedListener");
+            }
+            editor.apply();
+            new SaveUser(SettingTask.this, oData).execute(auditiorKey,
+                    typeReference.getReferenceKey(),
+                    organizationReference.getReferenceKey(),
+                    objectReference.getReferenceKey(),
+                    responsibleReference.getReferenceKey(),
+                    dataversion);
+        }
+    };
 
     /**
      * Создание интент для открытия индивидуальных настроек пользователя
@@ -51,9 +94,10 @@ public class SettingTask extends AppCompatActivity{
      * @param auditor - guid аудитора
      * @return - интент активности
      */
-    public static Intent intentActivity(Context context, String auditor) {
+    public static Intent intentActivity(Context context, String auditor, String version) {
         Intent intent = new Intent(context, SettingTask.class);
         intent.putExtra(ARG_AUDITOR, auditor);
+        intent.putExtra(ARG_VERSION, version);
         return intent;
     }
 
@@ -83,60 +127,14 @@ public class SettingTask extends AppCompatActivity{
             linearLayout.setLayoutParams(layoutParams);
         }
 
+        setReferences();
+
         //Создает объект OData
         oData = new AuditOData(this);
 
-        //Обработчик изменения поля
-        Reference.OnChangedReferenceKey onChangedReferenceKey = new Reference.OnChangedReferenceKey() {
-            @Override
-            public void onChangedKey(int id, String key, Object object) {
-                final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(SettingTask.this);
-                final SharedPreferences.Editor editor = preferences.edit();
-                switch (id) {
-                    case R.id.type:
-                        if (key==null || !preferences.getString(SettingTask.DEFAULT_TYPE, AuditOData.EMPTY_KEY).equals(key)) {
-                            objectReference.setKey(null);
-                            objectReference.setEnabled(key!=null);
-                            editor.putString(SettingTask.DEFAULT_OBJECT, AuditOData.EMPTY_KEY);
-                        }
-                        if(object!=null) {
-                            objectReference.setParentTypes(((AType)object).objectTypes);
-                        }
-                        editor.putString(SettingTask.DEFAULT_TYPE, key);
-                        break;
-                    case R.id.organization:
-                        editor.putString(SettingTask.DEFAULT_ORGANIZATION, key);
-                        break;
-                    case R.id.object:
-                        editor.putString(SettingTask.DEFAULT_OBJECT, key);
-                        break;
-                    case R.id.responsible:
-                        editor.putString(SettingTask.DEFAULT_RESPONSIBLE, key);
-                        break;
-                    default:
-                        throw new RuntimeException("Invalid id of Reference.onReferenceSelectedListener");
-                }
-                editor.apply();
-                new SaveUser(oData).execute(auditiorKey,
-                        typeReference.getReferenceKey(),
-                        organizationReference.getReferenceKey(),
-                        objectReference.getReferenceKey(),
-                        responsibleReference.getReferenceKey());
-            }
-        };
-
-        //Находим ссылки на поля настроек
-        typeReference = (Reference) getSupportFragmentManager().findFragmentById(R.id.type);
-        typeReference.setOnChangedReferenceKey(onChangedReferenceKey);
-        organizationReference = (Reference) getSupportFragmentManager().findFragmentById(R.id.organization);
-        organizationReference.setOnChangedReferenceKey(onChangedReferenceKey);
-        objectReference = (Reference) getSupportFragmentManager().findFragmentById(R.id.object);
-        objectReference.setOnChangedReferenceKey(onChangedReferenceKey);
-        responsibleReference = (Reference) getSupportFragmentManager().findFragmentById(R.id.responsible);
-        responsibleReference.setOnChangedReferenceKey(onChangedReferenceKey);
-
         if (savedInstanceState==null) { // открываем форму впервые
             auditiorKey = getIntent().getStringExtra(ARG_AUDITOR);
+            dataversion = getIntent().getStringExtra(ARG_VERSION);
             //Загружаем guid из предпочтений. Настраиваем фрагменты
             final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
             typeReference.setKey(preferences.getString(DEFAULT_TYPE, AuditOData.EMPTY_KEY));
@@ -145,7 +143,22 @@ public class SettingTask extends AppCompatActivity{
             responsibleReference.setKey(preferences.getString(DEFAULT_RESPONSIBLE, AuditOData.EMPTY_KEY));
         } else { // открываем после поворота
             auditiorKey = savedInstanceState.getString(ARG_AUDITOR);
+            dataversion = savedInstanceState.getString(ARG_VERSION);
         }
+    }
+
+    /**
+     * Setting reference fields
+     */
+    private void setReferences() {
+        typeReference = (Reference) getSupportFragmentManager().findFragmentById(R.id.type);
+        typeReference.setOnChangedReferenceKey(onChangedReferenceKey);
+        organizationReference = (Reference) getSupportFragmentManager().findFragmentById(R.id.organization);
+        organizationReference.setOnChangedReferenceKey(onChangedReferenceKey);
+        objectReference = (Reference) getSupportFragmentManager().findFragmentById(R.id.object);
+        objectReference.setOnChangedReferenceKey(onChangedReferenceKey);
+        responsibleReference = (Reference) getSupportFragmentManager().findFragmentById(R.id.responsible);
+        responsibleReference.setOnChangedReferenceKey(onChangedReferenceKey);
     }
 
     /**
@@ -166,6 +179,7 @@ public class SettingTask extends AppCompatActivity{
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putString(ARG_AUDITOR, auditiorKey);
+        outState.putString(ARG_VERSION, dataversion);
     }
 
     //Обработчик возврата назад
@@ -184,5 +198,9 @@ public class SettingTask extends AppCompatActivity{
         oData = null;
     }
 
+    @Override
+    public void onSaveUserExecute(String version) {
+        dataversion = version;
+    }
 }
 //Фома2018

@@ -93,7 +93,6 @@ public class Reference extends Fragment implements
             object = null;
             parentTypes = null;
             setText("");
-            if (onChangedReferenceKey != null) onChangedReferenceKey.onChangedKey(getId(), key, object);
         } else if (!guid.equals(key))
             new LoadObject(this, oData, set).execute(key = guid);
     }
@@ -206,7 +205,6 @@ public class Reference extends Fragment implements
                 name = ((Items.Item) object).name;
         }
         setText(name);
-        if (onChangedReferenceKey != null) onChangedReferenceKey.onChangedKey(getId(), key, object);
         if (getView() != null) getView().findViewById(R.id.progressBar).setVisibility(View.INVISIBLE);
     }
 
@@ -344,6 +342,7 @@ public class Reference extends Fragment implements
     @Override
     public void onReferenceManagerInteractionListenerSingleChoice(int code, Items.Item item) {
         //При вызове из фрагмента code будет всегда -1. Скрипач не нужен
+        final String oldKey = key;
         switch (set) {
             case TYPE: case OBJECT:
                 setText(item.name);
@@ -353,8 +352,11 @@ public class Reference extends Fragment implements
                 object = item;
                 key = item.id;
                 setText(item.name);
-                if (onChangedReferenceKey != null) onChangedReferenceKey.onChangedKey(getId(), key, object);
         }
+        if ((oldKey == null && key != null) ||
+                (oldKey != null && key == null) ||
+                ( key != null && !key.equals(oldKey)))
+            performChangedReferenceKey();
     }
 
     //вызывается при присоединении фрагмента

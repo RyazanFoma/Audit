@@ -44,6 +44,7 @@ import static com.bit.eduardf.audit.ParcelableUser.USER_ORGANIZATION;
 import static com.bit.eduardf.audit.ParcelableUser.USER_HASH;
 import static com.bit.eduardf.audit.ParcelableUser.USER_RESPONSIBLE;
 import static com.bit.eduardf.audit.ParcelableUser.USER_TYPE;
+import static com.bit.eduardf.audit.ParcelableUser.USER_VERSION;
 
 /*
  * *
@@ -147,6 +148,7 @@ public class AuditOData {
     private static final String USERS_OBJECT = "ОбъектПоУмолчанию_Key";
     private static final String USERS_ORGANIZATION = "ОрганизацияПоУмолчанию_Key";
     private static final String USERS_RESPONSIBLE = "ОтветственныйПоУмолчанию_Key";
+    private static final String USERS_VERSION = "DataVersion";
 
     //Порядок соритровки
     private static final String ORDER_ASC = " asc";
@@ -162,6 +164,7 @@ public class AuditOData {
     private static final String COMMON_GROUP = "GroupMark";
     private static final String COMMON_OWNER = "Owner_Key";
     private static final String COMMON_PARENT = "Parent_Key";
+    private static final String COMMON_VERSION = "DataVersion";
 //    private static final String COMMON_CODE = "Code";
     private static final String COMMON_PREDEFINED = "Predefined";
     private static final String COMMON_PRENAMED = "PredefinedDataName";
@@ -429,7 +432,7 @@ public class AuditOData {
                 .newURIBuilder(serviceRootOData)
                 .appendEntitySetSegment(Set.AUDITOR.name)
                 .filter(FILTER_AUDITORS)
-                .select(COMMON_KEY, COMMON_NAME, USERS_PASSWORD,
+                .select(COMMON_KEY, COMMON_NAME, COMMON_VERSION, USERS_PASSWORD,
                         USERS_TYPE, USERS_OBJECT, USERS_ORGANIZATION, USERS_RESPONSIBLE)
                 .build();
 //        final ODataRetrieveResponse<ClientEntitySet>
@@ -458,6 +461,7 @@ public class AuditOData {
                 user.put(USER_OBJECT, clientEntity.getProperty(USERS_OBJECT).getValue());
                 user.put(USER_ORGANIZATION, clientEntity.getProperty(USERS_ORGANIZATION).getValue());
                 user.put(USER_RESPONSIBLE, clientEntity.getProperty(USERS_RESPONSIBLE).getValue());
+                user.put(USER_VERSION, clientEntity.getProperty(COMMON_VERSION).getValue());
                 usersMap.add(user);
             }
         }
@@ -476,10 +480,12 @@ public class AuditOData {
      * @param organization - organization giud
      * @param object - object giud
      * @param responsible - responsible giud
+     * @param version - DataVersion
      * @return - client entity with user parameters
      */
     private ClientEntity buildUserEntity(@NotNull String type, @NotNull String organization,
-                                         @NotNull String object, @NotNull String responsible) {
+                                         @NotNull String object, @NotNull String responsible,
+                                         @NotNull String version) {
         final ClientEntity entity = client.getObjectFactory().newEntity(null);
         final List<ClientProperty> properties = entity.getProperties();
         properties.add(client.getObjectFactory().newPrimitiveProperty(USERS_TYPE,
@@ -490,6 +496,8 @@ public class AuditOData {
                 client.getObjectFactory().newPrimitiveValueBuilder().buildString(bindGuid(object))));
         properties.add(client.getObjectFactory().newPrimitiveProperty(USERS_RESPONSIBLE,
                 client.getObjectFactory().newPrimitiveValueBuilder().buildString(bindGuid(responsible))));
+        properties.add(client.getObjectFactory().newPrimitiveProperty(USERS_VERSION,
+                client.getObjectFactory().newPrimitiveValueBuilder().buildString(bindGuid(version))));
         return entity;
     }
 
@@ -500,18 +508,27 @@ public class AuditOData {
      * @param organization - organization giud
      * @param object - object giud
      * @param responsible - responsible giud
+     * @param version - DataVersion
      * @throws ODataErrorException - in case of request failure
+     * @return new DataVersion
      */
-    void saveUser(@NotNull String auditor, @NotNull String type, @NotNull String organization,
-                  @NotNull String object, @NotNull String responsible) throws ODataErrorException {
+    String saveUser(@NotNull String auditor, @NotNull String type, @NotNull String organization,
+                  @NotNull String object, @NotNull String responsible, @NotNull String version
+                  ) throws ODataErrorException {
         final URI entityURI = client.newURIBuilder(serviceRootOData)
                 .appendEntitySetSegment(Set.AUDITOR.name)
                 .appendKeySegment("guid'"+auditor+"'")
                 .build();
+
         try {
-            ODataEntityUpdateRequest<ClientEntity> request = client.getCUDRequestFactory().getEntityUpdateRequest(entityURI, UpdateType.PATCH,
-                    buildUserEntity(type, organization, object, responsible));
-            request.execute();
+            final ODataEntityUpdateRequest<ClientEntity> request = client.getCUDRequestFactory()
+                    .getEntityUpdateRequest(entityURI, UpdateType.PATCH,
+                        buildUserEntity(type, organization, object, responsible, version));
+            request.setIfMatch(version);
+            return request.execute().getBody().getProperty(COMMON_VERSION).getPrimitiveValue().toString();
+//            final ODataEntityUpdateResponse<ClientEntity> response = request.execute();
+//            final String newVersion = response.getBody().getProperty(COMMON_VERSION).getPrimitiveValue().toString();
+//            return newVersion;
         }
         catch (HttpClientException e) {
             throw new ODataErrorException(e, CONNECTION_ERROR);

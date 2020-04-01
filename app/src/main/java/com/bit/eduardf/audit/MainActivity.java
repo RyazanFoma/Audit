@@ -38,6 +38,7 @@ import static com.bit.eduardf.audit.ParcelableUser.USER_OBJECT;
 import static com.bit.eduardf.audit.ParcelableUser.USER_ORGANIZATION;
 import static com.bit.eduardf.audit.ParcelableUser.USER_RESPONSIBLE;
 import static com.bit.eduardf.audit.ParcelableUser.USER_TYPE;
+import static com.bit.eduardf.audit.ParcelableUser.USER_VERSION;
 
 /*
  * *
@@ -319,7 +320,8 @@ public class MainActivity extends AppCompatActivity implements
                 //Открываем список заданий
                 startActivity(TaskListActivity.intentActivity(this,
                         id,
-                        users.get(iPosition).get(USER_NAME).toString()));
+                        users.get(iPosition).get(USER_NAME).toString(),
+                        users.get(iPosition).get(USER_VERSION).toString()));
             }
             else {
                 //Неверный пароль

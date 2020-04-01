@@ -23,6 +23,7 @@ public class ParcelableUser implements Parcelable {
     static final String USER_ORGANIZATION = "organization";
     static final String USER_OBJECT = "object";
     static final String USER_RESPONSIBLE = "responsible";
+    static final String USER_VERSION = "dataversion";
 
     public Map<String, Object> user = new HashMap<>();
 
@@ -59,6 +60,7 @@ public class ParcelableUser implements Parcelable {
         dest.writeString(user.get(USER_ORGANIZATION).toString());
         dest.writeString(user.get(USER_OBJECT).toString());
         dest.writeString(user.get(USER_RESPONSIBLE).toString());
+        dest.writeString(user.get(USER_VERSION).toString());
     }
 
     //Извлекает объект из парсел
@@ -70,6 +72,7 @@ public class ParcelableUser implements Parcelable {
         user.put(USER_ORGANIZATION, in.readString());
         user.put(USER_OBJECT, in.readString());
         user.put(USER_RESPONSIBLE, in.readString());
+        user.put(USER_VERSION, in.readString());
     }
     
 }

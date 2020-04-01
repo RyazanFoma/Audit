@@ -15,11 +15,10 @@ import android.os.AsyncTask;
  * Класс для сохранения нового или существующего задания
  * Входные параметры: [0] - задание
  */
-class SaveTask extends AsyncTask<Tasks.Task, Void, Void> {
+class SaveTask extends AsyncTask<Tasks.Task, Void, Integer> {
     private final AuditOData oData;
     private final OnSaveTaskExecute onExecute;
     private final MediaHttps mediaHttps;
-    private int status;
     //Конструктор
     SaveTask(Context context, AuditOData oData) {
         if (context instanceof OnSaveTaskExecute) {
@@ -35,17 +34,16 @@ class SaveTask extends AsyncTask<Tasks.Task, Void, Void> {
         onExecute.onSaveTaskPreExecute();
     }
     @Override
-    protected Void doInBackground(Tasks.Task... tasks) {
+    protected Integer doInBackground(Tasks.Task... tasks) {
         if (tasks[0].id != null) //Обновляем существующее задание
             oData.updateTask(tasks[0]);
         else //Создаем новое задание
             oData.createTask(tasks[0]);
         mediaHttps.updateMediaFiles(tasks[0].id, tasks[0].mediaFiles);
-        status = tasks[0].status.number;
-        return null;
+        return tasks[0].status.number;
     }
     @Override
-    protected void onPostExecute(Void voids) {
+    protected void onPostExecute(Integer status) {
         onExecute.onSaveTaskPostExecute(status);
     }
 
