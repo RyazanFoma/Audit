@@ -13,9 +13,9 @@ import android.support.v7.widget.RecyclerView;
 
 public abstract class PaginationListener extends RecyclerView.OnScrollListener {
 
-    GridLayoutManager layoutManager;
+    private GridLayoutManager layoutManager;
 
-    PaginationListener(GridLayoutManager layoutManager) {
+    protected PaginationListener(GridLayoutManager layoutManager) {
         this.layoutManager = layoutManager;
     }
 

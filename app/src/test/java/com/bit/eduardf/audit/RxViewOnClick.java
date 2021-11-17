@@ -9,8 +9,8 @@ package com.bit.eduardf.audit;
 import android.support.annotation.NonNull;
 import android.view.View;
 
-import io.reactivex.Observable;
-import io.reactivex.subjects.PublishSubject;
+import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.subjects.PublishSubject;
 
 public class RxViewOnClick {
 

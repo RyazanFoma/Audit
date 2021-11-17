@@ -259,7 +259,7 @@ public class AuditOData {
     private final String serviceRootOData; //Путь к oData
 
     //Конструктор
-    AuditOData(Context context) {
+    public AuditOData(Context context) {
         final SharedPreferences pr = PreferenceManager.getDefaultSharedPreferences(context);
         serviceRootOData = pr.getString("odata_path", "");
         client = ODataClientFactory.getClient();
@@ -810,7 +810,8 @@ public class AuditOData {
      * @return - loaded part of tasks list
      * @throws ODataErrorException - in case of request failure
      */
-    @NonNull Tasks getTasks(String auditor, Tasks.Task.Status status, String like, int... skip)
+    @NonNull
+    public Tasks getTasks(String auditor, Tasks.Task.Status status, String like, int... skip)
             throws ODataErrorException {
         Tasks tasks = new Tasks();
         try {

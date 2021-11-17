@@ -77,10 +77,10 @@ public class ReferenceChoice extends AppCompatActivity implements
     static final int MODE_MULTIPLE_CHOICE = 2; //Режим множественного выбора
 
     private int iModeMenu; //Текущий режим меню:
-    static final int ACTION_BAR = 0; //меню действий
-    static final int ACTION_MODE = 1; //контекстное меню
-    static final int ACTION_COPY = 2; //копирование
-    static final int ACTION_MOVE = 3; //перемещение
+    public static final int ACTION_BAR = 0; //меню действий
+    public static final int ACTION_MODE = 1; //контекстное меню
+    public static final int ACTION_COPY = 2; //копирование
+    public static final int ACTION_MOVE = 3; //перемещение
 
     private static final String ARG_RC = "requestCode"; //Сквозной код для идентификации результата выбора
     private static final String ARG_TITLE = "title"; //Заголовок activity

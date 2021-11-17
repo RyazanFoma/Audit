@@ -19,32 +19,32 @@ import static java.text.DateFormat.getDateTimeInstance;
  */
 
 //Класс - список заданий на аудит, предназначен для рециклервью
-class Tasks extends ArrayList<Tasks.Task> {
+public class Tasks extends ArrayList<Tasks.Task> {
 
     //Класс - задание на аудит:
-    static class Task {
-        String id; //Идентификатор
-        Date date; //Дата
-        String number; //Номер
-        Status status; //Статус
-        String auditor_key; //Идентификатор аудитора
-        String type_key; //Идентификатор вида аудита
-        String type_name; //Наименование вида аудита
-        String organization_key; //Идентификатор организации
-        String object_key; //Идентификатор объекта аудита
-        String object_name; //Наименование объекта аудита
-        String responsible_key; //Идентификатор ответственного за объект
-        String comment; //Комментарий
-        String analytic_names; //Наименования аналитик строкой
-        boolean achieved; //Цель аудита достигнута
-        boolean deleted; //Пометка на удаление
-        boolean posted; //Проведен
-        boolean checked; //Отмечен в списке
-        boolean expand; //Карточка в списке развернута
-        boolean group; //Карточка в списке занимает все колонки
-        ArrayList<String> analytics; //Аналитика списком
-        ArrayList<IndicatorRow> indicators; //Покаказели задания
-        MediaFiles mediaFiles; //Медиафайлы
+    public static class Task {
+        public String id; //Идентификатор
+        public Date date; //Дата
+        public String number; //Номер
+        public Status status; //Статус
+        public String auditor_key; //Идентификатор аудитора
+        public String type_key; //Идентификатор вида аудита
+        public String type_name; //Наименование вида аудита
+        public String organization_key; //Идентификатор организации
+        public String object_key; //Идентификатор объекта аудита
+        public String object_name; //Наименование объекта аудита
+        public String responsible_key; //Идентификатор ответственного за объект
+        public String comment; //Комментарий
+        public String analytic_names; //Наименования аналитик строкой
+        public boolean achieved; //Цель аудита достигнута
+        public boolean deleted; //Пометка на удаление
+        public boolean posted; //Проведен
+        public boolean checked; //Отмечен в списке
+        public boolean expand; //Карточка в списке развернута
+        public boolean group; //Карточка в списке занимает все колонки
+        public ArrayList<String> analytics; //Аналитика списком
+        public ArrayList<IndicatorRow> indicators; //Покаказели задания
+        public MediaFiles mediaFiles; //Медиафайлы
 
         //Конструктор
         Task() {
@@ -69,10 +69,12 @@ class Tasks extends ArrayList<Tasks.Task> {
         private static final String ENUM_STATUS_1 = "ВРаботе";
         private static final String ENUM_STATUS_2 = "Проведен";
 
+        public String getId() { return id; }
+
         /**
          * Статус задания
          */
-        enum Status {
+        public enum Status {
             APPROVED(0, ENUM_STATUS_0, "Утвержден"),
             IN_WORK(1, ENUM_STATUS_1, "В работе"),
             POSTED(2, ENUM_STATUS_2, "Проведен");
@@ -252,7 +254,7 @@ class Tasks extends ArrayList<Tasks.Task> {
     }
 
     //возвращает количество отмеченных заданий
-    int checkedCount() {
+    public int checkedCount() {
         int checked = 0;
         for(Task task: this) if (task.checked) checked++;
         return checked;
@@ -291,7 +293,7 @@ class Tasks extends ArrayList<Tasks.Task> {
     }
 
     //Помечает/отменяет все задания
-    void setCheckedAll(boolean checked) {
+    public void setCheckedAll(boolean checked) {
         for(Task task: this) {
             if (!task.group) {
                 task.checked=checked;

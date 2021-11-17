@@ -17,27 +17,27 @@ import android.widget.TextView;
 
 //Хранилище для RecyclerView
 public class ViewHolderTasks extends RecyclerView.ViewHolder {
-    final View mView; // общий контейнер
-    final CardView itemView; // карточка
-    final View groupView; // область группы
-    final TextView nameView; // имя группы
-    final View elementView; // область элемента
-    final TextView numberView; // номер
-    final TextView dateView; // дата
-    final TextView timeView; // время
-    final View drawableView; //Область с иконками
-    final ImageView deletedView; // пометка на удаление
-    final ImageView postedView; // документ проведен
-    final ImageView thumbView; // цель достигнута
-    final TextView objectView; // объект аудита
-    final TextView analyticsView; // аналитика строкой
-    final TextView typeView; // вид аудита
-    final TextView commentView; // комментарий к заданию
-    final ImageView expandImage; // раскрыть/свернуть
-    final CheckBox checkedView; // чек-бокс
+    public final View mView; // общий контейнер
+    public final CardView itemView; // карточка
+    public final View groupView; // область группы
+    public final TextView nameView; // имя группы
+    public final View elementView; // область элемента
+    public final TextView numberView; // номер
+    public final TextView dateView; // дата
+    public final TextView timeView; // время
+    public final View drawableView; //Область с иконками
+    public final ImageView deletedView; // пометка на удаление
+    public final ImageView postedView; // документ проведен
+    public final ImageView thumbView; // цель достигнута
+    public final TextView objectView; // объект аудита
+    public final TextView analyticsView; // аналитика строкой
+    public final TextView typeView; // вид аудита
+    public final TextView commentView; // комментарий к заданию
+    public final ImageView expandImage; // раскрыть/свернуть
+    public final CheckBox checkedView; // чек-бокс
     public Tasks.Task task; // пункт
 
-    ViewHolderTasks(View view) {
+    public ViewHolderTasks(View view) {
         super(view);
         this.mView = view;
         itemView = view.findViewById(R.id.item);
